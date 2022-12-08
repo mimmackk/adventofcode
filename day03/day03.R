@@ -1,0 +1,48 @@
+library(tidyverse)
+
+raw_input <- read_lines("input.txt") |> 
+  enframe(name = NULL, value = "str")
+
+# Part 1
+raw_input |> 
+  mutate(
+    # Separate each line into two compartments
+    str_length = str_length(str) / 2,
+    str_1 = str_sub(str, start = 1L, end = str_length),
+    str_2 = str_sub(str, start = str_length + 1, end = -1L),
+    
+    # Find the letter in common between each pair of compartments
+    across(c(str_1, str_2), ~ str_split(.x, "")),
+    dup = map2_chr(str_1, str_2, ~ intersect(.x, .y)),
+    
+    # Convert to priority value
+    priority = match(dup, c(letters, LETTERS))
+  ) |> 
+  
+  # Compute total sum
+  pull(priority) |> 
+  sum()
+
+# Part 2
+raw_input |> 
+  
+  # Reshape to one row per group, one column per elf
+  mutate(
+    str = str_split(str, ""),
+    group_num = floor((row_number() - 1) / 3),
+    elf_num = as.character(row_number() %% 3)
+  ) |>
+  pivot_wider(names_from = elf_num, values_from = str, names_prefix = "elf_") |> 
+  
+  # Find the character in common between all 3 elves & convert to priority val
+  mutate(
+    dup = pmap_chr(
+      list(elf_0, elf_1, elf_2), 
+      ~ reduce(list(..1, ..2, ..3), intersect)
+    ),
+    priority = match(dup, c(letters, LETTERS))
+  ) |> 
+  
+  # Compute total sum
+  pull(priority) |> 
+  sum()
