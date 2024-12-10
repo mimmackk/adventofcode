@@ -1,3 +1,6 @@
-# Advent of Code 2022
+# Advent of Code Solutions
 
-Solutions for the 2022 Advent calendar of programming puzzles: https://adventofcode.com/2022/about
+Solutions for the advent calendar of programming puzzles:
+
+-   https://adventofcode.com/2022/about
+-   https://adventofcode.com/2024/about

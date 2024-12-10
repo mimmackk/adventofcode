@@ -1,0 +1,200 @@
+---
+title: "Advent of Code Solutions"
+subtitle: "Day 4: Ceres Search"
+date: 2024-12-04
+published-title: "Date"
+format: 
+  html:
+    embed-resources: true
+    toc: true
+    toc-expand: 2
+    toc-title: Contents
+    other-links:
+      - text: Advent of Code
+        href: https://adventofcode.com/2024/day/4
+      - text: GitHub
+        href: https://github.com/mimmackk/adventofcode
+---
+
+# Problem Description
+
+## Part 1
+
+"Looks like the Chief's not here. Next!" One of The Historians pulls out a device and pushes the only button on it. After a brief flash, you recognize the interior of the [Ceres monitoring station](https://adventofcode.com/2019/day/10)!
+
+As the search for the Chief continues, a small Elf who lives on the station tugs on your shirt; she'd like to know if you could help her with her *word search* (your puzzle input). She only has to find one word: `XMAS`.
+
+This word search allows words to be horizontal, vertical, diagonal, written backwards, or even overlapping other words. It's a little unusual, though, as you don't merely need to find one instance of `XMAS` - you need to find *all of them*. Here are a few ways `XMAS` might appear, where irrelevant characters have been replaced with `.`:
+
+```         
+..X...
+.SAMX.
+.A..A.
+XMAS.S
+.X....
+```
+
+The actual word search will be full of letters instead. For example:
+
+```         
+MMMSXXMASM
+MSAMXMSMSA
+AMXSXMAAMM
+MSAMASMSMX
+XMASAMXAMM
+XXAMMXXAMA
+SMSMSASXSS
+SAXAMASAAA
+MAMMMXMMMM
+MXMXAXMASX
+```
+
+In this word search, `XMAS` occurs a total of *`18`* times; here's the same word search again, but where letters not involved in any `XMAS` have been replaced with `.`:
+
+```         
+....XXMAS.
+.SAMXMS...
+...S..A...
+..A.A.MS.X
+XMASAMX.MM
+X.....XA.A
+S.S.S.S.SS
+.A.A.A.A.A
+..M.M.M.MM
+.X.X.XMASX
+```
+
+Take a look at the little Elf's word search. *How many times does `XMAS`appear?*
+
+## Part 2
+
+The Elf looks quizzically at you. Did you misunderstand the assignment?
+
+Looking for the instructions, you flip over the word search to find that this isn't actually an *`XMAS`* puzzle; it's an *`X-MAS`* puzzle in which you're supposed to find two `MAS` in the shape of an `X`. One way to achieve that is like this:
+
+```         
+M.S
+.A.
+M.S
+```
+
+Irrelevant characters have again been replaced with `.` in the above diagram. Within the `X`, each `MAS` can be written forwards or backwards.
+
+Here's the same example from before, but this time all of the `X-MAS`es have been kept instead:
+
+```         
+.M.S......
+..A..MSMS.
+.M.S.MAA..
+..A.ASMSM.
+.M.S.M....
+..........
+S.S.S.S.S.
+.A.A.A.A..
+M.M.M.M.M.
+..........
+```
+
+In this example, an `X-MAS` appears *`9`* times.
+
+Flip the word search from the instructions back over to the word search side and try again. *How many times does an `X-MAS` appear?*
+
+# Solution
+
+```{r setup, include = FALSE}
+library(tidyverse)
+```
+
+## Read Input
+
+```{r}
+path <- "../input/day04.txt"
+input <- read_lines(path)
+```
+
+## Part 1
+
+```{r, warning=FALSE}
+# Convert vector of text to matrix
+txt_to_mtx <- function(txt) {
+  txt |> 
+    str_split("") |> 
+    unlist() |> 
+    matrix(nrow = length(txt), byrow = TRUE)
+}
+
+# Convert matrix to vector of text
+mtx_to_txt <- function(mtx) {
+  mtx |> 
+    t() |> 
+    as_tibble() |> 
+    as.list() |> 
+    map(str_flatten) |> 
+    unlist() |> 
+    unname()
+}
+
+# Transpose a vector of text
+transpose_txt <- function(txt) {
+  txt |> 
+    txt_to_mtx() |> 
+    t() |> 
+    mtx_to_txt()
+}
+
+# Get rows and columns of input as individual text vectors
+rows <- input
+cols <- transpose_txt(rows)
+
+# Convert diagonals of input as individual text vectors
+pad <- map_chr(
+  1:length(rows), 
+  ~ str_c(rep_len(" ", .x - 1), collapse = "")
+)
+
+diag1 <- str_c(pad, rows, rev(pad)) |> 
+  transpose_txt()
+diag2 <- str_c(rev(pad), rows, pad) |> 
+  transpose_txt()
+
+# Loop over rows, columns, and diagnoals and count occurrences of "XMAS"
+map_int(
+  list(rows, cols, diag1, diag2),
+  ~ sum(str_count(.x, "XMAS") + str_count(.x, "SAMX"))
+) |> 
+  sum()
+```
+
+## Part 2
+
+```{r}
+# Define the four possible XMAS patterns in a 3x3 grid as a regex string
+xmas1 <- "M.S.A.M.S"
+xmas4 <- "S.M.A.S.M"
+xmas2 <- "S.S.A.M.M"
+xmas3 <- "M.M.A.S.S"
+xmas_regex <- glue::glue("{xmas1}|{xmas2}|{xmas3}|{xmas4}")
+
+# Convert input into a matrix
+mtx <- txt_to_mtx(input)
+
+# Extract every 3x3 submatrix in the input text block as a text string
+map(
+  1:(nrow(mtx) - 2),
+  function(row_start) {
+    map_chr(
+      1:(ncol(mtx) - 2),
+      function(col_start) {
+        mtx[row_start:(row_start + 2), col_start:(col_start + 2)] |> 
+          mtx_to_txt() |> 
+          str_flatten()
+      }
+    )
+  }
+) |> 
+  unlist() |> 
+  
+  # Count the text strings with a valid XMAS pattern
+  str_detect(xmas_regex) |> 
+  sum()
+```

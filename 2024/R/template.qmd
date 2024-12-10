@@ -1,0 +1,40 @@
+---
+title: "Advent of Code Solutions"
+subtitle: "Day N: Title"
+date: 2024-12-XX
+published-title: "Date"
+format: 
+  html:
+    embed-resources: true
+    toc: true
+    toc-expand: 2
+    toc-title: Contents
+    other-links:
+      - text: Advent of Code
+        href: https://adventofcode.com/2024/day/N
+      - text: GitHub
+        href: https://github.com/mimmackk/adventofcode
+---
+
+# Problem Description
+
+## Part 1
+
+## Part 2
+
+# Solution
+
+```{r setup, include = FALSE}
+library(tidyverse)
+```
+
+## Read Input
+
+```{r}
+path <- "../input/dayN.txt"
+input <- read_lines(path, skip_empty_rows = TRUE)
+```
+
+## Part 1
+
+## Part 2
