@@ -1,6 +1,5 @@
-# Advent of Code Solutions
+# Advent of Code Worked Solutions
 
-Solutions for the advent calendar of programming puzzles:
+Worked solutions for the advent calendar of programming puzzles:
 
--   https://adventofcode.com/2022/about
--   https://adventofcode.com/2024/about
+-   https://adventofcode.com/about

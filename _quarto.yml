@@ -1,0 +1,36 @@
+project:
+  type: website
+
+subtitle: "Advent of Code: Worked Solutions"
+published-title: "Date"
+author-title: "About"
+
+website:
+  title: "Advent of Code: Worked Solutions"
+  navbar: false
+  sidebar:
+    style: "floating"
+    search: false
+    contents:
+    - section: "2024"
+      contents: 2024/R/*
+    - section: "2022"
+      contents: 2022/R/*
+  page-navigation: true
+  bread-crumbs: false
+  repo-url: https://github.com/mimmackk/adventofcode
+  repo-actions: source
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+    toc-expand: 2
+    toc-title: Contents
+
+execute:
+  freeze: auto
+  message: false
+  warning: false
+  echo: true

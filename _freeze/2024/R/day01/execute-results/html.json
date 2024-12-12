@@ -1,0 +1,15 @@
+{
+  "hash": "c67dfb5dc9e2f02532cc321fcd186765",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 1\"\ndate: 2024-12-01\nauthor:\n  name: https://adventofcode.com/2024/day/1\n  url: https://adventofcode.com/2024/day/1\n---\n\n\n\n\n## Setup\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput <- read_table(\n  \"../input/day01.txt\", \n  col_names = c(\"x\", \"y\"), \n  show_col_types = FALSE\n)\n```\n:::\n\n\n\n\n## Part 1\n\nSort each list independently, then sum the distances between each pair of ordered items.\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ntibble(\n  x = sort(input$x), \n  y = sort(input$y),\n  dist = abs(y - x)\n) |> \n  summarize(total = sum(dist)) |> \n  pull()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 2285373\n```\n\n\n:::\n:::\n\n\n\n\n## Part 2\n\nFor each item in list `x`, multiply its value by its number of occurrences in list `y`, then sum the total.\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput |> \n  mutate(\n    x_match_count = map_int(x, ~ sum(.x == y)),\n    similarity_score = x * x_match_count\n  ) |> \n  summarize(total = sum(similarity_score)) |> \n  pull()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 21142653\n```\n\n\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

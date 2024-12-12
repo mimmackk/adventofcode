@@ -1,0 +1,17 @@
+{
+  "hash": "b22fa486c8575f3910dc22810a801852",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 5\"\ndate: 2024-12-05\nauthor:\n  name: https://adventofcode.com/2024/day/5\n  url: https://adventofcode.com/2024/day/5\n---\n\n\n\n\n\n## Setup\n\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput <- read_lines(\"../input/day05.txt\", skip_empty_rows = TRUE)\n```\n:::\n\n\n\n\n\n## Part 1\n\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Extract page ordering rules from input\nrule_list <- input |> \n  keep(~ str_detect(.x, \"\\\\|\")) |> \n  as_tibble_col(column_name = \"rule\") |> \n  separate(rule, into = c(\"p1\", \"p2\")) |> \n  mutate(rule_num = row_number(), .before = everything()) |> \n  mutate(across(c(p1, p2), parse_number))\n\n# Extract page sequences from input\npages <- input |> \n  discard(~ str_detect(.x, \"\\\\|\")) |> \n  str_split(\",\") |> \n  map(parse_number) |> \n  as_tibble_col(column_name = \"update\")\n\n# Sort a given vector by its applicable rules\nsort_by_rules <- function(seq) {\n  active_rules <- rule_list |> \n    filter(p1 %in% seq & p2 %in% seq)\n  \n  repeat {\n    swap_occurred <- FALSE\n    for (i in 1:nrow(active_rules)) {\n      rule <- filter(active_rules, row_number() == i)\n      idx1 <- which(seq == rule$p1)\n      idx2 <- which(seq == rule$p2)\n      \n      if (idx1 > idx2) {\n        seq[[idx1]] <- rule$p2\n        seq[[idx2]] <- rule$p1\n        swap_occurred <- TRUE\n      }\n    }\n    if (!swap_occurred) return(seq)\n  }\n}\n\n# Sort all page sequences and extract the center page of each result\noutput <- pages |> \n  mutate(\n    resorted = map(update, sort_by_rules),\n    is_sorted = map2_lgl(update, resorted, identical),\n    center_page = map_int(resorted, ~ .x[(length(.x) + 1) / 2])\n  )\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\n# For the properly-ordered updates, sum the center page numbers\noutput |>\n  filter(is_sorted) |> \n  pull(center_page) |> \n  sum()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 6505\n```\n\n\n:::\n:::\n\n\n\n\n\n## Part 2\n\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# For the improperly-ordered updates, sum their sorted center pages\noutput |>\n  filter(!is_sorted) |> \n  pull(center_page) |> \n  sum()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 6897\n```\n\n\n:::\n:::\n",
+    "supporting": [
+      "day05_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

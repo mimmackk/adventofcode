@@ -1,0 +1,69 @@
+---
+title: "Day 5"
+date: 2022-12-05
+author:
+  name: https://adventofcode.com/2022/day/5
+  url: https://adventofcode.com/2022/day/5
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+
+# Read input from file
+path <- "../input/day05.txt"
+input <- read_lines(path)
+```
+
+## Part 1
+
+```{r}
+
+# Format raw input
+moves <- input |>
+  tail_while(~ .x != "") |>
+  str_extract_all("\\d+") |>
+  map(as.integer)
+
+stacks <- read_fwf(
+  path,
+  n_max = length(input) - length(moves) - 2,
+  col_types = "c"
+) |>
+  mutate(across(everything(), ~ str_extract(.x, "[A-Z]"))) |>
+  as.list() |>
+  map(discard, is.na) |>
+  map(rev)
+
+move_crates <- function(moves, stacks, func) {
+  
+  # Execute moves
+  for (curr_move in moves) {
+    count <- curr_move[1]
+    from  <- curr_move[2]
+    to    <- curr_move[3]
+    
+    crates <- func(tail(stacks[[from]], count))
+
+    stacks[[to]]   <- append(stacks[[to]], crates)
+    stacks[[from]] <- head(stacks[[from]], -1 * count)
+  }
+
+  # Examine final top row of crates
+  stacks |>
+    map(~ tail(.x, 1)) |>
+    str_c(collapse = "")
+}
+```
+
+```{r}
+move_crates(moves, stacks, rev)
+```
+
+## Part 2
+
+```{r}
+move_crates(moves, stacks, identity)
+```

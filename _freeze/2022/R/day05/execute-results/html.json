@@ -1,0 +1,15 @@
+{
+  "hash": "cf8c3065394452c58f054423acb31c2d",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 5\"\ndate: 2022-12-05\nauthor:\n  name: https://adventofcode.com/2022/day/5\n  url: https://adventofcode.com/2022/day/5\n---\n\n\n\n\n## Setup\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\n\n# Read input from file\npath <- \"../input/day05.txt\"\ninput <- read_lines(path)\n```\n:::\n\n\n\n\n## Part 1\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Format raw input\nmoves <- input |>\n  tail_while(~ .x != \"\") |>\n  str_extract_all(\"\\\\d+\") |>\n  map(as.integer)\n\nstacks <- read_fwf(\n  path,\n  n_max = length(input) - length(moves) - 2,\n  col_types = \"c\"\n) |>\n  mutate(across(everything(), ~ str_extract(.x, \"[A-Z]\"))) |>\n  as.list() |>\n  map(discard, is.na) |>\n  map(rev)\n\nmove_crates <- function(moves, stacks, func) {\n  \n  # Execute moves\n  for (curr_move in moves) {\n    count <- curr_move[1]\n    from  <- curr_move[2]\n    to    <- curr_move[3]\n    \n    crates <- func(tail(stacks[[from]], count))\n\n    stacks[[to]]   <- append(stacks[[to]], crates)\n    stacks[[from]] <- head(stacks[[from]], -1 * count)\n  }\n\n  # Examine final top row of crates\n  stacks |>\n    map(~ tail(.x, 1)) |>\n    str_c(collapse = \"\")\n}\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nmove_crates(moves, stacks, rev)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] \"RLFNRTNFB\"\n```\n\n\n:::\n:::\n\n\n\n\n## Part 2\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nmove_crates(moves, stacks, identity)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] \"MHQTLJRLB\"\n```\n\n\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

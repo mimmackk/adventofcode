@@ -1,0 +1,32 @@
+---
+title: "Day 4"
+date: 2022-12-04
+author:
+  name: https://adventofcode.com/2022/day/4
+  url: https://adventofcode.com/2022/day/4
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_csv("../input/day04.txt", col_names = FALSE)
+```
+
+## Parts 1 & 2
+
+```{r}
+input |>  
+  separate(X1, into = c("start1", "end1"), sep = "-", convert = TRUE) |>
+  separate(X2, into = c("start2", "end2"), sep = "-", convert = TRUE) |>
+  mutate(
+    range1 = map2(start1, end1, ~ .x:.y),
+    range2 = map2(start2, end2, ~ .x:.y),
+    contained = map2_lgl(range1, range2, ~ all(.x %in% .y) | all(.y %in% .x)),
+    overlap   = map2_lgl(range1, range2, ~ length(intersect(.x, .y)) > 0)
+  ) |>
+  summarize(num_contained = sum(contained), num_overlap = sum(overlap))
+```

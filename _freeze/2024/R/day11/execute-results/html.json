@@ -1,0 +1,17 @@
+{
+  "hash": "ee87c901cf6e9437d916d57f70a4f774",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 11\"\ndate: 2024-12-11\nauthor:\n  name: https://adventofcode.com/2024/day/11\n  url: https://adventofcode.com/2024/day/11\n---\n\n\n\n\n\n## Setup\n\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput <- read_lines(\"../input/day11.txt\", skip_empty_rows = TRUE) |> \n  str_split_1(\" \") |> \n  as.integer()\n```\n:::\n\n\n\n\n\n## Part 1\n\nCreate blink functions:\n\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nblink <- function(x) {\n  char <- format(x, scientific = FALSE)\n  n <- str_length(char)\n  \n  if (x == 0) \n    1\n  else if (n %% 2 == 0)\n    parse_number(c(\n      str_sub(char, 1, n / 2),\n      str_sub(char, n / 2 + 1, n)\n    ))\n  else \n    x * 2024\n}\n\nblink_n <- function(df, n) {\n  if (n == 0)\n    return(sum(df$n))\n  \n  df |> \n    mutate(stones = map(stones, blink)) |> \n    unnest(stones) |> \n    summarize(n = sum(n), .by = stones) |> \n    blink_n(n - 1)\n}\n```\n:::\n\n\n\n\n\nRun blink function 25 times on puzzle input:\n\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndf <- tibble(stones = input, n = 1)\n\nblink_n(df, 25)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 193899\n```\n\n\n:::\n:::\n\n\n\n\n\n## Part 2\n\nRun blink function 75 times on puzzle input:\n\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nblink_n(df, 75) |> \n  format(scientific = FALSE)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] \"229682160383225\"\n```\n\n\n:::\n:::\n",
+    "supporting": [
+      "day11_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

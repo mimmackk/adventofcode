@@ -1,0 +1,15 @@
+{
+  "hash": "fc64c95b5863c4d6ad71ddeb49c32556",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 4\"\ndate: 2022-12-04\nauthor:\n  name: https://adventofcode.com/2022/day/4\n  url: https://adventofcode.com/2022/day/4\n---\n\n\n\n\n## Setup\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput <- read_csv(\"../input/day04.txt\", col_names = FALSE)\n```\n:::\n\n\n\n\n## Parts 1 & 2\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput |>  \n  separate(X1, into = c(\"start1\", \"end1\"), sep = \"-\", convert = TRUE) |>\n  separate(X2, into = c(\"start2\", \"end2\"), sep = \"-\", convert = TRUE) |>\n  mutate(\n    range1 = map2(start1, end1, ~ .x:.y),\n    range2 = map2(start2, end2, ~ .x:.y),\n    contained = map2_lgl(range1, range2, ~ all(.x %in% .y) | all(.y %in% .x)),\n    overlap   = map2_lgl(range1, range2, ~ length(intersect(.x, .y)) > 0)\n  ) |>\n  summarize(num_contained = sum(contained), num_overlap = sum(overlap))\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n# A tibble: 1 × 2\n  num_contained num_overlap\n          <int>       <int>\n1           550         931\n```\n\n\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

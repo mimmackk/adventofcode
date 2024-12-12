@@ -1,0 +1,17 @@
+{
+  "hash": "7dcd38ac5b508b4f65f018be7dc2a4ba",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 3\"\ndate: 2024-12-03\nauthor:\n  name: https://adventofcode.com/2024/day/3\n  url: https://adventofcode.com/2024/day/3\n---\n\n\n\n\n\n## Setup\n\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput <- read_lines(\"../input/day03.txt\") |> \n  str_c(collapse = \"\")\n```\n:::\n\n\n\n\n\n## Part 1\n\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nuncorrupt <- function(str) {\n  \n  str |> \n    \n    # Extract all text of the format `mul(a,b)` where a, b are valid integers\n    str_extract_all(\"mul\\\\(\\\\d+,\\\\d+\\\\)\") |> \n    unlist() |> \n    \n    # Extract both integers from the mul sequences and multiply them together\n    str_extract_all(\"\\\\d+\") |> \n    map(parse_number) |> \n    map(reduce, prod) |> \n    \n    # Sum up the total of all results\n    reduce(sum)\n  \n}\n\nuncorrupt(input)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 178538786\n```\n\n\n:::\n:::\n\n\n\n\n\n## Part 2\n\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Remove all text between `don't()` and `do()`, then uncorrupt the result\ninput |> \n  str_remove_all(\"don't\\\\(\\\\).*?do\\\\(\\\\)\") |>   \n  uncorrupt()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 102467299\n```\n\n\n:::\n:::\n",
+    "supporting": [
+      "day03_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

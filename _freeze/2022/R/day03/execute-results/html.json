@@ -1,0 +1,15 @@
+{
+  "hash": "05a96a22e5024441bd85ce9c27a6ac80",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 3\"\ndate: 2022-12-03\nauthor:\n  name: https://adventofcode.com/2022/day/3\n  url: https://adventofcode.com/2022/day/3\n---\n\n\n\n\n## Setup\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput <- read_table(\"../input/day03.txt\", col_names = \"str\")\n```\n:::\n\n\n\n\n## Part 1\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput |>\n  mutate(\n    # Separate each line into two compartments\n    str_length = str_length(str) / 2,\n    str_1 = str_sub(str, start = 1L, end = str_length),\n    str_2 = str_sub(str, start = str_length + 1, end = -1L),\n\n    # Find the letter in common between each pair of compartments\n    across(c(str_1, str_2), ~ str_split(.x, \"\")),\n    dup = map2_chr(str_1, str_2, ~ intersect(.x, .y)),\n\n    # Convert to priority value\n    priority = match(dup, c(letters, LETTERS))\n  ) |>\n\n  # Compute total sum\n  pull(priority) |>\n  sum()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 8252\n```\n\n\n:::\n:::\n\n\n\n\n## Part 2\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput |>\n\n  # Reshape to one row per group, one column per elf\n  mutate(\n    str = str_split(str, \"\"),\n    group_num = floor((row_number() - 1) / 3),\n    elf_num = as.character(row_number() %% 3)\n  ) |>\n  pivot_wider(names_from = elf_num, values_from = str, names_prefix = \"elf_\") |>\n\n  # Find the character in common between all 3 elves & convert to priority val\n  mutate(\n    dup = pmap_chr(\n      list(elf_0, elf_1, elf_2),\n      ~ reduce(list(..1, ..2, ..3), intersect)\n    ),\n    priority = match(dup, c(letters, LETTERS))\n  ) |>\n\n  # Compute total sum\n  pull(priority) |>\n  sum()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 2828\n```\n\n\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

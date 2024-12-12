@@ -1,0 +1,58 @@
+---
+title: "Day 6"
+date: 2022-12-06
+author:
+  name: https://adventofcode.com/2022/day/6
+  url: https://adventofcode.com/2022/day/6
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day06.txt") |>
+  str_split_1("") |>
+  enframe(name = "idx", value = "char")
+```
+
+## Part 1
+
+```{r}
+find_marker <- function(df, marker_length) {
+  df |> 
+    # Construct sequences of next n chars and count # of unique chars in each
+    transmute(
+      marker_idx = idx + marker_length - 1,
+      char_seq = reduce(
+        .x = map(0:(marker_length - 1), ~ lead(char, n = .x)),
+        .f = str_c
+      ),
+      n_unique = map_int(
+        char_seq,
+        ~ .x |>
+          str_split("") |>
+          unlist() |>
+          unique() |>
+          length()
+      )
+    ) |>
+
+    # Extract first instance where all n chars are unique
+    filter(n_unique == marker_length) |>
+    pull(marker_idx) |>
+    min()
+}
+```
+
+```{r}
+find_marker(input, marker_length = 4)
+```
+
+## Part 2
+
+```{r}
+find_marker(input, marker_length = 14)
+```

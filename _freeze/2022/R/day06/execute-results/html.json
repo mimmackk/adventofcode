@@ -1,0 +1,15 @@
+{
+  "hash": "8ee3898b61455cdb541e7be734ebe46e",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 6\"\ndate: 2022-12-06\nauthor:\n  name: https://adventofcode.com/2022/day/6\n  url: https://adventofcode.com/2022/day/6\n---\n\n\n\n\n## Setup\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput <- read_lines(\"../input/day06.txt\") |>\n  str_split_1(\"\") |>\n  enframe(name = \"idx\", value = \"char\")\n```\n:::\n\n\n\n\n## Part 1\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nfind_marker <- function(df, marker_length) {\n  df |> \n    # Construct sequences of next n chars and count # of unique chars in each\n    transmute(\n      marker_idx = idx + marker_length - 1,\n      char_seq = reduce(\n        .x = map(0:(marker_length - 1), ~ lead(char, n = .x)),\n        .f = str_c\n      ),\n      n_unique = map_int(\n        char_seq,\n        ~ .x |>\n          str_split(\"\") |>\n          unlist() |>\n          unique() |>\n          length()\n      )\n    ) |>\n\n    # Extract first instance where all n chars are unique\n    filter(n_unique == marker_length) |>\n    pull(marker_idx) |>\n    min()\n}\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nfind_marker(input, marker_length = 4)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 1802\n```\n\n\n:::\n:::\n\n\n\n\n## Part 2\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nfind_marker(input, marker_length = 14)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 3551\n```\n\n\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

@@ -1,0 +1,51 @@
+---
+title: "Day 1"
+date: 2022-12-01
+author:
+  name: https://adventofcode.com/2022/day/1
+  url: https://adventofcode.com/2022/day/1
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day01.txt") |> 
+  as.integer()
+```
+
+## Part 1
+
+```{r}
+# Format input as a data frame and number the elves
+df <- tibble(
+  cal = input,
+  elf_id = cumsum(is.na(cal)) + 1
+) |>
+  filter(!is.na(cal))
+
+# Compute calorie sum for each elf, get the top n elves, and combine totals
+count_max <- function(df, num_top_elves) {
+  df |> 
+    group_by(elf_id) |>
+    summarize(total_cal = sum(cal)) |>
+    slice_max(total_cal, n = num_top_elves) |>
+    pull(total_cal) |>
+    sum()
+}
+```
+
+Run puzzle input:
+
+```{r}
+count_max(df, 1)
+```
+
+## Part 2
+
+```{r}
+count_max(df, 3)
+```

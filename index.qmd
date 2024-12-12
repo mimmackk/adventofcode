@@ -1,0 +1,10 @@
+---
+title: "Advent of Code: Worked Solutions"
+date: today
+author: 
+  name: https://adventofcode.com/about
+  url: https://adventofcode.com/about
+author-title: "About"
+---
+
+Worked solutions to the Advent of Code – a yearly advent calendar of programming puzzles – in R.

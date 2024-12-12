@@ -1,0 +1,17 @@
+{
+  "hash": "5e98229754e0d83711fd2b13e52386da",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 4\"\ndate: 2024-12-04\nauthor:\n  name: https://adventofcode.com/2024/day/4\n  url: https://adventofcode.com/2024/day/4\n---\n\n\n\n\n\n## Setup\n\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput <- read_lines(\"../input/day04.txt\")\n```\n:::\n\n\n\n\n\n## Part 1\n\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Convert vector of text to matrix\ntxt_to_mtx <- function(txt) {\n  txt |> \n    str_split(\"\") |> \n    unlist() |> \n    matrix(nrow = length(txt), byrow = TRUE)\n}\n\n# Convert matrix to vector of text\nmtx_to_txt <- function(mtx) {\n  mtx |> \n    t() |> \n    as_tibble() |> \n    as.list() |> \n    map(str_flatten) |> \n    unlist() |> \n    unname()\n}\n\n# Transpose a vector of text\ntranspose_txt <- function(txt) {\n  txt |> \n    txt_to_mtx() |> \n    t() |> \n    mtx_to_txt()\n}\n\n# Get rows and columns of input as individual text vectors\nrows <- input\ncols <- transpose_txt(rows)\n\n# Convert diagonals of input as individual text vectors\npad <- map_chr(\n  1:length(rows), \n  ~ str_c(rep_len(\" \", .x - 1), collapse = \"\")\n)\n\ndiag1 <- str_c(pad, rows, rev(pad)) |> \n  transpose_txt()\ndiag2 <- str_c(rev(pad), rows, pad) |> \n  transpose_txt()\n\n# Loop over rows, columns, and diagnoals and count occurrences of \"XMAS\"\nmap_int(\n  list(rows, cols, diag1, diag2),\n  ~ sum(str_count(.x, \"XMAS\") + str_count(.x, \"SAMX\"))\n) |> \n  sum()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 2599\n```\n\n\n:::\n:::\n\n\n\n\n\n## Part 2\n\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Define the four possible XMAS patterns in a 3x3 grid as a regex string\nxmas1 <- \"M.S.A.M.S\"\nxmas4 <- \"S.M.A.S.M\"\nxmas2 <- \"S.S.A.M.M\"\nxmas3 <- \"M.M.A.S.S\"\nxmas_regex <- glue::glue(\"{xmas1}|{xmas2}|{xmas3}|{xmas4}\")\n\n# Convert input into a matrix\nmtx <- txt_to_mtx(input)\n\n# Extract every 3x3 submatrix in the input text block as a text string\nmap(\n  1:(nrow(mtx) - 2),\n  function(row_start) {\n    map_chr(\n      1:(ncol(mtx) - 2),\n      function(col_start) {\n        mtx[row_start:(row_start + 2), col_start:(col_start + 2)] |> \n          mtx_to_txt() |> \n          str_flatten()\n      }\n    )\n  }\n) |> \n  unlist() |> \n  \n  # Count the text strings with a valid XMAS pattern\n  str_detect(xmas_regex) |> \n  sum()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 1948\n```\n\n\n:::\n:::\n",
+    "supporting": [
+      "day04_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

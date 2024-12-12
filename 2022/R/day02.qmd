@@ -1,0 +1,63 @@
+---
+title: "Day 2"
+date: 2022-12-02
+author:
+  name: https://adventofcode.com/2022/day/2
+  url: https://adventofcode.com/2022/day/2
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_fwf("../input/day02.txt", col_types = "c")
+```
+
+## Part 1
+
+```{r}
+# Format shapes/strategies as numbers 1-3 for modular arithmetic
+df <- tibble(
+  opponent = as.numeric(factor(input$X1, levels = c("A", "B", "C"))),
+  strategy = as.numeric(factor(input$X2, levels = c("X", "Y", "Z")))
+)
+
+score_shape <- function(df) {
+  df |> 
+    mutate(
+      self = strategy,
+      outcome = (self - opponent + 1) %% 3 * 3,
+      score = self + outcome
+    ) |>
+    pull(score) |>
+    sum()
+}
+```
+
+Run puzzle input:
+
+```{r}
+score_shape(df)
+```
+
+## Part 2
+
+```{r}
+score_outcome <- function(df) {
+  df |> 
+    mutate(
+      self = (opponent + strategy) %% 3 + 1,
+      outcome = (strategy - 1) * 3,
+      score = self + outcome
+    ) |>
+    pull(score) |>
+    sum()
+}
+```
+
+```{r}
+score_outcome(df)
+```
