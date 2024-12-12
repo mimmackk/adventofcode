@@ -1,5 +1,6 @@
 project:
   type: website
+  output-dir: docs
 
 subtitle: "Advent of Code: Worked Solutions"
 published-title: "Date"

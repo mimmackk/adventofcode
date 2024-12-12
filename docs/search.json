@@ -1,0 +1,1043 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Advent of Code: Worked Solutions",
+    "section": "",
+    "text": "Worked solutions to the Advent of Code – a yearly advent calendar of programming puzzles – in R."
+  },
+  {
+    "objectID": "2024/R/day08.html",
+    "href": "2024/R/day08.html",
+    "title": "Day 8",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day08.txt\", skip_empty_rows = TRUE)",
+    "crumbs": [
+      "2024",
+      "Day 8"
+    ]
+  },
+  {
+    "objectID": "2024/R/day08.html#setup",
+    "href": "2024/R/day08.html#setup",
+    "title": "Day 8",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day08.txt\", skip_empty_rows = TRUE)",
+    "crumbs": [
+      "2024",
+      "Day 8"
+    ]
+  },
+  {
+    "objectID": "2024/R/day08.html#part-1",
+    "href": "2024/R/day08.html#part-1",
+    "title": "Day 8",
+    "section": "Part 1",
+    "text": "Part 1\nDefine antinode functions:\n\n# Check if a coordinate is in the bounds of the map\nin_bounds &lt;- function(x, map) {\n  between(x[1], 1, nrow(map)) & between(x[2], 1, ncol(map))\n}\n\n# Compute the antinodes of a given pair of antennas\nantinode_pair &lt;- function(x1, x2, map) {\n  diff &lt;- x2 - x1\n  list(x1 - diff, x2 + diff) |&gt; \n    keep(~in_bounds(.x, map))\n}\n\n# Get coordinates of every antenna of the given frequency\nget_freq_antennas &lt;- function(freq, map) {\n  antennas &lt;- which(map == freq, arr.ind = TRUE)\n  split(antennas, row(antennas))\n}\n\n# Compute all antinodes of a given frequency in a given map\nget_all_antinodes &lt;- function(freq, map, f) {\n  antennas &lt;- get_freq_antennas(freq, map)\n  \n  pairs &lt;- combn(antennas, 2)\n  pairs &lt;- split(pairs, col(pairs))\n  \n  pairs |&gt; \n    map(~f(.x[[1]], .x[[2]], map)) |&gt; \n    list_flatten() |&gt; \n    unique()\n}\n\nRun antinode functions on puzzle input:\n\n# Convert input to matrix format\nmtx &lt;- input |&gt;\n  str_split(\"\") |&gt; \n  unlist() |&gt; \n  matrix(nrow = length(input), byrow = TRUE)\n\n# Find the distinct set of frequencies in the map\nfreqs &lt;- keep(\n  unique(as.vector(mtx)), \n  ~.x %in% c(letters, LETTERS, as.character(0:9))\n)\n\n# Count all distinct antinode locations across all frequencies in the map\nfreqs |&gt; \n  map(~get_all_antinodes(.x, mtx, antinode_pair)) |&gt; \n  list_flatten() |&gt; \n  unique() |&gt; \n  length()\n\n[1] 369",
+    "crumbs": [
+      "2024",
+      "Day 8"
+    ]
+  },
+  {
+    "objectID": "2024/R/day08.html#part-2",
+    "href": "2024/R/day08.html#part-2",
+    "title": "Day 8",
+    "section": "Part 2",
+    "text": "Part 2\nUpdate the antinode function:\n\n# Compute the updated antinodes of a given pair of antennas\nantinode_set &lt;- function(x1, x2, map) {\n  diff &lt;- x2 - x1\n  antinodes &lt;- list(x1, x2)\n  \n  i &lt;- 1\n  while(in_bounds(x2 + i * diff, map)) {\n    antinodes &lt;- c(antinodes, list(as.integer(x2 + i * diff)))\n    i &lt;- i + 1\n  }\n\n  i &lt;- 1\n  while(in_bounds(x1 - i * diff, map)) {\n    antinodes &lt;- c(antinodes, list(as.integer(x1 - i * diff)))\n    i &lt;- i + 1\n  }\n  \n  antinodes\n}\n\nRe-run puzzle input:\n\nfreqs |&gt; \n  map(~get_all_antinodes(.x, mtx, antinode_set)) |&gt; \n  list_flatten() |&gt; \n  unique() |&gt; \n  length()\n\n[1] 1169",
+    "crumbs": [
+      "2024",
+      "Day 8"
+    ]
+  },
+  {
+    "objectID": "2024/R/day03.html",
+    "href": "2024/R/day03.html",
+    "title": "Day 3",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day03.txt\") |&gt; \n  str_c(collapse = \"\")",
+    "crumbs": [
+      "2024",
+      "Day 3"
+    ]
+  },
+  {
+    "objectID": "2024/R/day03.html#setup",
+    "href": "2024/R/day03.html#setup",
+    "title": "Day 3",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day03.txt\") |&gt; \n  str_c(collapse = \"\")",
+    "crumbs": [
+      "2024",
+      "Day 3"
+    ]
+  },
+  {
+    "objectID": "2024/R/day03.html#part-1",
+    "href": "2024/R/day03.html#part-1",
+    "title": "Day 3",
+    "section": "Part 1",
+    "text": "Part 1\n\nuncorrupt &lt;- function(str) {\n  \n  str |&gt; \n    \n    # Extract all text of the format `mul(a,b)` where a, b are valid integers\n    str_extract_all(\"mul\\\\(\\\\d+,\\\\d+\\\\)\") |&gt; \n    unlist() |&gt; \n    \n    # Extract both integers from the mul sequences and multiply them together\n    str_extract_all(\"\\\\d+\") |&gt; \n    map(parse_number) |&gt; \n    map(reduce, prod) |&gt; \n    \n    # Sum up the total of all results\n    reduce(sum)\n  \n}\n\nuncorrupt(input)\n\n[1] 178538786",
+    "crumbs": [
+      "2024",
+      "Day 3"
+    ]
+  },
+  {
+    "objectID": "2024/R/day03.html#part-2",
+    "href": "2024/R/day03.html#part-2",
+    "title": "Day 3",
+    "section": "Part 2",
+    "text": "Part 2\n\n# Remove all text between `don't()` and `do()`, then uncorrupt the result\ninput |&gt; \n  str_remove_all(\"don't\\\\(\\\\).*?do\\\\(\\\\)\") |&gt;   \n  uncorrupt()\n\n[1] 102467299",
+    "crumbs": [
+      "2024",
+      "Day 3"
+    ]
+  },
+  {
+    "objectID": "2024/R/day06.html",
+    "href": "2024/R/day06.html",
+    "title": "Day 6",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day06.txt\", skip_empty_rows = TRUE)",
+    "crumbs": [
+      "2024",
+      "Day 6"
+    ]
+  },
+  {
+    "objectID": "2024/R/day06.html#setup",
+    "href": "2024/R/day06.html#setup",
+    "title": "Day 6",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day06.txt\", skip_empty_rows = TRUE)",
+    "crumbs": [
+      "2024",
+      "Day 6"
+    ]
+  },
+  {
+    "objectID": "2024/R/day06.html#part-1",
+    "href": "2024/R/day06.html#part-1",
+    "title": "Day 6",
+    "section": "Part 1",
+    "text": "Part 1\n\n# Guard functions --------------------------------------------------------------\nguards &lt;- c(\"^\", \"&gt;\", \"v\", \"&lt;\")\nguard_shift &lt;- c(tail(guards, -1), head(guards, 1))\n\nrotate_guard &lt;- function(cur) guard_shift[guards == cur]\n\nguard_dir &lt;- function(char) {\n  case_match(char,\n    \"^\" ~ matrix(c(-1,  0), nrow = 1),\n    \"&gt;\" ~ matrix(c( 0,  1), nrow = 1),\n    \"v\" ~ matrix(c( 1,  0), nrow = 1),\n    \"&lt;\" ~ matrix(c( 0, -1), nrow = 1)\n  )\n}\n\nin_bounds &lt;- function(coord, mtx) {\n  between(coord[1], 1, nrow(mtx)) & between(coord[2], 1, ncol(mtx))\n}\n\nmap_path &lt;- function(mtx) {\n\n  # Initiate guard's starting position and direction\n  cur_char  &lt;- keep(mtx, ~ .x %in% guards)\n  cur_coord &lt;- which(mtx == cur_char, arr.ind = TRUE)\n  cur_dir   &lt;- guard_dir(cur_char)\n  \n  # As long as the guard is in bounds, iteratively update its coords and direction\n  repeat {\n    next_coord &lt;- cur_coord + cur_dir\n    \n    # If next step is out-of-bounds, update matrix and exit\n    if (!in_bounds(next_coord, mtx)) {\n      mtx[cur_coord] &lt;- \"X\"\n      break\n    }\n    # If next step is an obstacle, rotate the guard\n    else if (mtx[next_coord] == '#') {\n      cur_char &lt;- rotate_guard(cur_char)\n      cur_dir  &lt;- guard_dir(cur_char)\n    }\n    # Otherwise advance the guard forward\n    else {\n      mtx[cur_coord] &lt;- \"X\"\n      cur_coord &lt;- next_coord\n    }\n  }\n  \n  mtx\n}\n\n\n# Convert input into a matrix\nmtx &lt;- input |&gt; \n  str_split(\"\") |&gt; \n  unlist() |&gt; \n  matrix(nrow = length(input), byrow = TRUE)\n\n# Map the guard's path\nguard_path &lt;- map_path(mtx)\n\n# Count distinct positions visited\nsum(guard_path == \"X\")",
+    "crumbs": [
+      "2024",
+      "Day 6"
+    ]
+  },
+  {
+    "objectID": "2024/R/day06.html#part-2",
+    "href": "2024/R/day06.html#part-2",
+    "title": "Day 6",
+    "section": "Part 2",
+    "text": "Part 2\nChange the path mapping function to test for loops\n\npath_loops &lt;- function(mtx) {\n\n  # Initiate guard's starting position and direction\n  cur_char  &lt;- keep(mtx, ~ .x %in% guards)\n  cur_coord &lt;- which(mtx == cur_char, arr.ind = TRUE)\n  cur_dir   &lt;- guard_dir(cur_char)\n  path_hist &lt;- matrix(\"\", nrow(mtx), ncol(mtx))\n\n  # As long as the guard is in bounds, iteratively update its coords and direction\n  repeat {\n    next_coord &lt;- cur_coord + cur_dir\n    \n    # Check if the guard is looping or if they have left the area\n    if (str_detect(path_hist[cur_coord], fixed(cur_char))) \n      return(TRUE)\n    else if (!in_bounds(next_coord, mtx)) \n      return(FALSE)\n    \n    # If next step is an obstacle, rotate the guard\n    else if (mtx[next_coord] == '#') {\n      # Update path history\n      path_hist[cur_coord] &lt;- str_c(path_hist[cur_coord], cur_char)\n      # Update guard\n      cur_char &lt;- rotate_guard(cur_char)\n      cur_dir  &lt;- guard_dir(cur_char)\n    }\n    # Otherwise advance the guard forward\n    else {\n      # Update path history\n      path_hist[cur_coord] &lt;- str_c(path_hist[cur_coord], cur_char)\n      # Update guard\n      cur_coord &lt;- next_coord\n    }\n  }\n}\n\n\n# Create a variation of the map for each possible obstacle location\nobstacles &lt;- which(guard_path == \"X\" & !(mtx %in% guards))\n\n# Test each obstacle location for loops and sum result\nobstacles |&gt; \n  map(~ replace(mtx, .x, \"#\")) |&gt; \n  map_lgl(path_loops) |&gt; \n  sum()",
+    "crumbs": [
+      "2024",
+      "Day 6"
+    ]
+  },
+  {
+    "objectID": "2024/R/day11.html",
+    "href": "2024/R/day11.html",
+    "title": "Day 11",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day11.txt\", skip_empty_rows = TRUE) |&gt; \n  str_split_1(\" \") |&gt; \n  as.integer()",
+    "crumbs": [
+      "2024",
+      "Day 11"
+    ]
+  },
+  {
+    "objectID": "2024/R/day11.html#setup",
+    "href": "2024/R/day11.html#setup",
+    "title": "Day 11",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day11.txt\", skip_empty_rows = TRUE) |&gt; \n  str_split_1(\" \") |&gt; \n  as.integer()",
+    "crumbs": [
+      "2024",
+      "Day 11"
+    ]
+  },
+  {
+    "objectID": "2024/R/day11.html#part-1",
+    "href": "2024/R/day11.html#part-1",
+    "title": "Day 11",
+    "section": "Part 1",
+    "text": "Part 1\nCreate blink functions:\n\nblink &lt;- function(x) {\n  char &lt;- format(x, scientific = FALSE)\n  n &lt;- str_length(char)\n  \n  if (x == 0) \n    1\n  else if (n %% 2 == 0)\n    parse_number(c(\n      str_sub(char, 1, n / 2),\n      str_sub(char, n / 2 + 1, n)\n    ))\n  else \n    x * 2024\n}\n\nblink_n &lt;- function(df, n) {\n  if (n == 0)\n    return(sum(df$n))\n  \n  df |&gt; \n    mutate(stones = map(stones, blink)) |&gt; \n    unnest(stones) |&gt; \n    summarize(n = sum(n), .by = stones) |&gt; \n    blink_n(n - 1)\n}\n\nRun blink function 25 times on puzzle input:\n\ndf &lt;- tibble(stones = input, n = 1)\n\nblink_n(df, 25)\n\n[1] 193899",
+    "crumbs": [
+      "2024",
+      "Day 11"
+    ]
+  },
+  {
+    "objectID": "2024/R/day11.html#part-2",
+    "href": "2024/R/day11.html#part-2",
+    "title": "Day 11",
+    "section": "Part 2",
+    "text": "Part 2\nRun blink function 75 times on puzzle input:\n\nblink_n(df, 75) |&gt; \n  format(scientific = FALSE)\n\n[1] \"229682160383225\"",
+    "crumbs": [
+      "2024",
+      "Day 11"
+    ]
+  },
+  {
+    "objectID": "2024/R/day04.html",
+    "href": "2024/R/day04.html",
+    "title": "Day 4",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day04.txt\")",
+    "crumbs": [
+      "2024",
+      "Day 4"
+    ]
+  },
+  {
+    "objectID": "2024/R/day04.html#setup",
+    "href": "2024/R/day04.html#setup",
+    "title": "Day 4",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day04.txt\")",
+    "crumbs": [
+      "2024",
+      "Day 4"
+    ]
+  },
+  {
+    "objectID": "2024/R/day04.html#part-1",
+    "href": "2024/R/day04.html#part-1",
+    "title": "Day 4",
+    "section": "Part 1",
+    "text": "Part 1\n\n# Convert vector of text to matrix\ntxt_to_mtx &lt;- function(txt) {\n  txt |&gt; \n    str_split(\"\") |&gt; \n    unlist() |&gt; \n    matrix(nrow = length(txt), byrow = TRUE)\n}\n\n# Convert matrix to vector of text\nmtx_to_txt &lt;- function(mtx) {\n  mtx |&gt; \n    t() |&gt; \n    as_tibble() |&gt; \n    as.list() |&gt; \n    map(str_flatten) |&gt; \n    unlist() |&gt; \n    unname()\n}\n\n# Transpose a vector of text\ntranspose_txt &lt;- function(txt) {\n  txt |&gt; \n    txt_to_mtx() |&gt; \n    t() |&gt; \n    mtx_to_txt()\n}\n\n# Get rows and columns of input as individual text vectors\nrows &lt;- input\ncols &lt;- transpose_txt(rows)\n\n# Convert diagonals of input as individual text vectors\npad &lt;- map_chr(\n  1:length(rows), \n  ~ str_c(rep_len(\" \", .x - 1), collapse = \"\")\n)\n\ndiag1 &lt;- str_c(pad, rows, rev(pad)) |&gt; \n  transpose_txt()\ndiag2 &lt;- str_c(rev(pad), rows, pad) |&gt; \n  transpose_txt()\n\n# Loop over rows, columns, and diagnoals and count occurrences of \"XMAS\"\nmap_int(\n  list(rows, cols, diag1, diag2),\n  ~ sum(str_count(.x, \"XMAS\") + str_count(.x, \"SAMX\"))\n) |&gt; \n  sum()\n\n[1] 2599",
+    "crumbs": [
+      "2024",
+      "Day 4"
+    ]
+  },
+  {
+    "objectID": "2024/R/day04.html#part-2",
+    "href": "2024/R/day04.html#part-2",
+    "title": "Day 4",
+    "section": "Part 2",
+    "text": "Part 2\n\n# Define the four possible XMAS patterns in a 3x3 grid as a regex string\nxmas1 &lt;- \"M.S.A.M.S\"\nxmas4 &lt;- \"S.M.A.S.M\"\nxmas2 &lt;- \"S.S.A.M.M\"\nxmas3 &lt;- \"M.M.A.S.S\"\nxmas_regex &lt;- glue::glue(\"{xmas1}|{xmas2}|{xmas3}|{xmas4}\")\n\n# Convert input into a matrix\nmtx &lt;- txt_to_mtx(input)\n\n# Extract every 3x3 submatrix in the input text block as a text string\nmap(\n  1:(nrow(mtx) - 2),\n  function(row_start) {\n    map_chr(\n      1:(ncol(mtx) - 2),\n      function(col_start) {\n        mtx[row_start:(row_start + 2), col_start:(col_start + 2)] |&gt; \n          mtx_to_txt() |&gt; \n          str_flatten()\n      }\n    )\n  }\n) |&gt; \n  unlist() |&gt; \n  \n  # Count the text strings with a valid XMAS pattern\n  str_detect(xmas_regex) |&gt; \n  sum()\n\n[1] 1948",
+    "crumbs": [
+      "2024",
+      "Day 4"
+    ]
+  },
+  {
+    "objectID": "2022/R/day09.html",
+    "href": "2022/R/day09.html",
+    "title": "Day 9",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(ctmle, include.only = \"bound\")\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day09.txt\") |&gt;\n  str_split(\" \")",
+    "crumbs": [
+      "2022",
+      "Day 9"
+    ]
+  },
+  {
+    "objectID": "2022/R/day09.html#setup",
+    "href": "2022/R/day09.html#setup",
+    "title": "Day 9",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(ctmle, include.only = \"bound\")\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day09.txt\") |&gt;\n  str_split(\" \")",
+    "crumbs": [
+      "2022",
+      "Day 9"
+    ]
+  },
+  {
+    "objectID": "2022/R/day09.html#part-1",
+    "href": "2022/R/day09.html#part-1",
+    "title": "Day 9",
+    "section": "Part 1",
+    "text": "Part 1\n\n# Convert head movements to sequence of locations on complex plane\nhead_path &lt;- input |&gt;\n  map(~ rep(.x[[1]], .x[[2]])) |&gt;\n  reduce(c) |&gt;\n  recode(\"R\" = 1 + 0i, \"L\" = -1 + 0i, \"U\" = 0 + 1i, \"D\" = 0 - 1i) |&gt;\n  accumulate(.init = 0 + 0i, .f = sum)\n\n# Find path of next knot given path of previous knot.\nmove_next_knot &lt;- function(prev_knot_path) {\n  accumulate(\n    .x = prev_knot_path,\n    .f = function(tail = .x, head = .y) {\n      diff &lt;- head - tail\n      if_else(\n        max(abs(Re(diff)), abs(Im(diff))) &lt;= 1,\n        tail,\n        tail + bound(Re(diff), c(-1, 1)) + bound(Im(diff), c(-1, 1)) * 1i\n      )\n    }\n  )\n}\n\n\nunique_tail_spots &lt;- function(path, num_knots) {\n  # Iteratively compute path of each knot from head & to tail\n  move_tail &lt;- reduce(map(1:(num_knots - 1), ~ move_next_knot), compose)\n\n  # Find number of unique locations in the tail's path\n  length(unique(move_tail(path)))\n}\n\n\nunique_tail_spots(head_path, num_knots = 2)\n\n[1] 6197",
+    "crumbs": [
+      "2022",
+      "Day 9"
+    ]
+  },
+  {
+    "objectID": "2022/R/day09.html#part-2",
+    "href": "2022/R/day09.html#part-2",
+    "title": "Day 9",
+    "section": "Part 2",
+    "text": "Part 2\n\nunique_tail_spots(head_path, num_knots = 10)\n\n[1] 2562",
+    "crumbs": [
+      "2022",
+      "Day 9"
+    ]
+  },
+  {
+    "objectID": "2022/R/day01.html",
+    "href": "2022/R/day01.html",
+    "title": "Day 1",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; \n  as.integer()",
+    "crumbs": [
+      "2022",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2022/R/day01.html#setup",
+    "href": "2022/R/day01.html#setup",
+    "title": "Day 1",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; \n  as.integer()",
+    "crumbs": [
+      "2022",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2022/R/day01.html#part-1",
+    "href": "2022/R/day01.html#part-1",
+    "title": "Day 1",
+    "section": "Part 1",
+    "text": "Part 1\n\n# Format input as a data frame and number the elves\ndf &lt;- tibble(\n  cal = input,\n  elf_id = cumsum(is.na(cal)) + 1\n) |&gt;\n  filter(!is.na(cal))\n\n# Compute calorie sum for each elf, get the top n elves, and combine totals\ncount_max &lt;- function(df, num_top_elves) {\n  df |&gt; \n    group_by(elf_id) |&gt;\n    summarize(total_cal = sum(cal)) |&gt;\n    slice_max(total_cal, n = num_top_elves) |&gt;\n    pull(total_cal) |&gt;\n    sum()\n}\n\nRun puzzle input:\n\ncount_max(df, 1)\n\n[1] 68787",
+    "crumbs": [
+      "2022",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2022/R/day01.html#part-2",
+    "href": "2022/R/day01.html#part-2",
+    "title": "Day 1",
+    "section": "Part 2",
+    "text": "Part 2\n\ncount_max(df, 3)\n\n[1] 198041",
+    "crumbs": [
+      "2022",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2022/R/day02.html",
+    "href": "2022/R/day02.html",
+    "title": "Day 2",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_fwf(\"../input/day02.txt\", col_types = \"c\")",
+    "crumbs": [
+      "2022",
+      "Day 2"
+    ]
+  },
+  {
+    "objectID": "2022/R/day02.html#setup",
+    "href": "2022/R/day02.html#setup",
+    "title": "Day 2",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_fwf(\"../input/day02.txt\", col_types = \"c\")",
+    "crumbs": [
+      "2022",
+      "Day 2"
+    ]
+  },
+  {
+    "objectID": "2022/R/day02.html#part-1",
+    "href": "2022/R/day02.html#part-1",
+    "title": "Day 2",
+    "section": "Part 1",
+    "text": "Part 1\n\n# Format shapes/strategies as numbers 1-3 for modular arithmetic\ndf &lt;- tibble(\n  opponent = as.numeric(factor(input$X1, levels = c(\"A\", \"B\", \"C\"))),\n  strategy = as.numeric(factor(input$X2, levels = c(\"X\", \"Y\", \"Z\")))\n)\n\nscore_shape &lt;- function(df) {\n  df |&gt; \n    mutate(\n      self = strategy,\n      outcome = (self - opponent + 1) %% 3 * 3,\n      score = self + outcome\n    ) |&gt;\n    pull(score) |&gt;\n    sum()\n}\n\nRun puzzle input:\n\nscore_shape(df)\n\n[1] 15422",
+    "crumbs": [
+      "2022",
+      "Day 2"
+    ]
+  },
+  {
+    "objectID": "2022/R/day02.html#part-2",
+    "href": "2022/R/day02.html#part-2",
+    "title": "Day 2",
+    "section": "Part 2",
+    "text": "Part 2\n\nscore_outcome &lt;- function(df) {\n  df |&gt; \n    mutate(\n      self = (opponent + strategy) %% 3 + 1,\n      outcome = (strategy - 1) * 3,\n      score = self + outcome\n    ) |&gt;\n    pull(score) |&gt;\n    sum()\n}\n\n\nscore_outcome(df)\n\n[1] 15442",
+    "crumbs": [
+      "2022",
+      "Day 2"
+    ]
+  },
+  {
+    "objectID": "2022/R/day12.html",
+    "href": "2022/R/day12.html",
+    "title": "Day 12",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day12.txt\", skip_empty_rows = TRUE)",
+    "crumbs": [
+      "2022",
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2022/R/day12.html#setup",
+    "href": "2022/R/day12.html#setup",
+    "title": "Day 12",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day12.txt\", skip_empty_rows = TRUE)",
+    "crumbs": [
+      "2022",
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2022/R/day12.html#part-1",
+    "href": "2022/R/day12.html#part-1",
+    "title": "Day 12",
+    "section": "Part 1",
+    "text": "Part 1\nReformat input as a data frame of coordinates and elevations:\n\ndf &lt;- input |&gt;\n  str_split(\"\") |&gt;\n  unlist() |&gt;\n  as_tibble() |&gt;\n  transmute(\n    id = row_number(),\n    letter = value,\n    elevation = case_when(\n      letter == \"S\" ~  Inf,\n      letter == \"E\" ~ -Inf,\n      .default = match(letter, letters)\n    ),\n    row = floor((id - 1) / str_length(input[1]) + 1),\n    col = (id - 1) %% str_length(input[1]) + 1\n  )\n\n\ndf_to_graph &lt;- function(df) {\n\n  # Flag whether each neighbor of each vertex is walkable\n  neighbors &lt;- df |&gt;\n    mutate(up   = lag(id), down  = lead(id), .by = col) |&gt;\n    mutate(left = lag(id), right = lead(id), .by = row) |&gt;\n    mutate(\n      across(\n        c(up, down, left, right),\n        ~ elevation[.x],\n        .names = \"{.col}_elev\"\n      ),\n      across(\n        ends_with(\"_elev\"),\n        ~ (.x - elevation) &lt;= 1,\n        .names = \"{str_remove(.col, '_elev')}_walkable\"\n      )\n    ) |&gt;\n    rename_with(.cols = c(up, down, left, right), ~ str_c(.x, \"_idx\")) |&gt;\n    select(source_idx = id, ends_with(c(\"idx\", \"walkable\")))\n\n  # Construct a list of edges\n  edge_list &lt;- neighbors |&gt;\n    pivot_longer(\n      !source_idx,\n      names_to = c(\"target_dir\", \".value\"),\n      names_sep = \"_\"\n    ) |&gt;\n    rename(\n      target_idx = idx,\n      target_walkable = walkable\n    ) |&gt;\n    filter(target_walkable == TRUE) |&gt;\n    pmap(function(source_idx, target_idx, ...) { c(source_idx, target_idx) }) |&gt;\n    unlist()\n\n  # Convert to a directed graph\n  g &lt;- make_empty_graph() |&gt;\n    add_vertices(length(df$id)) |&gt;\n    add_edges(edge_list)\n\n}\n\nshortest_path_length &lt;- function(g, source_idx, target_idx) {\n  shortest_paths(g, from = source_idx, to = target_idx)$vpath[[1]] |&gt;\n    length() - 1\n}\n\n\ng &lt;- df_to_graph(df)\n\n\n# Get the indices of the start and end vertices\nidx_start &lt;- match(\"S\", df$letter)\nidx_end   &lt;- match(\"E\", df$letter)\n\n# Compute shortest path from start to end\nshortest_path_length(g, idx_start, idx_end)\n\n[1] 462",
+    "crumbs": [
+      "2022",
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2022/R/day12.html#part-2",
+    "href": "2022/R/day12.html#part-2",
+    "title": "Day 12",
+    "section": "Part 2",
+    "text": "Part 2\n\n# Loop over all starting locations and find the shortest path to the end\nmin_dist &lt;- Inf\nfor (i in c(idx_start, which(df$letter == \"a\"))) {\n  cur &lt;- shortest_path_length(g, i, idx_end)\n  if (cur &gt;= 0 & cur &lt; min_dist) {\n    min_dist &lt;- cur\n  }\n}\nmin_dist\n\n[1] 451",
+    "crumbs": [
+      "2022",
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2022/R/day07.html",
+    "href": "2022/R/day07.html",
+    "title": "Day 7",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day07.txt\") |&gt; \n  enframe(name = NULL)",
+    "crumbs": [
+      "2022",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2022/R/day07.html#setup",
+    "href": "2022/R/day07.html#setup",
+    "title": "Day 7",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day07.txt\") |&gt; \n  enframe(name = NULL)",
+    "crumbs": [
+      "2022",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2022/R/day07.html#part-1",
+    "href": "2022/R/day07.html#part-1",
+    "title": "Day 7",
+    "section": "Part 1",
+    "text": "Part 1\n\ndir_sizes &lt;- input |&gt; \n  mutate(\n\n    # Determine path of each file by accumulating preceding cd terms\n    path = value |&gt;\n      str_extract(\"(?&lt;=^\\\\$ cd ).*\") |&gt;\n      str_c(\"/\") |&gt;\n      replace_na(\"\") |&gt;\n      accumulate(\n        ~ if (.y == \"../\") {\n          str_remove(.x, \"(?&lt;=/)[a-z]+/$\")\n        } else {\n          str_c(.x, .y)\n        }\n      ) |&gt;\n      str_remove_all(\"^/|/$\"),\n\n    # Convert paths to lists of all containing directories\n    dirs = path |&gt;\n      str_split(\"/\") |&gt;\n      map(~accumulate(.x, str_c, sep = \"/\"))\n  ) |&gt;\n\n  # Remove commands & directories from output and format file info as cols\n  filter(!str_detect(value, \"^\\\\$|dir \")) |&gt;\n  separate(value, into = c(\"size\", \"file\"), sep = \" \") |&gt;\n  mutate(size = as.integer(size)) |&gt;\n\n  # Convert nested lists of directories to long-format\n  unnest_wider(dirs, names_sep = \"_\") |&gt;\n  mutate(dirs_1 = \"/\") |&gt;\n  pivot_longer(\n    cols = matches(\"dirs_\\\\d+\"),\n    names_to = NULL,\n    values_to = \"dir\",\n    values_drop_na = TRUE\n  ) |&gt;\n\n  # Compute size of each directory\n  group_by(dir) |&gt;\n  summarize(size = sum(size)) |&gt;\n  ungroup()\n\nSum sizes of all directories with maximum size 100000:\n\ndir_sizes |&gt;\n  filter(size &lt;= 100000) |&gt;\n  pull(size) |&gt;\n  sum()\n\n[1] 1243729",
+    "crumbs": [
+      "2022",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2022/R/day07.html#part-2",
+    "href": "2022/R/day07.html#part-2",
+    "title": "Day 7",
+    "section": "Part 2",
+    "text": "Part 2\nFind size of the smallest necessary directory to delete:\n\ncurr_system_size &lt;- dir_sizes |&gt;\n  filter(dir == \"/\") |&gt;\n  pull(size)\n\ndir_sizes |&gt;\n  filter(size &gt;= (30000000 - (70000000 - curr_system_size))) |&gt;\n  slice_min(size) |&gt;\n  pull(size)\n\n[1] 4443914",
+    "crumbs": [
+      "2022",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2022/R/day05.html",
+    "href": "2022/R/day05.html",
+    "title": "Day 5",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\npath &lt;- \"../input/day05.txt\"\ninput &lt;- read_lines(path)",
+    "crumbs": [
+      "2022",
+      "Day 5"
+    ]
+  },
+  {
+    "objectID": "2022/R/day05.html#setup",
+    "href": "2022/R/day05.html#setup",
+    "title": "Day 5",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\npath &lt;- \"../input/day05.txt\"\ninput &lt;- read_lines(path)",
+    "crumbs": [
+      "2022",
+      "Day 5"
+    ]
+  },
+  {
+    "objectID": "2022/R/day05.html#part-1",
+    "href": "2022/R/day05.html#part-1",
+    "title": "Day 5",
+    "section": "Part 1",
+    "text": "Part 1\n\n# Format raw input\nmoves &lt;- input |&gt;\n  tail_while(~ .x != \"\") |&gt;\n  str_extract_all(\"\\\\d+\") |&gt;\n  map(as.integer)\n\nstacks &lt;- read_fwf(\n  path,\n  n_max = length(input) - length(moves) - 2,\n  col_types = \"c\"\n) |&gt;\n  mutate(across(everything(), ~ str_extract(.x, \"[A-Z]\"))) |&gt;\n  as.list() |&gt;\n  map(discard, is.na) |&gt;\n  map(rev)\n\nmove_crates &lt;- function(moves, stacks, func) {\n  \n  # Execute moves\n  for (curr_move in moves) {\n    count &lt;- curr_move[1]\n    from  &lt;- curr_move[2]\n    to    &lt;- curr_move[3]\n    \n    crates &lt;- func(tail(stacks[[from]], count))\n\n    stacks[[to]]   &lt;- append(stacks[[to]], crates)\n    stacks[[from]] &lt;- head(stacks[[from]], -1 * count)\n  }\n\n  # Examine final top row of crates\n  stacks |&gt;\n    map(~ tail(.x, 1)) |&gt;\n    str_c(collapse = \"\")\n}\n\n\nmove_crates(moves, stacks, rev)\n\n[1] \"RLFNRTNFB\"",
+    "crumbs": [
+      "2022",
+      "Day 5"
+    ]
+  },
+  {
+    "objectID": "2022/R/day05.html#part-2",
+    "href": "2022/R/day05.html#part-2",
+    "title": "Day 5",
+    "section": "Part 2",
+    "text": "Part 2\n\nmove_crates(moves, stacks, identity)\n\n[1] \"MHQTLJRLB\"",
+    "crumbs": [
+      "2022",
+      "Day 5"
+    ]
+  },
+  {
+    "objectID": "2022/R/day10.html",
+    "href": "2022/R/day10.html",
+    "title": "Day 10",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day10.txt\") |&gt;\n  enframe(name = \"cmd_num\")",
+    "crumbs": [
+      "2022",
+      "Day 10"
+    ]
+  },
+  {
+    "objectID": "2022/R/day10.html#setup",
+    "href": "2022/R/day10.html#setup",
+    "title": "Day 10",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day10.txt\") |&gt;\n  enframe(name = \"cmd_num\")",
+    "crumbs": [
+      "2022",
+      "Day 10"
+    ]
+  },
+  {
+    "objectID": "2022/R/day10.html#part-1",
+    "href": "2022/R/day10.html#part-1",
+    "title": "Day 10",
+    "section": "Part 1",
+    "text": "Part 1\n\nsignal &lt;- input |&gt;\n\n  # Convert multi-cycle commands into list of changes to X at each cycle\n  separate(value, into = c(\"cmd\", \"V\"), sep = \" \", convert = TRUE) |&gt;\n  transmute(cmd_num, v1 = 0, v2 = V) |&gt;\n  pivot_longer(\n    c(v1, v2),\n    names_to = \"cycle_count\",\n    values_to = \"x_change\",\n    values_drop_na = TRUE\n  ) |&gt;\n  pull(x_change) |&gt;\n\n  # Iterate through changes to X to get value of X during each cycle\n  accumulate(`+`, .init = 1) |&gt;\n  enframe(name = \"cycle\", value = \"X\") |&gt;\n  slice_head(n = -1)\n\n\n# Sum the signal strength at 20th cycle & every 40 cycles after that\nsignal |&gt;\n  filter(cycle %% 40 == 20) |&gt;\n  mutate(signal_strength = cycle * X) |&gt;\n  pull(signal_strength) |&gt;\n  sum()\n\n[1] 16020",
+    "crumbs": [
+      "2022",
+      "Day 10"
+    ]
+  },
+  {
+    "objectID": "2022/R/day10.html#part-2",
+    "href": "2022/R/day10.html#part-2",
+    "title": "Day 10",
+    "section": "Part 2",
+    "text": "Part 2\n\n# Draw pixel when position of 3px-wide sprite overlaps w/ CRT position\nsignal |&gt;\n  mutate(\n    row = floor((cycle - 1) / 40),\n    col = (cycle - 1) %% 40\n  ) |&gt;\n  mutate(pixel = if_else(X &lt;= col + 1 & X &gt;= col - 1, \"#\", \".\")) |&gt;\n  group_by(row) |&gt;\n  summarize(val = str_c(pixel, collapse = \"\")) |&gt;\n  pull(val) |&gt;\n  cat(sep = \"\\n\")\n\n####..##..####.#..#.####..##..#....###..\n#....#..#....#.#..#....#.#..#.#....#..#.\n###..#......#..#..#...#..#..#.#....#..#.\n#....#.....#...#..#..#...####.#....###..\n#....#..#.#....#..#.#....#..#.#....#.#..\n####..##..####..##..####.#..#.####.#..#.",
+    "crumbs": [
+      "2022",
+      "Day 10"
+    ]
+  },
+  {
+    "objectID": "2022/R/day04.html",
+    "href": "2022/R/day04.html",
+    "title": "Day 4",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_csv(\"../input/day04.txt\", col_names = FALSE)",
+    "crumbs": [
+      "2022",
+      "Day 4"
+    ]
+  },
+  {
+    "objectID": "2022/R/day04.html#setup",
+    "href": "2022/R/day04.html#setup",
+    "title": "Day 4",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_csv(\"../input/day04.txt\", col_names = FALSE)",
+    "crumbs": [
+      "2022",
+      "Day 4"
+    ]
+  },
+  {
+    "objectID": "2022/R/day04.html#parts-1-2",
+    "href": "2022/R/day04.html#parts-1-2",
+    "title": "Day 4",
+    "section": "Parts 1 & 2",
+    "text": "Parts 1 & 2\n\ninput |&gt;  \n  separate(X1, into = c(\"start1\", \"end1\"), sep = \"-\", convert = TRUE) |&gt;\n  separate(X2, into = c(\"start2\", \"end2\"), sep = \"-\", convert = TRUE) |&gt;\n  mutate(\n    range1 = map2(start1, end1, ~ .x:.y),\n    range2 = map2(start2, end2, ~ .x:.y),\n    contained = map2_lgl(range1, range2, ~ all(.x %in% .y) | all(.y %in% .x)),\n    overlap   = map2_lgl(range1, range2, ~ length(intersect(.x, .y)) &gt; 0)\n  ) |&gt;\n  summarize(num_contained = sum(contained), num_overlap = sum(overlap))\n\n# A tibble: 1 × 2\n  num_contained num_overlap\n          &lt;int&gt;       &lt;int&gt;\n1           550         931",
+    "crumbs": [
+      "2022",
+      "Day 4"
+    ]
+  },
+  {
+    "objectID": "2022/R/day11.html",
+    "href": "2022/R/day11.html",
+    "title": "Day 11",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day11.txt\") |&gt;\n  trimws() |&gt;\n  discard(~ .x == \"\")",
+    "crumbs": [
+      "2022",
+      "Day 11"
+    ]
+  },
+  {
+    "objectID": "2022/R/day11.html#setup",
+    "href": "2022/R/day11.html#setup",
+    "title": "Day 11",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day11.txt\") |&gt;\n  trimws() |&gt;\n  discard(~ .x == \"\")",
+    "crumbs": [
+      "2022",
+      "Day 11"
+    ]
+  },
+  {
+    "objectID": "2022/R/day11.html#part-1",
+    "href": "2022/R/day11.html#part-1",
+    "title": "Day 11",
+    "section": "Part 1",
+    "text": "Part 1\n\n# Reformat input\nitems &lt;- str_match(input, \"Starting items:(.*)\")[,2] |&gt;\n  discard(is.na) |&gt;\n  str_split(\",\") |&gt;\n  map(parse_number)\n\noperations &lt;- input |&gt;\n  keep(~ str_detect(.x, \"Operation:\")) |&gt;\n  str_replace(\"Operation: new = \", \"~ \") |&gt;\n  str_replace_all(\"old\", \".x\") |&gt;\n  map(~ rlang::as_function(as.formula(.x)))\n\ndiv  &lt;- parse_number(keep(input, ~ str_detect(.x, \"Test:\")))\ndivt &lt;- parse_number(keep(input, ~ str_detect(.x, \"If true:\")))\ndivf &lt;- parse_number(keep(input, ~ str_detect(.x, \"If false:\")))\n\ntest &lt;- pmap(\n  list(div, divt, divf),\n  ~ function(x) if_else(x %% ..1 == 0, ..2 + 1, ..3 + 1)\n)\n\nnum_monkeys &lt;- length(input) / 6\n\n\ncompute_monkey_business &lt;- function(num_rounds, worry_func) {\n  # Initialize\n  activity &lt;- rep(0, num_monkeys)\n\n  # Perform the tosses\n  for (round in 1:num_rounds) {\n    for (monkey in 1:num_monkeys) {\n      for (item in items[[monkey]]) {\n        worry &lt;- worry_func(operations[[monkey]](item))\n        toss  &lt;- test[[monkey]](worry)\n        items[[toss]] &lt;- c(items[[toss]], worry)\n      }\n      activity[[monkey]] &lt;- activity[[monkey]] + length(items[[monkey]])\n      items[[monkey]] &lt;- numeric(0)\n    }\n  }\n\n  # Compute monkey business score\n  activity |&gt;\n    sort() |&gt;\n    tail(2) |&gt;\n    reduce(`*`)\n}\n\n\ncompute_monkey_business(num_rounds = 20, worry_func = \\(x) floor(x / 3))\n\n[1] 78678",
+    "crumbs": [
+      "2022",
+      "Day 11"
+    ]
+  },
+  {
+    "objectID": "2022/R/day11.html#part-2",
+    "href": "2022/R/day11.html#part-2",
+    "title": "Day 11",
+    "section": "Part 2",
+    "text": "Part 2\n\nlcm &lt;- DescTools::LCM(div)\ncompute_monkey_business(num_rounds = 10000, worry_func = \\(x) x %% lcm)\n\n[1] 15333249714",
+    "crumbs": [
+      "2022",
+      "Day 11"
+    ]
+  },
+  {
+    "objectID": "2022/R/day13.html",
+    "href": "2022/R/day13.html",
+    "title": "Day 13",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input into a data frame and convert to indexed nested lists\ndf &lt;- read_table(\"../input/day13.txt\", col_names = \"txt\") |&gt; \n  mutate(\n    row_id   = row_number(),\n    group_id = floor((row_id - 1) / 2) + 1,\n    item_id  = (row_id - 1) %% 2 + 1,\n    lst      = map(txt, jsonlite::fromJSON, simplifyVector = FALSE)\n  )",
+    "crumbs": [
+      "2022",
+      "Day 13"
+    ]
+  },
+  {
+    "objectID": "2022/R/day13.html#setup",
+    "href": "2022/R/day13.html#setup",
+    "title": "Day 13",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input into a data frame and convert to indexed nested lists\ndf &lt;- read_table(\"../input/day13.txt\", col_names = \"txt\") |&gt; \n  mutate(\n    row_id   = row_number(),\n    group_id = floor((row_id - 1) / 2) + 1,\n    item_id  = (row_id - 1) %% 2 + 1,\n    lst      = map(txt, jsonlite::fromJSON, simplifyVector = FALSE)\n  )",
+    "crumbs": [
+      "2022",
+      "Day 13"
+    ]
+  },
+  {
+    "objectID": "2022/R/day13.html#part-1",
+    "href": "2022/R/day13.html#part-1",
+    "title": "Day 13",
+    "section": "Part 1",
+    "text": "Part 1\nDefine a function to compare nested lists:\n\ncompare_nested &lt;- function(a, b) {\n\n  # Compare if both inputs are numeric\n  if (is.numeric(a) & is.numeric(b)) {\n    if (a &lt; b)  return(-1)\n    if (a &gt; b)  return(1)\n    if (a == b) return(0)\n  }\n\n  # Compare if only one input is numeric\n  if (is.numeric(a) != is.numeric(b)) {\n    if (is.numeric(a))\n      return(compare_nested(list(a), b))\n    if (is.numeric(b))\n      return(compare_nested(a, list(b)))\n  }\n\n  # Compare if both inputs are lists\n  i &lt;- 1\n  while (i &lt;= min(length(a), length(b))) {\n    result &lt;- compare_nested(a[[i]], b[[i]])\n    if (result %in% c(1, -1))\n      return(result)\n    i &lt;- i + 1\n  }\n  # When all comparable values are equal, compare lengths\n  return(compare_nested(length(a), length(b)))\n}\n\nSum the indices of packet pairs that are in order:\n\ndf |&gt;\n  select(group_id, item_id, lst) |&gt;\n  pivot_wider(\n    names_from = item_id,\n    names_prefix = \"item_\",\n    values_from = lst\n  ) |&gt;\n  mutate(comparison = map2_int(item_1, item_2, compare_nested)) |&gt;\n  filter(comparison == -1) |&gt;\n  pull(group_id) |&gt; \n  sum()\n\n[1] 5684",
+    "crumbs": [
+      "2022",
+      "Day 13"
+    ]
+  },
+  {
+    "objectID": "2022/R/day13.html#part-2",
+    "href": "2022/R/day13.html#part-2",
+    "title": "Day 13",
+    "section": "Part 2",
+    "text": "Part 2\nDefine a function to determine the pairwise order of nested lists:\n\nsort_nested &lt;- function(lst) {\n  n &lt;- length(lst)\n  indices &lt;- 1:n\n\n  if (n == 0) return()\n  if (n == 1) return(indices)\n\n  # Bubble sort: loop through list and swap elements until sorted\n  repeat {\n    swap_occurred &lt;- FALSE\n    for (i in 1:(n - 1)) {\n      j1 &lt;- which(indices == i)\n      j2 &lt;- which(indices == i + 1)\n      if (compare_nested(lst[[j1]], lst[[j2]]) == 1) {\n        indices[j1] &lt;- i + 1\n        indices[j2] &lt;- i\n        swap_occurred &lt;- TRUE\n      }\n    }\n    if (!swap_occurred) break\n  }\n  return(indices)\n}\n\nAdd new flagged packets, sort all, and multiply flagged indices:\n\nnew_packets &lt;- list(\"[[2]]\", \"[[6]]\") |&gt;\n  map(jsonlite::fromJSON, simplifyVector = FALSE) |&gt;\n  as_tibble_col(column_name = \"lst\")\n\ndf |&gt;\n  transmute(lst, flag = FALSE) |&gt;\n  add_row(new_packets, flag = TRUE) |&gt;\n  mutate(ord = sort_nested(lst)) |&gt;\n  filter(flag) |&gt;\n  pull(ord) |&gt; \n  prod()\n\n[1] 22932",
+    "crumbs": [
+      "2022",
+      "Day 13"
+    ]
+  },
+  {
+    "objectID": "2022/R/day06.html",
+    "href": "2022/R/day06.html",
+    "title": "Day 6",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day06.txt\") |&gt;\n  str_split_1(\"\") |&gt;\n  enframe(name = \"idx\", value = \"char\")",
+    "crumbs": [
+      "2022",
+      "Day 6"
+    ]
+  },
+  {
+    "objectID": "2022/R/day06.html#setup",
+    "href": "2022/R/day06.html#setup",
+    "title": "Day 6",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day06.txt\") |&gt;\n  str_split_1(\"\") |&gt;\n  enframe(name = \"idx\", value = \"char\")",
+    "crumbs": [
+      "2022",
+      "Day 6"
+    ]
+  },
+  {
+    "objectID": "2022/R/day06.html#part-1",
+    "href": "2022/R/day06.html#part-1",
+    "title": "Day 6",
+    "section": "Part 1",
+    "text": "Part 1\n\nfind_marker &lt;- function(df, marker_length) {\n  df |&gt; \n    # Construct sequences of next n chars and count # of unique chars in each\n    transmute(\n      marker_idx = idx + marker_length - 1,\n      char_seq = reduce(\n        .x = map(0:(marker_length - 1), ~ lead(char, n = .x)),\n        .f = str_c\n      ),\n      n_unique = map_int(\n        char_seq,\n        ~ .x |&gt;\n          str_split(\"\") |&gt;\n          unlist() |&gt;\n          unique() |&gt;\n          length()\n      )\n    ) |&gt;\n\n    # Extract first instance where all n chars are unique\n    filter(n_unique == marker_length) |&gt;\n    pull(marker_idx) |&gt;\n    min()\n}\n\n\nfind_marker(input, marker_length = 4)\n\n[1] 1802",
+    "crumbs": [
+      "2022",
+      "Day 6"
+    ]
+  },
+  {
+    "objectID": "2022/R/day06.html#part-2",
+    "href": "2022/R/day06.html#part-2",
+    "title": "Day 6",
+    "section": "Part 2",
+    "text": "Part 2\n\nfind_marker(input, marker_length = 14)\n\n[1] 3551",
+    "crumbs": [
+      "2022",
+      "Day 6"
+    ]
+  },
+  {
+    "objectID": "2022/R/day03.html",
+    "href": "2022/R/day03.html",
+    "title": "Day 3",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_table(\"../input/day03.txt\", col_names = \"str\")",
+    "crumbs": [
+      "2022",
+      "Day 3"
+    ]
+  },
+  {
+    "objectID": "2022/R/day03.html#setup",
+    "href": "2022/R/day03.html#setup",
+    "title": "Day 3",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_table(\"../input/day03.txt\", col_names = \"str\")",
+    "crumbs": [
+      "2022",
+      "Day 3"
+    ]
+  },
+  {
+    "objectID": "2022/R/day03.html#part-1",
+    "href": "2022/R/day03.html#part-1",
+    "title": "Day 3",
+    "section": "Part 1",
+    "text": "Part 1\n\ninput |&gt;\n  mutate(\n    # Separate each line into two compartments\n    str_length = str_length(str) / 2,\n    str_1 = str_sub(str, start = 1L, end = str_length),\n    str_2 = str_sub(str, start = str_length + 1, end = -1L),\n\n    # Find the letter in common between each pair of compartments\n    across(c(str_1, str_2), ~ str_split(.x, \"\")),\n    dup = map2_chr(str_1, str_2, ~ intersect(.x, .y)),\n\n    # Convert to priority value\n    priority = match(dup, c(letters, LETTERS))\n  ) |&gt;\n\n  # Compute total sum\n  pull(priority) |&gt;\n  sum()\n\n[1] 8252",
+    "crumbs": [
+      "2022",
+      "Day 3"
+    ]
+  },
+  {
+    "objectID": "2022/R/day03.html#part-2",
+    "href": "2022/R/day03.html#part-2",
+    "title": "Day 3",
+    "section": "Part 2",
+    "text": "Part 2\n\ninput |&gt;\n\n  # Reshape to one row per group, one column per elf\n  mutate(\n    str = str_split(str, \"\"),\n    group_num = floor((row_number() - 1) / 3),\n    elf_num = as.character(row_number() %% 3)\n  ) |&gt;\n  pivot_wider(names_from = elf_num, values_from = str, names_prefix = \"elf_\") |&gt;\n\n  # Find the character in common between all 3 elves & convert to priority val\n  mutate(\n    dup = pmap_chr(\n      list(elf_0, elf_1, elf_2),\n      ~ reduce(list(..1, ..2, ..3), intersect)\n    ),\n    priority = match(dup, c(letters, LETTERS))\n  ) |&gt;\n\n  # Compute total sum\n  pull(priority) |&gt;\n  sum()\n\n[1] 2828",
+    "crumbs": [
+      "2022",
+      "Day 3"
+    ]
+  },
+  {
+    "objectID": "2022/R/day08.html",
+    "href": "2022/R/day08.html",
+    "title": "Day 8",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file and format as a matrix\ninput &lt;- read_fwf(\"../input/day08.txt\") |&gt; \n  transmute(x = str_split(X1, \"\")) |&gt;\n  unnest_wider(x, names_sep = \"\") |&gt;\n  mutate(across(everything(), as.integer)) |&gt;\n  as.matrix()",
+    "crumbs": [
+      "2022",
+      "Day 8"
+    ]
+  },
+  {
+    "objectID": "2022/R/day08.html#setup",
+    "href": "2022/R/day08.html#setup",
+    "title": "Day 8",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file and format as a matrix\ninput &lt;- read_fwf(\"../input/day08.txt\") |&gt; \n  transmute(x = str_split(X1, \"\")) |&gt;\n  unnest_wider(x, names_sep = \"\") |&gt;\n  mutate(across(everything(), as.integer)) |&gt;\n  as.matrix()",
+    "crumbs": [
+      "2022",
+      "Day 8"
+    ]
+  },
+  {
+    "objectID": "2022/R/day08.html#parts-1-2",
+    "href": "2022/R/day08.html#parts-1-2",
+    "title": "Day 8",
+    "section": "Parts 1 & 2",
+    "text": "Parts 1 & 2\n\n# Create df with one row per tree and variables for its containing row & col\nexpand_grid(\n  col_pos = 1:nrow(input),\n  row_pos = 1:ncol(input)\n) |&gt;\n  mutate(\n    tree_idx = row_number(),\n    row_list = map(col_pos, ~ unname(as.matrix(input)[.x, ])),\n    col_list = map(row_pos, ~ unname(as.matrix(input)[, .x])),\n  ) |&gt;\n\n  # For each tree, construct its treeline looking outward in each direction\n  pivot_longer(\n    c(col_pos, row_pos, col_list, row_list),\n    names_to = c(\"axis\", \".value\"),\n    names_sep = \"_\"\n  ) |&gt;\n  mutate(\n    split = map2(\n      list,\n      pos,\n      ~ split(.x, c(rep(\"bwd\", .y - 1), \"curr_tree\", rep(\"fwd\", length(.x) - .y)))\n    )\n  ) |&gt;\n  unnest_wider(split) |&gt;\n  mutate(bwd = map(bwd, rev)) |&gt;\n  pivot_longer(c(fwd, bwd), names_to = \"dir\", values_to = \"treeline\") |&gt;\n\n  # Check if each is the tallest tree in each direction & count visible trees\n  mutate(\n    is_tallest = map2_lgl(curr_tree, treeline, ~ all(.x &gt; .y)),\n    num_visible = map2_int(curr_tree, treeline, function(curr_tree, treeline) {\n      ifelse(\n        every(treeline, ~.x &lt; curr_tree),\n        length(treeline),\n        detect_index(treeline, ~ .x &gt;= curr_tree)\n      )\n    })\n  ) |&gt;\n\n  # Summarize visibility & scenic scores from all 4 directions for each tree\n  group_by(tree_idx) |&gt;\n  summarize(\n    is_visible = any(is_tallest),\n    scenic_score = prod(num_visible)\n  ) |&gt;\n  ungroup() |&gt;\n\n  # Compute total trees visible from forest edge & max scenic score in forest\n  summarize(\n    total_visible = sum(is_visible),\n    max_scenic_score = max(scenic_score)\n  )\n\n# A tibble: 1 × 2\n  total_visible max_scenic_score\n          &lt;int&gt;            &lt;dbl&gt;\n1          1690           535680",
+    "crumbs": [
+      "2022",
+      "Day 8"
+    ]
+  },
+  {
+    "objectID": "2024/R/day10.html",
+    "href": "2024/R/day10.html",
+    "title": "Day 10",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day10.txt\", skip_empty_rows = TRUE)\n\n# Convert input to matrix format\nmtx &lt;- input |&gt; \n  str_split(\"\") |&gt;\n  unlist() |&gt; \n  as.integer() |&gt; \n  matrix(nrow = length(input), byrow = TRUE)",
+    "crumbs": [
+      "2024",
+      "Day 10"
+    ]
+  },
+  {
+    "objectID": "2024/R/day10.html#setup",
+    "href": "2024/R/day10.html#setup",
+    "title": "Day 10",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day10.txt\", skip_empty_rows = TRUE)\n\n# Convert input to matrix format\nmtx &lt;- input |&gt; \n  str_split(\"\") |&gt;\n  unlist() |&gt; \n  as.integer() |&gt; \n  matrix(nrow = length(input), byrow = TRUE)",
+    "crumbs": [
+      "2024",
+      "Day 10"
+    ]
+  },
+  {
+    "objectID": "2024/R/day10.html#part-1",
+    "href": "2024/R/day10.html#part-1",
+    "title": "Day 10",
+    "section": "Part 1",
+    "text": "Part 1\nDefine custom functions:\n\n# North / South / East / West\ndirs &lt;- list(c(0,  1), c(0, -1), c(1,  0), c(-1,  0))\n\n# Check if a coordinate is in the bounds of the map\nin_bounds &lt;- function(x, map) {\n  between(x[1], 1, nrow(map)) & between(x[2], 1, ncol(map))\n}\n\nfind_trail_ends &lt;- function(cur_coord, map) {\n  \n  # If the trailhead has been reached, return its coordinate.\n  if (map[cur_coord] == 9)\n    return(list(cur_coord))\n  \n  # Define the possible next steps within the map bounds\n  next_steps &lt;- dirs |&gt; \n    map(~ cur_coord + .x) |&gt; \n    keep(~ in_bounds(.x, map))\n  \n  trail_ends &lt;- list()\n  \n  # If the next step leads to a valid path, add its terminal to the list\n  for (next_coord in next_steps) {\n    if (map[next_coord] == map[cur_coord] + 1) \n      trail_ends &lt;- c(trail_ends, find_trail_ends(next_coord, map))\n  }\n  \n  return(unique(trail_ends))\n}\n\nscore_trail &lt;- function(trailhead, map) length(find_trail_ends(trailhead, map))\n\n\n# Get a list of coordinates of all of the trailheads\ntrailheads &lt;- which(mtx == 0, arr.ind = TRUE)\ntrailheads_list &lt;- map(\n  1:nrow(trailheads), \n  ~ array(trailheads[.x,], dim = c(1, 2))\n)\n\n# Score each trailhead and sum the total\ntrailheads_list |&gt; \n  map_int(~ score_trail(.x, mtx)) |&gt; \n  sum()\n\n[1] 531",
+    "crumbs": [
+      "2024",
+      "Day 10"
+    ]
+  },
+  {
+    "objectID": "2024/R/day10.html#part-2",
+    "href": "2024/R/day10.html#part-2",
+    "title": "Day 10",
+    "section": "Part 2",
+    "text": "Part 2\nModify the trail rating function:\n\nrate_trail &lt;- function(cur_coord, map) {\n  # If the trailhead has been reached, increment the score and exit.\n  if (map[cur_coord] == 9)\n    return(1)\n  \n  # Define the possible next steps within the map bounds\n  next_steps &lt;- dirs |&gt; \n    map(~ cur_coord + .x) |&gt; \n    keep(~ in_bounds(.x, map))\n  \n  # Sum the trail ratings of all valid next steps\n  map_int(\n    next_steps,\n    ~ if (map[.x] == map[cur_coord] + 1) rate_trail(.x, map) else 0\n  ) |&gt; \n    sum()\n}\n\nRe-run the puzzle input:\n\ntrailheads_list |&gt; \n  map_int(~ rate_trail(.x, mtx)) |&gt; \n  sum()\n\n[1] 1210",
+    "crumbs": [
+      "2024",
+      "Day 10"
+    ]
+  },
+  {
+    "objectID": "2024/R/day05.html",
+    "href": "2024/R/day05.html",
+    "title": "Day 5",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day05.txt\", skip_empty_rows = TRUE)",
+    "crumbs": [
+      "2024",
+      "Day 5"
+    ]
+  },
+  {
+    "objectID": "2024/R/day05.html#setup",
+    "href": "2024/R/day05.html#setup",
+    "title": "Day 5",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day05.txt\", skip_empty_rows = TRUE)",
+    "crumbs": [
+      "2024",
+      "Day 5"
+    ]
+  },
+  {
+    "objectID": "2024/R/day05.html#part-1",
+    "href": "2024/R/day05.html#part-1",
+    "title": "Day 5",
+    "section": "Part 1",
+    "text": "Part 1\n\n# Extract page ordering rules from input\nrule_list &lt;- input |&gt; \n  keep(~ str_detect(.x, \"\\\\|\")) |&gt; \n  as_tibble_col(column_name = \"rule\") |&gt; \n  separate(rule, into = c(\"p1\", \"p2\")) |&gt; \n  mutate(rule_num = row_number(), .before = everything()) |&gt; \n  mutate(across(c(p1, p2), parse_number))\n\n# Extract page sequences from input\npages &lt;- input |&gt; \n  discard(~ str_detect(.x, \"\\\\|\")) |&gt; \n  str_split(\",\") |&gt; \n  map(parse_number) |&gt; \n  as_tibble_col(column_name = \"update\")\n\n# Sort a given vector by its applicable rules\nsort_by_rules &lt;- function(seq) {\n  active_rules &lt;- rule_list |&gt; \n    filter(p1 %in% seq & p2 %in% seq)\n  \n  repeat {\n    swap_occurred &lt;- FALSE\n    for (i in 1:nrow(active_rules)) {\n      rule &lt;- filter(active_rules, row_number() == i)\n      idx1 &lt;- which(seq == rule$p1)\n      idx2 &lt;- which(seq == rule$p2)\n      \n      if (idx1 &gt; idx2) {\n        seq[[idx1]] &lt;- rule$p2\n        seq[[idx2]] &lt;- rule$p1\n        swap_occurred &lt;- TRUE\n      }\n    }\n    if (!swap_occurred) return(seq)\n  }\n}\n\n# Sort all page sequences and extract the center page of each result\noutput &lt;- pages |&gt; \n  mutate(\n    resorted = map(update, sort_by_rules),\n    is_sorted = map2_lgl(update, resorted, identical),\n    center_page = map_int(resorted, ~ .x[(length(.x) + 1) / 2])\n  )\n\n\n# For the properly-ordered updates, sum the center page numbers\noutput |&gt;\n  filter(is_sorted) |&gt; \n  pull(center_page) |&gt; \n  sum()\n\n[1] 6505",
+    "crumbs": [
+      "2024",
+      "Day 5"
+    ]
+  },
+  {
+    "objectID": "2024/R/day05.html#part-2",
+    "href": "2024/R/day05.html#part-2",
+    "title": "Day 5",
+    "section": "Part 2",
+    "text": "Part 2\n\n# For the improperly-ordered updates, sum their sorted center pages\noutput |&gt;\n  filter(!is_sorted) |&gt; \n  pull(center_page) |&gt; \n  sum()\n\n[1] 6897",
+    "crumbs": [
+      "2024",
+      "Day 5"
+    ]
+  },
+  {
+    "objectID": "2024/R/day07.html",
+    "href": "2024/R/day07.html",
+    "title": "Day 7",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day07.txt\", skip_empty_rows = TRUE) |&gt; \n  str_split(\" \") |&gt; \n  map(parse_number)",
+    "crumbs": [
+      "2024",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2024/R/day07.html#setup",
+    "href": "2024/R/day07.html#setup",
+    "title": "Day 7",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day07.txt\", skip_empty_rows = TRUE) |&gt; \n  str_split(\" \") |&gt; \n  map(parse_number)",
+    "crumbs": [
+      "2024",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2024/R/day07.html#part-1",
+    "href": "2024/R/day07.html#part-1",
+    "title": "Day 7",
+    "section": "Part 1",
+    "text": "Part 1\nDefine calibration functions:\n\ncalibrate_operators &lt;- function(seq, target, operators) {\n  \n  # If the end of the list has been reached or the target is already overshot, exit\n  if (length(seq) == 1) \n    return(seq == target)\n  else if (seq[1] &gt; target)\n    return(FALSE)\n  \n  # Recursively compare the first two items of the seq using each operator\n  map_lgl(\n    operators,\n    \\(f) {\n      new_start &lt;- get(f)(seq[1], seq[2])\n      new_seq &lt;- c(new_start, tail(seq, -2))\n      calibrate_operators(new_seq, target, operators)\n    }\n  ) |&gt; \n    # If any output is true, the output has been calibrated.\n    any()\n}\n\ncalibration_value &lt;- function(input, output, operators) {\n  # Compute calibration for each input-output pair\n  is_calibrated &lt;- map2_lgl(\n    input, \n    output, \n    ~ calibrate_operators(.x, .y, operators = operators)\n  )\n  \n  # Sum the calibrated outputs\n  output |&gt; \n    keep(is_calibrated) |&gt; \n    sum() |&gt; \n    format(scientific = FALSE)\n}\n\nCompute calibration of the puzzle input:\n\ninput_values  &lt;- map(input, tail, -1)\noutput_values &lt;- map_dbl(input, head, 1)\n  \ncalibration_value(input_values, output_values, c(\"+\", \"*\"))\n\n[1] \"12940396350192\"",
+    "crumbs": [
+      "2024",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2024/R/day07.html#part-2",
+    "href": "2024/R/day07.html#part-2",
+    "title": "Day 7",
+    "section": "Part 2",
+    "text": "Part 2\nAdd a new concatenation operator and re-run the calibration on the puzzle input\n\nconcat &lt;- function(x, y) as.numeric(str_c(x, y))\n\ncalibration_value(input_values, output_values, c(\"+\", \"*\", \"concat\"))\n\n[1] \"106016735664498\"",
+    "crumbs": [
+      "2024",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2024/R/day02.html",
+    "href": "2024/R/day02.html",
+    "title": "Day 2",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day02.txt\") |&gt; \n  map(~parse_number(str_split_1(.x, \" \")))",
+    "crumbs": [
+      "2024",
+      "Day 2"
+    ]
+  },
+  {
+    "objectID": "2024/R/day02.html#setup",
+    "href": "2024/R/day02.html#setup",
+    "title": "Day 2",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day02.txt\") |&gt; \n  map(~parse_number(str_split_1(.x, \" \")))",
+    "crumbs": [
+      "2024",
+      "Day 2"
+    ]
+  },
+  {
+    "objectID": "2024/R/day02.html#part-1",
+    "href": "2024/R/day02.html#part-1",
+    "title": "Day 2",
+    "section": "Part 1",
+    "text": "Part 1\n\n# Compute difference between consecutive integers\nseq_gaps &lt;- function(seq)\n  head(lead(seq) - seq, -1)\n\n# Check whether the sequence is incr/decr with gaps between 1 and 3\ngaps_are_valid &lt;- function(gaps)\n  (all(gaps &lt; 0) | all(gaps &gt; 0)) & all(between(abs(gaps), 1, 3))\n\n# Count number of safe reports\ninput |&gt; \n  map(seq_gaps) |&gt; \n  map_lgl(gaps_are_valid) |&gt; \n  sum()\n\n[1] 306",
+    "crumbs": [
+      "2024",
+      "Day 2"
+    ]
+  },
+  {
+    "objectID": "2024/R/day02.html#part-2",
+    "href": "2024/R/day02.html#part-2",
+    "title": "Day 2",
+    "section": "Part 2",
+    "text": "Part 2\n\ntibble(input) |&gt; \n  \n  # For each report, create a set of versions where each level is removed\n  mutate(\n    id = row_number(),\n    mod = map(input, \\(seq) map(1:length(seq), \\(n) seq[-c(n)])),\n  ) |&gt; \n  unnest(mod) |&gt; \n  \n  # Check validity of each report and its altered versions\n  mutate(\n    report_is_safe = map_lgl(input, ~ gaps_are_valid(seq_gaps(.x))),\n    mod_is_safe    = map_lgl(mod,   ~ gaps_are_valid(seq_gaps(.x))),\n    is_safe = report_is_safe | mod_is_safe\n  ) |&gt; \n  summarize(is_safe = any(is_safe), .by = id) |&gt; \n  \n  # Count all safe reports\n  summarize(total = sum(is_safe)) |&gt; \n  pull()\n\n[1] 366",
+    "crumbs": [
+      "2024",
+      "Day 2"
+    ]
+  },
+  {
+    "objectID": "2024/R/day01.html",
+    "href": "2024/R/day01.html",
+    "title": "Day 1",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_table(\n  \"../input/day01.txt\", \n  col_names = c(\"x\", \"y\"), \n  show_col_types = FALSE\n)",
+    "crumbs": [
+      "2024",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2024/R/day01.html#setup",
+    "href": "2024/R/day01.html#setup",
+    "title": "Day 1",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_table(\n  \"../input/day01.txt\", \n  col_names = c(\"x\", \"y\"), \n  show_col_types = FALSE\n)",
+    "crumbs": [
+      "2024",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2024/R/day01.html#part-1",
+    "href": "2024/R/day01.html#part-1",
+    "title": "Day 1",
+    "section": "Part 1",
+    "text": "Part 1\nSort each list independently, then sum the distances between each pair of ordered items.\n\ntibble(\n  x = sort(input$x), \n  y = sort(input$y),\n  dist = abs(y - x)\n) |&gt; \n  summarize(total = sum(dist)) |&gt; \n  pull()\n\n[1] 2285373",
+    "crumbs": [
+      "2024",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2024/R/day01.html#part-2",
+    "href": "2024/R/day01.html#part-2",
+    "title": "Day 1",
+    "section": "Part 2",
+    "text": "Part 2\nFor each item in list x, multiply its value by its number of occurrences in list y, then sum the total.\n\ninput |&gt; \n  mutate(\n    x_match_count = map_int(x, ~ sum(.x == y)),\n    similarity_score = x * x_match_count\n  ) |&gt; \n  summarize(total = sum(similarity_score)) |&gt; \n  pull()\n\n[1] 21142653",
+    "crumbs": [
+      "2024",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2024/R/day09.html",
+    "href": "2024/R/day09.html",
+    "title": "Day 9",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day09.txt\", skip_empty_rows = TRUE) |&gt; \n  str_split_1(\"\") |&gt; \n  as.integer()",
+    "crumbs": [
+      "2024",
+      "Day 9"
+    ]
+  },
+  {
+    "objectID": "2024/R/day09.html#setup",
+    "href": "2024/R/day09.html#setup",
+    "title": "Day 9",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day09.txt\", skip_empty_rows = TRUE) |&gt; \n  str_split_1(\"\") |&gt; \n  as.integer()",
+    "crumbs": [
+      "2024",
+      "Day 9"
+    ]
+  },
+  {
+    "objectID": "2024/R/day09.html#part-1",
+    "href": "2024/R/day09.html#part-1",
+    "title": "Day 9",
+    "section": "Part 1",
+    "text": "Part 1\nDefine custom file functions:\n\nmove_files &lt;- function(filesys) {\n  repeat {\n    first_blank &lt;- min(which(is.na(filesys)))\n    last_file   &lt;- max(which(!is.na(filesys)))\n    \n    # If all files have been compressed, exit\n    if (first_blank &gt; last_file) break\n    \n    # Otherwise, move the last file into the first blank location\n    filesys[first_blank] &lt;- filesys[last_file]\n    filesys[last_file]   &lt;- NA_integer_\n  }\n  filesys\n}\n\nchecksum &lt;- function(filesys) {\n  filesys |&gt; \n    imap_int(\\(x, idx) if_else(is.na(x), 0, x * (idx - 1))) |&gt; \n    sum() |&gt; \n    format(scientific = FALSE)\n}\n\nRun puzzle input:\n\n# Uncompress file layout\nfilesys &lt;- input|&gt; \n  imap(function(x, idx) {\n    # Even entries are files; odd entries are spaces\n    file_id &lt;- if_else(idx %% 2 == 1, floor(idx / 2), NA_integer_)\n    rep(file_id, x)\n  }) |&gt; \n  unlist()\n\nfilesys |&gt; \n  move_files() |&gt; \n  checksum()\n\n[1] \"6330095022244\"",
+    "crumbs": [
+      "2024",
+      "Day 9"
+    ]
+  },
+  {
+    "objectID": "2024/R/day09.html#part-2",
+    "href": "2024/R/day09.html#part-2",
+    "title": "Day 9",
+    "section": "Part 2",
+    "text": "Part 2\nUpdate the compression function:\n\nmove_blocks &lt;- function(filesys) {\n  for (file_id in max(na.omit(filesys)):1) {\n    \n    # Pull the location and length of the file block for the current ID\n    file_block &lt;- which(filesys == file_id)\n    n &lt;- length(file_block)\n    \n    # Pull indices of all empty values before the current file block\n    empty_idx &lt;- which(is.na(filesys[1:min(file_block)]))\n    \n    # Pull all valid starting indices of empty blocks of the right length\n    if (n == 1) {\n      valid_idx &lt;- empty_idx\n    } else {\n      valid_block &lt;- replace_na(lead(empty_idx, n - 1) - empty_idx == n - 1, FALSE)\n      valid_idx &lt;- empty_idx[valid_block]\n    }\n    \n    # If valid indices exist, move the file block to the first valid location\n    if (length(valid_idx) &gt; 0) {\n      idx_start &lt;- min(valid_idx)\n      filesys[idx_start:(idx_start + n - 1)] &lt;- file_id\n      filesys[file_block] &lt;- NA_integer_\n    }\n    \n  }\n  filesys\n}\n\nRun puzzle input:\n\nfilesys |&gt; \n  move_blocks() |&gt; \n  checksum()\n\n[1] \"6359491814941\"",
+    "crumbs": [
+      "2024",
+      "Day 9"
+    ]
+  }
+]
