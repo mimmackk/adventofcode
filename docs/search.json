@@ -1039,5 +1039,93 @@
       "2024",
       "Day 9"
     ]
+  },
+  {
+    "objectID": "2024/R/day12.html",
+    "href": "2024/R/day12.html",
+    "title": "Day 12",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file into a data frame\ninput &lt;- read_table(\"../input/day12.txt\", col_names = \"chr\") |&gt; \n  mutate(\n    row = row_number(),\n    chr = str_split(chr, \"\")\n  ) |&gt; \n  unnest(chr) |&gt; \n  mutate(col = row_number(), .by = row) |&gt; \n  mutate(idx = row_number(), .before = everything())",
+    "crumbs": [
+      "2024",
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2024/R/day12.html#setup",
+    "href": "2024/R/day12.html#setup",
+    "title": "Day 12",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file into a data frame\ninput &lt;- read_table(\"../input/day12.txt\", col_names = \"chr\") |&gt; \n  mutate(\n    row = row_number(),\n    chr = str_split(chr, \"\")\n  ) |&gt; \n  unnest(chr) |&gt; \n  mutate(col = row_number(), .by = row) |&gt; \n  mutate(idx = row_number(), .before = everything())",
+    "crumbs": [
+      "2024",
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2024/R/day12.html#part-1",
+    "href": "2024/R/day12.html#part-1",
+    "title": "Day 12",
+    "section": "Part 1",
+    "text": "Part 1\nFormat the input as a graph, with edges connecting neighbors of the same type:\n\n# Flag neighboring characters of the same value that border one other\nedges_wide &lt;- input |&gt; \n  mutate(v = case_when(row + 1 == lead(row) ~ lead(idx)), .by = c(chr, col)) |&gt; \n  mutate(h = case_when(col + 1 == lead(col) ~ lead(idx)), .by = c(chr, row))\n\nedges_long &lt;- edges_wide |&gt; \n  pivot_longer(\n    c(v, h), \n    names_to = NULL, \n    values_to = \"target\", \n    values_drop_na = TRUE\n  )\n\n# Format neighbors as a list of edges and add to add a graph\ng &lt;- edges_long |&gt; \n  transmute(\n    edge_id = row_number(),\n    src = idx, \n    target\n  ) |&gt; \n  pivot_longer(c(src, target)) |&gt; \n  arrange(edge_id, value) |&gt; \n  pull(value) |&gt; \n  make_graph(n = nrow(input), directed = FALSE)\n\nV(g)$name &lt;- 1:nrow(input)\n\n# Separate out the resulting graph into sub-graphs of innerconnected regions\ndg &lt;- decompose(g)\n\nCompute the perimeter, area, and cost of each subgraph then sum the total:\n\ndg |&gt; \n  map_int(\\(subgraph) {\n    perim &lt;- sum(4 - degree(subgraph))\n    area  &lt;- gorder(subgraph)\n    perim * area\n  }) |&gt; \n  sum()\n\n[1] 1433460",
+    "crumbs": [
+      "2024",
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2024/R/day12.html#part-2",
+    "href": "2024/R/day12.html#part-2",
+    "title": "Day 12",
+    "section": "Part 2",
+    "text": "Part 2\nUsed a hint from reddit: the number of corners is equal to the number of sides.\nA plot can have a convex corner or a concave corner.\n\nA cell has a convex corner for each pair of adjacent borders\nA cell has a concave corner if it has two adjacent cells of its same group, but its diagonal cell between the two has a different group.\n\n\n# Get original row/column input and join on the group output from the graph\ngroups &lt;- left_join(\n  input,\n  imap_dfr(dg, \\(g, grp_idx) tibble(grp = grp_idx, idx = V(g)$name)),\n  join_by(idx)\n) |&gt; \n  select(idx, grp, row, col)\n\n# For each of a cell's neighbors, flag if they're in the same group\nneighbors &lt;- groups |&gt; \n  # Get group number of each adjacent cell (N/S/E/W)\n  left_join(transmute(groups, n = grp, row = row + 1, col), join_by(row, col)) |&gt; \n  left_join(transmute(groups, w = grp, col = col + 1, row), join_by(row, col)) |&gt; \n  left_join(transmute(groups, s = grp, row = row - 1, col), join_by(row, col)) |&gt; \n  left_join(transmute(groups, e = grp, col = col - 1, row), join_by(row, col)) |&gt; \n  # Get group number of each diagonal cell (NW/NE/SW/SE)\n  left_join(transmute(groups, nw = grp, row = row + 1, col = col + 1), join_by(row, col)) |&gt; \n  left_join(transmute(groups, ne = grp, row = row + 1, col = col - 1), join_by(row, col)) |&gt; \n  left_join(transmute(groups, sw = grp, row = row - 1, col = col + 1), join_by(row, col)) |&gt; \n  left_join(transmute(groups, se = grp, row = row - 1, col = col - 1), join_by(row, col)) |&gt; \n  select(-c(row, col)) |&gt; \n  # Compare group numbers of adjacent/diagonal cells to the current cell\n  mutate(across(c(n, w, s, e, nw, ne, sw, se), ~ replace_na(.x == grp, FALSE)))\n\n# Compute total number of concave/convex corners for each cell\ncorners &lt;- neighbors |&gt; \n  mutate(\n    convex = (!n & !w) + (!s & !w) + (!s & !e) + (!n & !e),\n    concave = (n & w & !nw) + (s & w & !sw) + (s & e & !se) + (n & e & !ne)\n  )\n\nTotal the number of corners per group and multiply by the group’s area to get the total cost:\n\ncorners |&gt; \n  summarize(\n    area = n(),\n    num_sides = sum(convex + concave), \n    .by = grp\n  ) |&gt; \n  mutate(cost = area * num_sides) |&gt; \n  pull(cost) |&gt; \n  sum()\n\n[1] 855082",
+    "crumbs": [
+      "2024",
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2024/R/day13.html",
+    "href": "2024/R/day13.html",
+    "title": "Day 13",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day13.txt\", skip_empty_rows = TRUE)",
+    "crumbs": [
+      "2024",
+      "Day 13"
+    ]
+  },
+  {
+    "objectID": "2024/R/day13.html#setup",
+    "href": "2024/R/day13.html#setup",
+    "title": "Day 13",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day13.txt\", skip_empty_rows = TRUE)",
+    "crumbs": [
+      "2024",
+      "Day 13"
+    ]
+  },
+  {
+    "objectID": "2024/R/day13.html#part-1",
+    "href": "2024/R/day13.html#part-1",
+    "title": "Day 13",
+    "section": "Part 1",
+    "text": "Part 1\nExtract numerical values from input text:\n\ndf &lt;- input |&gt; \n  unglue_data(c(\n    \"Button {button}: X+{x=\\\\d+}, Y+{y=\\\\d+}\",\n    \"{button}: X={x=\\\\d+}, Y={y=\\\\d+}\"\n  )) |&gt; \n  mutate(\n    machine_id = floor((row_number() - 1) / 3),\n    across(c(x, y), parse_number),\n    .before = everything()\n  ) |&gt; \n  pivot_wider(names_from = button, values_from = c(x, y))\n\nDefine a function to convert numeric equation input and output token counts:\n\ncompute_tokens &lt;- function(df) {\n  \n  # Convert each machine's properties into a system of equations and solve.\n  soln &lt;- df |&gt; \n    nest(coeff = c(x_A, x_B, y_A, y_B)) |&gt; \n    nest(intercept = c(x_Prize, y_Prize)) |&gt; \n    mutate(\n      coeff = map(coeff, ~ matrix(as.numeric(.x), nrow = 2, byrow = TRUE)),\n      intercept = map(intercept, as.numeric),\n      soln = map2(\n        coeff, \n        intercept, \n        ~ solve(.x, .y) |&gt; \n          set_names(\"A\", \"B\") |&gt; \n          as_tibble_row()\n      )\n    ) |&gt; \n    unnest(soln) |&gt; \n    select(machine_id, A, B)\n  \n  \n  # Check that the solution is two whole numbers, then sum the token cost\n  soln |&gt; \n    mutate(\n      across(\n        c(A, B), \n        ~ near(.x, abs(round(.x)), tol = 0.001), \n        .names = \"{.col}_valid\"\n      ),\n      win = A_valid & B_valid,\n      tokens = if_else(win, 3 * A + B, 0)\n    ) |&gt; \n    pull(tokens) |&gt; \n    sum()\n}\n\nRun function on puzzle input:\n\ncompute_tokens(df)\n\n[1] 31623",
+    "crumbs": [
+      "2024",
+      "Day 13"
+    ]
+  },
+  {
+    "objectID": "2024/R/day13.html#part-2",
+    "href": "2024/R/day13.html#part-2",
+    "title": "Day 13",
+    "section": "Part 2",
+    "text": "Part 2\nAdd 10000000000000 to each prize intercept and re-compute:\n\ndf |&gt; \n  mutate(across(c(x_Prize, y_Prize), ~ .x + 10000000000000)) |&gt; \n  compute_tokens() |&gt; \n  format(scientific = FALSE)\n\n[1] \"93209116744825\"",
+    "crumbs": [
+      "2024",
+      "Day 13"
+    ]
   }
 ]

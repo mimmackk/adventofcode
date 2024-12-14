@@ -1,6 +1,7 @@
 ---
 title: "Advent of Code: Worked Solutions"
 date: today
+published-title: "Last Updated"
 author: 
   name: https://adventofcode.com/about
   url: https://adventofcode.com/about

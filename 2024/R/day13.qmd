@@ -1,0 +1,99 @@
+---
+title: "Day 13"
+date: 2024-12-13
+author:
+  name: https://adventofcode.com/2024/day/13
+  url: https://adventofcode.com/2024/day/13
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+library(unglue)
+
+# Read input from file
+input <- read_lines("../input/day13.txt", skip_empty_rows = TRUE)
+```
+
+## Part 1
+
+Extract numerical values from input text:
+```{r}
+df <- input |> 
+  unglue_data(c(
+    "Button {button}: X+{x=\\d+}, Y+{y=\\d+}",
+    "{button}: X={x=\\d+}, Y={y=\\d+}"
+  )) |> 
+  mutate(
+    machine_id = floor((row_number() - 1) / 3),
+    across(c(x, y), parse_number),
+    .before = everything()
+  ) |> 
+  pivot_wider(names_from = button, values_from = c(x, y))
+```
+
+
+Define a function to convert numeric equation input and output token counts:
+
+```{r}
+
+compute_tokens <- function(df) {
+  
+  # Convert each machine's properties into a system of equations and solve.
+  soln <- df |> 
+    nest(coeff = c(x_A, x_B, y_A, y_B)) |> 
+    nest(intercept = c(x_Prize, y_Prize)) |> 
+    mutate(
+      coeff = map(coeff, ~ matrix(as.numeric(.x), nrow = 2, byrow = TRUE)),
+      intercept = map(intercept, as.numeric),
+      soln = map2(
+        coeff, 
+        intercept, 
+        ~ solve(.x, .y) |> 
+          set_names("A", "B") |> 
+          as_tibble_row()
+      )
+    ) |> 
+    unnest(soln) |> 
+    select(machine_id, A, B)
+  
+  
+  # Check that the solution is two whole numbers, then sum the token cost
+  soln |> 
+    mutate(
+      across(
+        c(A, B), 
+        ~ near(.x, abs(round(.x)), tol = 0.001), 
+        .names = "{.col}_valid"
+      ),
+      win = A_valid & B_valid,
+      tokens = if_else(win, 3 * A + B, 0)
+    ) |> 
+    pull(tokens) |> 
+    sum()
+}
+
+```
+
+Run function on puzzle input: 
+
+```{r}
+compute_tokens(df)
+```
+
+
+## Part 2
+
+Add 10000000000000 to each prize intercept and re-compute:
+
+```{r}
+
+df |> 
+  mutate(across(c(x_Prize, y_Prize), ~ .x + 10000000000000)) |> 
+  compute_tokens() |> 
+  format(scientific = FALSE)
+
+```
+

@@ -1,0 +1,139 @@
+---
+title: "Day 12"
+date: 2024-12-12
+author:
+  name: https://adventofcode.com/2024/day/12
+  url: https://adventofcode.com/2024/day/12
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+library(igraph)
+
+# Read input from file into a data frame
+input <- read_table("../input/day12.txt", col_names = "chr") |> 
+  mutate(
+    row = row_number(),
+    chr = str_split(chr, "")
+  ) |> 
+  unnest(chr) |> 
+  mutate(col = row_number(), .by = row) |> 
+  mutate(idx = row_number(), .before = everything())
+```
+
+## Part 1
+
+Format the input as a graph, with edges connecting neighbors of the same type:
+
+```{r}
+
+# Flag neighboring characters of the same value that border one other
+edges_wide <- input |> 
+  mutate(v = case_when(row + 1 == lead(row) ~ lead(idx)), .by = c(chr, col)) |> 
+  mutate(h = case_when(col + 1 == lead(col) ~ lead(idx)), .by = c(chr, row))
+
+edges_long <- edges_wide |> 
+  pivot_longer(
+    c(v, h), 
+    names_to = NULL, 
+    values_to = "target", 
+    values_drop_na = TRUE
+  )
+
+# Format neighbors as a list of edges and add to add a graph
+g <- edges_long |> 
+  transmute(
+    edge_id = row_number(),
+    src = idx, 
+    target
+  ) |> 
+  pivot_longer(c(src, target)) |> 
+  arrange(edge_id, value) |> 
+  pull(value) |> 
+  make_graph(n = nrow(input), directed = FALSE)
+
+V(g)$name <- 1:nrow(input)
+
+# Separate out the resulting graph into sub-graphs of innerconnected regions
+dg <- decompose(g)
+
+```
+
+Compute the perimeter, area, and cost of each subgraph then sum the total:
+
+```{r}
+dg |> 
+  map_int(\(subgraph) {
+    perim <- sum(4 - degree(subgraph))
+    area  <- gorder(subgraph)
+    perim * area
+  }) |> 
+  sum()
+```
+
+## Part 2
+
+Used a hint from reddit: the number of corners is equal to the number of sides.
+
+A plot can have a convex corner or a concave corner.
+
+-   A cell has a convex corner for each pair of adjacent borders
+-   A cell has a concave corner if it has two adjacent cells of its same group, but its diagonal cell between the two has a different group.
+
+```{r}
+
+# Get original row/column input and join on the group output from the graph
+groups <- left_join(
+  input,
+  imap_dfr(dg, \(g, grp_idx) tibble(grp = grp_idx, idx = V(g)$name)),
+  join_by(idx)
+) |> 
+  select(idx, grp, row, col)
+
+# For each of a cell's neighbors, flag if they're in the same group
+neighbors <- groups |> 
+  # Get group number of each adjacent cell (N/S/E/W)
+  left_join(transmute(groups, n = grp, row = row + 1, col), join_by(row, col)) |> 
+  left_join(transmute(groups, w = grp, col = col + 1, row), join_by(row, col)) |> 
+  left_join(transmute(groups, s = grp, row = row - 1, col), join_by(row, col)) |> 
+  left_join(transmute(groups, e = grp, col = col - 1, row), join_by(row, col)) |> 
+  # Get group number of each diagonal cell (NW/NE/SW/SE)
+  left_join(transmute(groups, nw = grp, row = row + 1, col = col + 1), join_by(row, col)) |> 
+  left_join(transmute(groups, ne = grp, row = row + 1, col = col - 1), join_by(row, col)) |> 
+  left_join(transmute(groups, sw = grp, row = row - 1, col = col + 1), join_by(row, col)) |> 
+  left_join(transmute(groups, se = grp, row = row - 1, col = col - 1), join_by(row, col)) |> 
+  select(-c(row, col)) |> 
+  # Compare group numbers of adjacent/diagonal cells to the current cell
+  mutate(across(c(n, w, s, e, nw, ne, sw, se), ~ replace_na(.x == grp, FALSE)))
+
+# Compute total number of concave/convex corners for each cell
+corners <- neighbors |> 
+  mutate(
+    convex = (!n & !w) + (!s & !w) + (!s & !e) + (!n & !e),
+    concave = (n & w & !nw) + (s & w & !sw) + (s & e & !se) + (n & e & !ne)
+  )
+
+```
+
+Total the number of corners per group and multiply by the group's area to get the total cost:
+
+```{r}
+corners |> 
+  summarize(
+    area = n(),
+    num_sides = sum(convex + concave), 
+    .by = grp
+  ) |> 
+  mutate(cost = area * num_sides) |> 
+  pull(cost) |> 
+  sum()
+
+```
+
+
+
+
+
