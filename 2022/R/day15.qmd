@@ -1,0 +1,190 @@
+---
+title: "Day 15"
+date: 2022-12-15
+author:
+  name: https://adventofcode.com/2022/day/15
+  url: https://adventofcode.com/2022/day/15
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+library(unglue)
+library(sf)
+
+theme_set(theme_bw())
+
+# Read input from text and extract numeric values into a data frame
+input <- read_lines("../input/day15.txt") |> 
+  unglue_data(
+    "Sensor at x={s_x}, y={s_y}: closest beacon is at x={b_x}, y={b_y}",
+    convert = TRUE
+  ) 
+```
+
+
+## Part 1
+
+Convert input into a list of beacons, sensors, and total detection distances:
+
+```{r}
+
+sensors <- input |> 
+  distinct(
+    s_x, 
+    s_y, 
+    max_dist = abs(b_x - s_x) + abs(b_y - s_y)
+  )
+
+beacons <- input |> 
+  distinct(x = b_x, y = b_y)
+
+```
+
+Generate a set of polygons that defines the regions detectible by each sensor:
+
+```{r}
+
+# Convert each sensor's detection distance into a region defined by a polygon
+poly <- sensors |> 
+  mutate(
+    polygon = pmap(list(s_x, s_y, max_dist), function(x, y, dist) {
+      rbind(
+        c(x - dist, y),
+        c(x, y - dist),
+        c(x + dist, y),
+        c(x, y + dist),
+        c(x - dist, y)
+      ) |> 
+        list() |> 
+        st_polygon()
+    }),
+    geometry = st_sfc(polygon)
+  ) |> 
+  transmute(idx = row_number(), geometry) |> 
+  st_as_sf()
+
+# Merge all polygons into a single geometric shape
+poly_union <- st_union(poly)
+
+```
+
+Visualize:
+
+```{r}
+
+# Overlapping regions
+ggplot() + 
+  geom_sf(data = poly, aes(fill = factor(idx))) + 
+  scale_fill_viridis_d(guide = "none")
+
+# Merged region
+ggplot() + 
+  geom_sf(data = poly_union)
+
+```
+
+Define a set of functions to count the number of integer points that cannot have a beacon within the detection region
+
+```{r}
+
+# Convert a set of x/y boundaries to a spatial rectangle object
+poly_rect <- function(xmin, xmax, ymin, ymax) {
+  rbind(
+    c(xmin, ymax), 
+    c(xmin, ymin), 
+    c(xmax, ymin), 
+    c(xmax, ymax), 
+    c(xmin, ymax)
+  ) |> 
+    list() |> 
+    st_polygon() |> 
+    st_sfc()
+}
+
+# Get the coordinates within a poly, optionally limited within x/y bounds
+sf_points_in_poly <- function(poly, xlim = NULL, ylim = NULL) {
+  
+  # Define a rectangular region within which to generate grid points
+  points_region <- poly_rect(
+    xmin = (if (is_null(xlim)) st_bbox(poly)$xmin else head(xlim, 1)) - 0.5, 
+    xmax = (if (is_null(xlim)) st_bbox(poly)$xmax else tail(xlim, 1)) + 0.5, 
+    ymin = (if (is_null(ylim)) st_bbox(poly)$ymin else head(ylim, 1)) - 0.5,
+    ymax = (if (is_null(ylim)) st_bbox(poly)$ymax else tail(ylim, 1)) + 0.5
+  )
+  
+  # Generate the grid points that sit within the polygon
+  points_region |> 
+    st_make_grid(cellsize = 1, what = "centers") |> 
+    st_intersection(poly) |> 
+    
+    # Convert the set of points from spatial objects to x-y coordinates
+    st_coordinates() |> 
+    as_tibble() |> 
+    mutate(across(everything(), as.integer)) |> 
+    rename_with(tolower)
+}
+
+# Count the points in a sf region (with optional x/y lims) that can't be a beacon
+count_nonbeacon <- function(detection_region, known_beacons, x = NULL, y = NULL) {
+  
+  # Get the set of integer points within the polygon and x-y region specified
+  detection_region |> 
+    sf_points_in_poly(xlim = x, ylim = y) |>
+  
+    # Remove known beacons from the list of points and count
+    anti_join(known_beacons, join_by(x, y)) |>
+    nrow()
+}
+
+```
+
+Run puzzle input:
+
+```{r}
+count_nonbeacon(poly_union, beacons, y = 2000000)
+```
+
+
+## Part 2
+
+Define a function to get the location of an undetected beacon within a viewport:
+
+```{r}
+
+find_undetected_beacon <- function(detection_region, xlim, ylim) {
+  boundary <- poly_rect(xlim[1], xlim[2], ylim[1], ylim[2])
+  
+  # Find the polygon region where an undetected beacon could occur
+  undetected_region <- st_difference(boundary, detection_region)
+  
+  # Get all integer points in the region
+  points <- sf_points_in_poly(undetected_region)
+  
+  # Compute the region's boundary points to exclude
+  undetected_region_boundary <- undetected_region |>
+    st_bbox() |>
+    as.list() |>
+    pmap(\(xmin, xmax, ymin, ymax) poly_rect(xmin, xmax, ymin, ymax)) |>
+    pluck(1) |> 
+    st_difference(undetected_region) |> 
+    sf_points_in_poly()
+  
+  # Exclude all boundary points from the region
+  anti_join(points, undetected_region_boundary, join_by(x, y))
+  
+}
+
+tuning_freq <- function(x, y) format(4000000 * x + y, scientific = FALSE)
+
+```
+
+Run on puzzle input:
+
+```{r}
+point <- find_undetected_beacon(poly_union, c(0, 4000000), c(0, 4000000))
+
+tuning_freq(point$x, point$y)
+```

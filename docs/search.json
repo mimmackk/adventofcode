@@ -51,6 +51,50 @@
     ]
   },
   {
+    "objectID": "2024/R/day01.html",
+    "href": "2024/R/day01.html",
+    "title": "Day 1",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_table(\n  \"../input/day01.txt\", \n  col_names = c(\"x\", \"y\"), \n  show_col_types = FALSE\n)",
+    "crumbs": [
+      "2024",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2024/R/day01.html#setup",
+    "href": "2024/R/day01.html#setup",
+    "title": "Day 1",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_table(\n  \"../input/day01.txt\", \n  col_names = c(\"x\", \"y\"), \n  show_col_types = FALSE\n)",
+    "crumbs": [
+      "2024",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2024/R/day01.html#part-1",
+    "href": "2024/R/day01.html#part-1",
+    "title": "Day 1",
+    "section": "Part 1",
+    "text": "Part 1\nSort each list independently, then sum the distances between each pair of ordered items.\n\ntibble(\n  x = sort(input$x), \n  y = sort(input$y),\n  dist = abs(y - x)\n) |&gt; \n  summarize(total = sum(dist)) |&gt; \n  pull()\n\n[1] 2285373",
+    "crumbs": [
+      "2024",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2024/R/day01.html#part-2",
+    "href": "2024/R/day01.html#part-2",
+    "title": "Day 1",
+    "section": "Part 2",
+    "text": "Part 2\nFor each item in list x, multiply its value by its number of occurrences in list y, then sum the total.\n\ninput |&gt; \n  mutate(\n    x_match_count = map_int(x, ~ sum(.x == y)),\n    similarity_score = x * x_match_count\n  ) |&gt; \n  summarize(total = sum(similarity_score)) |&gt; \n  pull()\n\n[1] 21142653",
+    "crumbs": [
+      "2024",
+      "Day 1"
+    ]
+  },
+  {
     "objectID": "2024/R/day03.html",
     "href": "2024/R/day03.html",
     "title": "Day 3",
@@ -315,47 +359,91 @@
     ]
   },
   {
-    "objectID": "2022/R/day01.html",
-    "href": "2022/R/day01.html",
-    "title": "Day 1",
+    "objectID": "2022/R/day14.html",
+    "href": "2022/R/day14.html",
+    "title": "Day 14",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; \n  as.integer()",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from text\ninput &lt;- read_lines(\"../input/day14.txt\")",
     "crumbs": [
       "2022",
-      "Day 1"
+      "Day 14"
     ]
   },
   {
-    "objectID": "2022/R/day01.html#setup",
-    "href": "2022/R/day01.html#setup",
-    "title": "Day 1",
+    "objectID": "2022/R/day14.html#setup",
+    "href": "2022/R/day14.html#setup",
+    "title": "Day 14",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; \n  as.integer()",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from text\ninput &lt;- read_lines(\"../input/day14.txt\")",
     "crumbs": [
       "2022",
-      "Day 1"
+      "Day 14"
     ]
   },
   {
-    "objectID": "2022/R/day01.html#part-1",
-    "href": "2022/R/day01.html#part-1",
-    "title": "Day 1",
+    "objectID": "2022/R/day14.html#part-1",
+    "href": "2022/R/day14.html#part-1",
+    "title": "Day 14",
     "section": "Part 1",
-    "text": "Part 1\n\n# Format input as a data frame and number the elves\ndf &lt;- tibble(\n  cal = input,\n  elf_id = cumsum(is.na(cal)) + 1\n) |&gt;\n  filter(!is.na(cal))\n\n# Compute calorie sum for each elf, get the top n elves, and combine totals\ncount_max &lt;- function(df, num_top_elves) {\n  df |&gt; \n    group_by(elf_id) |&gt;\n    summarize(total_cal = sum(cal)) |&gt;\n    slice_max(total_cal, n = num_top_elves) |&gt;\n    pull(total_cal) |&gt;\n    sum()\n}\n\nRun puzzle input:\n\ncount_max(df, 1)\n\n[1] 68787",
+    "text": "Part 1\nConvert input from rows of text lines to a list of obstacle coordinates:\n\n# Extract numeric values from the input text\ndf &lt;- input |&gt; \n  str_split(\" -&gt; \") |&gt; \n  imap_dfr(\\(input, idx) tibble(idx, input)) |&gt; \n  unglue_unnest(input, \"{x},{y}\", convert = TRUE)\n\n\n# Expand the endpoints into a list of coordinates of every obstacle\nobstacles &lt;- df |&gt; \n  mutate(\n    seq_x = map2(x, lead(x), ~ if (!is.na(.x) & !is.na(.y)) .x:.y),\n    seq_y = map2(y, lead(y), ~ if (!is.na(.x) & !is.na(.y)) .x:.y),\n    .by = idx\n  ) |&gt; \n  unnest(c(seq_x, seq_y)) |&gt; \n  distinct(x = seq_x, y = seq_y) |&gt; \n  mutate(chr = '#')\n\nDefine a function to recursively drop a grain of sand until it comes to rest:\n\ndrop_grain &lt;- function(scan, x_cur, y_cur) {\n  y_new &lt;- y_cur + 1\n  \n  # Check if new y-coordinate is out of bounds\n  if (y_new &gt; max(scan$y))\n    return(scan)\n  \n  for (x_new in c(x_cur, x_cur - 1, x_cur + 1)) {\n    # Check if next x-coordinate is out of bounds\n    if (!between(x_new, min(scan$x), max(scan$x)))\n      return(scan)\n    # If grain can flow into the next spot, recurse into next spot\n    else if (nrow(filter(scan, x == x_new, y == y_new)) == 0)\n      return(drop_grain(scan, x_new, y_new))\n  }\n\n  # If grain has nowhere to go, drop the grain in its current place and exit\n  return(add_row(scan, x = x_cur, y = y_cur, chr = \"o\"))\n}\n\nDefine a function that fills the map with sand one grain at a time, starting from the designated point, until all sand comes to rest:\n\nfill_sand &lt;- function(scan, grain_func) {\n  repeat {\n    scan_new &lt;- grain_func(scan)\n    \n    # If the scan is unchanged after dropping the grain, the sand is at rest. \n    if (nrow(scan_new) == nrow(scan)) break\n    \n    scan &lt;- scan_new\n  }\n  scan\n}\n\ncount_grains &lt;- function(scan) {\n  scan |&gt; \n    filter(chr == \"o\") |&gt; \n    nrow()\n}\n\nCount the grains using the puzzle input:\n\nobstacles |&gt; \n  fill_sand(grain_func = partial(drop_grain, x_cur = 500, y_cur = 0)) |&gt; \n  count_grains()\n\n[1] 862",
     "crumbs": [
       "2022",
-      "Day 1"
+      "Day 14"
     ]
   },
   {
-    "objectID": "2022/R/day01.html#part-2",
-    "href": "2022/R/day01.html#part-2",
-    "title": "Day 1",
+    "objectID": "2022/R/day14.html#part-2",
+    "href": "2022/R/day14.html#part-2",
+    "title": "Day 14",
     "section": "Part 2",
-    "text": "Part 2\n\ncount_max(df, 3)\n\n[1] 198041",
+    "text": "Part 2\nRe-define the drop_grain function to allow for the boundless floor:\n\ndrop_grain &lt;- function(scan, x_cur, y_cur, floor) {\n  y_new &lt;- y_cur + 1\n  \n  # Check if current location already has a grain of sand (entry blocked)\n  if (nrow(filter(scan, x == x_cur, y == y_cur)) &gt; 0)\n    return(scan)\n  \n  # Check if the current sand grain is sitting on top of the floor\n  if (y_new == floor)\n    return(add_row(scan, x = x_cur, y = y_cur, chr = \"o\"))\n  \n  # If grain can flow into the next spot, recurse into next spot\n  for (x_new in c(x_cur, x_cur - 1, x_cur + 1)) {\n    if (nrow(filter(scan, x == x_new, y == y_new)) == 0)\n      return(drop_grain(scan, x_new, y_new, floor))\n  }\n\n  # If grain has nowhere to go, drop the grain in its current place and exit\n  return(add_row(scan, x = x_cur, y = y_cur, chr = \"o\"))\n}\n\nCount the grains using the puzzle input:\n\nobstacles |&gt; \n  fill_sand(\n    grain_func = partial(\n      drop_grain, \n      x_cur = 500, \n      y_cur = 0, \n      floor = max(obstacles$y) + 2\n    )\n  ) |&gt; \n  count_grains()\n\n[1] 28744",
     "crumbs": [
       "2022",
-      "Day 1"
+      "Day 14"
+    ]
+  },
+  {
+    "objectID": "2022/R/day15.html",
+    "href": "2022/R/day15.html",
+    "title": "Day 15",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(sf)\n\ntheme_set(theme_bw())\n\n# Read input from text and extract numeric values into a data frame\ninput &lt;- read_lines(\"../input/day15.txt\") |&gt; \n  unglue_data(\n    \"Sensor at x={s_x}, y={s_y}: closest beacon is at x={b_x}, y={b_y}\",\n    convert = TRUE\n  )",
+    "crumbs": [
+      "2022",
+      "Day 15"
+    ]
+  },
+  {
+    "objectID": "2022/R/day15.html#setup",
+    "href": "2022/R/day15.html#setup",
+    "title": "Day 15",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(sf)\n\ntheme_set(theme_bw())\n\n# Read input from text and extract numeric values into a data frame\ninput &lt;- read_lines(\"../input/day15.txt\") |&gt; \n  unglue_data(\n    \"Sensor at x={s_x}, y={s_y}: closest beacon is at x={b_x}, y={b_y}\",\n    convert = TRUE\n  )",
+    "crumbs": [
+      "2022",
+      "Day 15"
+    ]
+  },
+  {
+    "objectID": "2022/R/day15.html#part-1",
+    "href": "2022/R/day15.html#part-1",
+    "title": "Day 15",
+    "section": "Part 1",
+    "text": "Part 1\nConvert input into a list of beacons, sensors, and total detection distances:\n\nsensors &lt;- input |&gt; \n  distinct(\n    s_x, \n    s_y, \n    max_dist = abs(b_x - s_x) + abs(b_y - s_y)\n  )\n\nbeacons &lt;- input |&gt; \n  distinct(x = b_x, y = b_y)\n\nGenerate a set of polygons that defines the regions detectible by each sensor:\n\n# Convert each sensor's detection distance into a region defined by a polygon\npoly &lt;- sensors |&gt; \n  mutate(\n    polygon = pmap(list(s_x, s_y, max_dist), function(x, y, dist) {\n      rbind(\n        c(x - dist, y),\n        c(x, y - dist),\n        c(x + dist, y),\n        c(x, y + dist),\n        c(x - dist, y)\n      ) |&gt; \n        list() |&gt; \n        st_polygon()\n    }),\n    geometry = st_sfc(polygon)\n  ) |&gt; \n  transmute(idx = row_number(), geometry) |&gt; \n  st_as_sf()\n\n# Merge all polygons into a single geometric shape\npoly_union &lt;- st_union(poly)\n\nVisualize:\n\n# Overlapping regions\nggplot() + \n  geom_sf(data = poly, aes(fill = factor(idx))) + \n  scale_fill_viridis_d(guide = \"none\")\n\n\n\n\n\n\n\n# Merged region\nggplot() + \n  geom_sf(data = poly_union)\n\n\n\n\n\n\n\n\nDefine a set of functions to count the number of integer points that cannot have a beacon within the detection region\n\n# Convert a set of x/y boundaries to a spatial rectangle object\npoly_rect &lt;- function(xmin, xmax, ymin, ymax) {\n  rbind(\n    c(xmin, ymax), \n    c(xmin, ymin), \n    c(xmax, ymin), \n    c(xmax, ymax), \n    c(xmin, ymax)\n  ) |&gt; \n    list() |&gt; \n    st_polygon() |&gt; \n    st_sfc()\n}\n\n# Get the coordinates within a poly, optionally limited within x/y bounds\nsf_points_in_poly &lt;- function(poly, xlim = NULL, ylim = NULL) {\n  \n  # Define a rectangular region within which to generate grid points\n  points_region &lt;- poly_rect(\n    xmin = (if (is_null(xlim)) st_bbox(poly)$xmin else head(xlim, 1)) - 0.5, \n    xmax = (if (is_null(xlim)) st_bbox(poly)$xmax else tail(xlim, 1)) + 0.5, \n    ymin = (if (is_null(ylim)) st_bbox(poly)$ymin else head(ylim, 1)) - 0.5,\n    ymax = (if (is_null(ylim)) st_bbox(poly)$ymax else tail(ylim, 1)) + 0.5\n  )\n  \n  # Generate the grid points that sit within the polygon\n  points_region |&gt; \n    st_make_grid(cellsize = 1, what = \"centers\") |&gt; \n    st_intersection(poly) |&gt; \n    \n    # Convert the set of points from spatial objects to x-y coordinates\n    st_coordinates() |&gt; \n    as_tibble() |&gt; \n    mutate(across(everything(), as.integer)) |&gt; \n    rename_with(tolower)\n}\n\n# Count the points in a sf region (with optional x/y lims) that can't be a beacon\ncount_nonbeacon &lt;- function(detection_region, known_beacons, x = NULL, y = NULL) {\n  \n  # Get the set of integer points within the polygon and x-y region specified\n  detection_region |&gt; \n    sf_points_in_poly(xlim = x, ylim = y) |&gt;\n  \n    # Remove known beacons from the list of points and count\n    anti_join(known_beacons, join_by(x, y)) |&gt;\n    nrow()\n}\n\nRun puzzle input:\n\ncount_nonbeacon(poly_union, beacons, y = 2000000)\n\n[1] 5367037",
+    "crumbs": [
+      "2022",
+      "Day 15"
+    ]
+  },
+  {
+    "objectID": "2022/R/day15.html#part-2",
+    "href": "2022/R/day15.html#part-2",
+    "title": "Day 15",
+    "section": "Part 2",
+    "text": "Part 2\nDefine a function to get the location of an undetected beacon within a viewport:\n\nfind_undetected_beacon &lt;- function(detection_region, xlim, ylim) {\n  boundary &lt;- poly_rect(xlim[1], xlim[2], ylim[1], ylim[2])\n  \n  # Find the polygon region where an undetected beacon could occur\n  undetected_region &lt;- st_difference(boundary, detection_region)\n  \n  # Get all integer points in the region\n  points &lt;- sf_points_in_poly(undetected_region)\n  \n  # Compute the region's boundary points to exclude\n  undetected_region_boundary &lt;- undetected_region |&gt;\n    st_bbox() |&gt;\n    as.list() |&gt;\n    pmap(\\(xmin, xmax, ymin, ymax) poly_rect(xmin, xmax, ymin, ymax)) |&gt;\n    pluck(1) |&gt; \n    st_difference(undetected_region) |&gt; \n    sf_points_in_poly()\n  \n  # Exclude all boundary points from the region\n  anti_join(points, undetected_region_boundary, join_by(x, y))\n  \n}\n\ntuning_freq &lt;- function(x, y) format(4000000 * x + y, scientific = FALSE)\n\nRun on puzzle input:\n\npoint &lt;- find_undetected_beacon(poly_union, c(0, 4000000), c(0, 4000000))\n\ntuning_freq(point$x, point$y)\n\n[1] \"11914583249288\"",
+    "crumbs": [
+      "2022",
+      "Day 15"
     ]
   },
   {
@@ -788,6 +876,50 @@
     ]
   },
   {
+    "objectID": "2022/R/day01.html",
+    "href": "2022/R/day01.html",
+    "title": "Day 1",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; \n  as.integer()",
+    "crumbs": [
+      "2022",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2022/R/day01.html#setup",
+    "href": "2022/R/day01.html#setup",
+    "title": "Day 1",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; \n  as.integer()",
+    "crumbs": [
+      "2022",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2022/R/day01.html#part-1",
+    "href": "2022/R/day01.html#part-1",
+    "title": "Day 1",
+    "section": "Part 1",
+    "text": "Part 1\n\n# Format input as a data frame and number the elves\ndf &lt;- tibble(\n  cal = input,\n  elf_id = cumsum(is.na(cal)) + 1\n) |&gt;\n  filter(!is.na(cal))\n\n# Compute calorie sum for each elf, get the top n elves, and combine totals\ncount_max &lt;- function(df, num_top_elves) {\n  df |&gt; \n    group_by(elf_id) |&gt;\n    summarize(total_cal = sum(cal)) |&gt;\n    slice_max(total_cal, n = num_top_elves) |&gt;\n    pull(total_cal) |&gt;\n    sum()\n}\n\nRun puzzle input:\n\ncount_max(df, 1)\n\n[1] 68787",
+    "crumbs": [
+      "2022",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2022/R/day01.html#part-2",
+    "href": "2022/R/day01.html#part-2",
+    "title": "Day 1",
+    "section": "Part 2",
+    "text": "Part 2\n\ncount_max(df, 3)\n\n[1] 198041",
+    "crumbs": [
+      "2022",
+      "Day 1"
+    ]
+  },
+  {
     "objectID": "2022/R/day08.html",
     "href": "2022/R/day08.html",
     "title": "Day 8",
@@ -1041,47 +1173,80 @@
     ]
   },
   {
-    "objectID": "2024/R/day01.html",
-    "href": "2024/R/day01.html",
-    "title": "Day 1",
+    "objectID": "2024/R/day15.html",
+    "href": "2024/R/day15.html",
+    "title": "Day 15",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_table(\n  \"../input/day01.txt\", \n  col_names = c(\"x\", \"y\"), \n  show_col_types = FALSE\n)",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day15.txt\")\ninput_wh &lt;- keep(input, ~ str_detect(.x, \"#\"))\ninput_mv &lt;- keep(input, ~ str_detect(.x, \"&lt;|&gt;|\\\\^|v\"))",
     "crumbs": [
       "2024",
-      "Day 1"
+      "Day 15"
     ]
   },
   {
-    "objectID": "2024/R/day01.html#setup",
-    "href": "2024/R/day01.html#setup",
-    "title": "Day 1",
+    "objectID": "2024/R/day15.html#setup",
+    "href": "2024/R/day15.html#setup",
+    "title": "Day 15",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_table(\n  \"../input/day01.txt\", \n  col_names = c(\"x\", \"y\"), \n  show_col_types = FALSE\n)",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day15.txt\")\ninput_wh &lt;- keep(input, ~ str_detect(.x, \"#\"))\ninput_mv &lt;- keep(input, ~ str_detect(.x, \"&lt;|&gt;|\\\\^|v\"))",
     "crumbs": [
       "2024",
-      "Day 1"
+      "Day 15"
     ]
   },
   {
-    "objectID": "2024/R/day01.html#part-1",
-    "href": "2024/R/day01.html#part-1",
-    "title": "Day 1",
+    "objectID": "2024/R/day15.html#part-1",
+    "href": "2024/R/day15.html#part-1",
+    "title": "Day 15",
     "section": "Part 1",
-    "text": "Part 1\nSort each list independently, then sum the distances between each pair of ordered items.\n\ntibble(\n  x = sort(input$x), \n  y = sort(input$y),\n  dist = abs(y - x)\n) |&gt; \n  summarize(total = sum(dist)) |&gt; \n  pull()\n\n[1] 2285373",
+    "text": "Part 1\nConvert warehouse input to a row/column indexed dataframe\n\n# Convert WH input text to a matrix\nmtx &lt;- input_wh |&gt;\n  str_split(\"\") |&gt; \n  matrix() |&gt; \n  unlist() |&gt; \n  matrix(byrow = TRUE, nrow = length(input_wh))\n\n\n# Convert movement sequence to a seq of characters\nmove_seq &lt;- input_mv |&gt; \n  str_c(collapse = \"\") |&gt; \n  str_split_1(\"\")\n\nDefine function to update the map based on a single movement of the robot::\n\nmove_robot &lt;- function(mtx, dir) {\n  # Get the current coordinates of the robot\n  robot &lt;- which(mtx == \"@\", arr.ind = TRUE)\n  row &lt;- robot[1, \"row\"]\n  col &lt;- robot[1, \"col\"]\n  \n  # Define the range of matrix values to adjust according to the movement dir\n  row_end &lt;- case_match(dir, c(\"&lt;\", \"&gt;\") ~ row, \"^\" ~ 1, \"v\" ~ nrow(mtx))\n  col_end &lt;- case_match(dir, c(\"^\", \"v\") ~ col, \"&lt;\" ~ 1, \"&gt;\" ~ nrow(mtx))\n  \n  # Using obstacle logic, determine the set of new characters\n  new &lt;- tibble(\n    orig = mtx[row:row_end, col:col_end],\n    lag = lag(orig)\n  ) |&gt; \n    mutate(\n      is_empty = orig == \".\",\n      is_wall  = orig == \"#\",\n      is_blocked = accumulate(is_wall, `|`),\n      is_fillable = is_empty & !is_blocked,\n      first_fillable = is_fillable & !lag(accumulate(is_fillable, `|`)),\n      can_move = accumulate(first_fillable, `|`, .dir = \"backward\"),\n      new = if_else(can_move, coalesce(lag, \".\"), orig)\n    ) |&gt; \n    pull(new)\n  \n  # Replace the affected characters in the matrix and return\n  mtx[row:row_end, col:col_end] &lt;- new\n  return(mtx)\n}\n\nDefine a function to iteratively run the set of movements\n\nrun_simulation &lt;- function(mtx, move_seq) {\n  mtx_prv &lt;- mtx\n  for (dir in move_seq) {\n    mtx_new &lt;- move_robot(mtx_prv, dir)\n    mtx_prv &lt;- mtx_new\n  }\n  return(mtx_new)\n}\n\nDefine a function to determine the GPS coordinates of all boxes\n\nget_boxes_gps &lt;- function(mtx) {\n  which(mtx == \"O\", arr.ind = TRUE) |&gt; \n    as_tibble() |&gt; \n    mutate(\n      gps = 100 * (row - 1) + (col - 1)\n    ) |&gt; \n    pull(gps)\n}\n\nRun puzzle input:\n\nmtx |&gt; \n  run_simulation(move_seq) |&gt; \n  get_boxes_gps() |&gt;\n  sum()\n\n[1] 1457740",
     "crumbs": [
       "2024",
-      "Day 1"
+      "Day 15"
     ]
   },
   {
-    "objectID": "2024/R/day01.html#part-2",
-    "href": "2024/R/day01.html#part-2",
-    "title": "Day 1",
-    "section": "Part 2",
-    "text": "Part 2\nFor each item in list x, multiply its value by its number of occurrences in list y, then sum the total.\n\ninput |&gt; \n  mutate(\n    x_match_count = map_int(x, ~ sum(.x == y)),\n    similarity_score = x * x_match_count\n  ) |&gt; \n  summarize(total = sum(similarity_score)) |&gt; \n  pull()\n\n[1] 21142653",
+    "objectID": "2024/R/day14.html",
+    "href": "2024/R/day14.html",
+    "title": "Day 14",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day14.txt\", skip_empty_rows = TRUE)\n\n# Parameters: dimensions of the room\nroom_w &lt;- 101\nroom_h &lt;- 103",
     "crumbs": [
       "2024",
-      "Day 1"
+      "Day 14"
+    ]
+  },
+  {
+    "objectID": "2024/R/day14.html#setup",
+    "href": "2024/R/day14.html#setup",
+    "title": "Day 14",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day14.txt\", skip_empty_rows = TRUE)\n\n# Parameters: dimensions of the room\nroom_w &lt;- 101\nroom_h &lt;- 103",
+    "crumbs": [
+      "2024",
+      "Day 14"
+    ]
+  },
+  {
+    "objectID": "2024/R/day14.html#part-1",
+    "href": "2024/R/day14.html#part-1",
+    "title": "Day 14",
+    "section": "Part 1",
+    "text": "Part 1\nExtract numerical values from input text:\n\ndf &lt;- input |&gt;\n  unglue_data(\"p={x},{y} v={vx},{vy}\") |&gt; \n  mutate(\n    across(everything(), parse_number),\n    robot_id = row_number(),\n    .before = everything()\n  )\n\nFor debugging: define a function to print the current state of the grid\n\nprint_grid &lt;- function(df, w = room_w, h = room_h) {\n  df |&gt; \n    summarize(n = as.character(n()), .by = c(x, y)) |&gt; \n    complete(\n      x = 0:(room_w - 1), \n      y = 0:(room_h - 1), \n      fill = list(n = \"\")\n    ) |&gt; \n    mutate(n = str_pad(n, width = max(str_length(n)), side = \"left\")) |&gt; \n    arrange(desc(y), x) |&gt; \n    group_split(y) |&gt; \n    map_chr(~ pull(.x, n) |&gt; str_c(collapse = \" \")) |&gt; \n    cat(sep = \"\\n\")\n}\n\nDefine a function which gives the location of the robots after n seconds. Multiply n by the velocity, add to the current position, and modulo the room dimensions.\n\npass_time &lt;- function(df, seconds, w = room_w, h = room_h) {\n  df |&gt; \n    mutate(\n      x = (x + vx * seconds) %% w,\n      y = (y + vy * seconds) %% h\n    )\n}\n\nDefine a function to get the current safety factor by counting the number of robots in each quadrant of the room:\n\nget_safety_score &lt;- function(df, w = room_w, h = room_h) {\n  mid_w &lt;- (room_w - 1) / 2\n  mid_h &lt;- (room_h - 1) / 2\n  \n  df |&gt; \n    mutate(\n      half_w = case_when(x &lt; mid_w ~ 0, x &gt; mid_w ~ 1),\n      half_h = case_when(y &lt; mid_h ~ 0, y &gt; mid_h ~ 1),\n      quadrant = half_w + 2 * half_h\n    ) |&gt; \n    drop_na(quadrant) |&gt; \n    summarize(num_robots = n(), .by = quadrant) |&gt; \n    pull(num_robots) |&gt; \n    prod()\n}\n\nCompute safety score of puzzle input:\n\ndf |&gt; \n  pass_time(100) |&gt; \n  get_safety_score()\n\n[1] 208437768",
+    "crumbs": [
+      "2024",
+      "Day 14"
+    ]
+  },
+  {
+    "objectID": "2024/R/day14.html#part-2",
+    "href": "2024/R/day14.html#part-2",
+    "title": "Day 14",
+    "section": "Part 2",
+    "text": "Part 2\nFirst, find the cycle of seconds where the robots’ positions repeat (no more than the least common multiple of the room width and room height)\n\ncycle &lt;- DescTools::LCM(room_w, room_h)\n\nFor each unique snapshot in the cycle, test for randomness vs structure in the X-Y coordinates.\n\nsimulations &lt;- map_dfr(\n  1:cycle,\n  \\(seconds) {\n    new &lt;- pass_time(df, seconds)\n    c(secs = seconds, xvar = var(new$x), yvar = var(new$y))\n  }\n)\n\nsimulations |&gt; \n  arrange(xvar, yvar, secs) |&gt; \n  filter(row_number() == 1) |&gt; \n  pull(secs)\n\n[1] 7492",
+    "crumbs": [
+      "2024",
+      "Day 14"
     ]
   },
   {

@@ -1,0 +1,132 @@
+---
+title: "Day 14"
+date: 2024-12-14
+author:
+  name: https://adventofcode.com/2024/day/14
+  url: https://adventofcode.com/2024/day/14
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+library(unglue)
+
+# Read input from file
+input <- read_lines("../input/day14.txt", skip_empty_rows = TRUE)
+
+# Parameters: dimensions of the room
+room_w <- 101
+room_h <- 103
+```
+
+## Part 1
+
+Extract numerical values from input text:
+
+```{r}
+df <- input |>
+  unglue_data("p={x},{y} v={vx},{vy}") |> 
+  mutate(
+    across(everything(), parse_number),
+    robot_id = row_number(),
+    .before = everything()
+  )
+```
+
+For debugging: define a function to print the current state of the grid
+
+```{r}
+
+print_grid <- function(df, w = room_w, h = room_h) {
+  df |> 
+    summarize(n = as.character(n()), .by = c(x, y)) |> 
+    complete(
+      x = 0:(room_w - 1), 
+      y = 0:(room_h - 1), 
+      fill = list(n = "")
+    ) |> 
+    mutate(n = str_pad(n, width = max(str_length(n)), side = "left")) |> 
+    arrange(desc(y), x) |> 
+    group_split(y) |> 
+    map_chr(~ pull(.x, n) |> str_c(collapse = " ")) |> 
+    cat(sep = "\n")
+}
+
+```
+
+Define a function which gives the location of the robots after n seconds. Multiply n by the velocity, add to the current position, and modulo the room dimensions.
+
+```{r}
+
+pass_time <- function(df, seconds, w = room_w, h = room_h) {
+  df |> 
+    mutate(
+      x = (x + vx * seconds) %% w,
+      y = (y + vy * seconds) %% h
+    )
+}
+
+```
+
+Define a function to get the current safety factor by counting the number of robots in each quadrant of the room:
+
+```{r}
+
+get_safety_score <- function(df, w = room_w, h = room_h) {
+  mid_w <- (room_w - 1) / 2
+  mid_h <- (room_h - 1) / 2
+  
+  df |> 
+    mutate(
+      half_w = case_when(x < mid_w ~ 0, x > mid_w ~ 1),
+      half_h = case_when(y < mid_h ~ 0, y > mid_h ~ 1),
+      quadrant = half_w + 2 * half_h
+    ) |> 
+    drop_na(quadrant) |> 
+    summarize(num_robots = n(), .by = quadrant) |> 
+    pull(num_robots) |> 
+    prod()
+}
+
+```
+
+Compute safety score of puzzle input:
+
+```{r}
+df |> 
+  pass_time(100) |> 
+  get_safety_score()
+
+```
+
+## Part 2
+
+First, find the cycle of seconds where the robots' positions repeat (no more than the least common multiple of the room width and room height)
+
+```{r}
+
+cycle <- DescTools::LCM(room_w, room_h)
+
+```
+
+For each unique snapshot in the cycle, test for randomness vs structure in the X-Y coordinates.
+
+```{r}
+  
+simulations <- map_dfr(
+  1:cycle,
+  \(seconds) {
+    new <- pass_time(df, seconds)
+    c(secs = seconds, xvar = var(new$x), yvar = var(new$y))
+  }
+)
+
+simulations |> 
+  arrange(xvar, yvar, secs) |> 
+  filter(row_number() == 1) |> 
+  pull(secs)
+
+```
+

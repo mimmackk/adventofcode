@@ -1,0 +1,151 @@
+---
+title: "Day 14"
+date: 2022-12-14
+author:
+  name: https://adventofcode.com/2022/day/14
+  url: https://adventofcode.com/2022/day/14
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+library(unglue)
+
+# Read input from text
+input <- read_lines("../input/day14.txt")
+```
+
+## Part 1
+
+Convert input from rows of text lines to a list of obstacle coordinates:
+
+```{r}
+
+# Extract numeric values from the input text
+df <- input |> 
+  str_split(" -> ") |> 
+  imap_dfr(\(input, idx) tibble(idx, input)) |> 
+  unglue_unnest(input, "{x},{y}", convert = TRUE)
+
+
+# Expand the endpoints into a list of coordinates of every obstacle
+obstacles <- df |> 
+  mutate(
+    seq_x = map2(x, lead(x), ~ if (!is.na(.x) & !is.na(.y)) .x:.y),
+    seq_y = map2(y, lead(y), ~ if (!is.na(.x) & !is.na(.y)) .x:.y),
+    .by = idx
+  ) |> 
+  unnest(c(seq_x, seq_y)) |> 
+  distinct(x = seq_x, y = seq_y) |> 
+  mutate(chr = '#')
+
+```
+
+Define a function to recursively drop a grain of sand until it comes to rest:
+
+```{r}
+
+drop_grain <- function(scan, x_cur, y_cur) {
+  y_new <- y_cur + 1
+  
+  # Check if new y-coordinate is out of bounds
+  if (y_new > max(scan$y))
+    return(scan)
+  
+  for (x_new in c(x_cur, x_cur - 1, x_cur + 1)) {
+    # Check if next x-coordinate is out of bounds
+    if (!between(x_new, min(scan$x), max(scan$x)))
+      return(scan)
+    # If grain can flow into the next spot, recurse into next spot
+    else if (nrow(filter(scan, x == x_new, y == y_new)) == 0)
+      return(drop_grain(scan, x_new, y_new))
+  }
+
+  # If grain has nowhere to go, drop the grain in its current place and exit
+  return(add_row(scan, x = x_cur, y = y_cur, chr = "o"))
+}
+
+```
+
+Define a function that fills the map with sand one grain at a time, starting from the designated point, until all sand comes to rest:
+
+```{r}
+
+fill_sand <- function(scan, grain_func) {
+  repeat {
+    scan_new <- grain_func(scan)
+    
+    # If the scan is unchanged after dropping the grain, the sand is at rest. 
+    if (nrow(scan_new) == nrow(scan)) break
+    
+    scan <- scan_new
+  }
+  scan
+}
+
+count_grains <- function(scan) {
+  scan |> 
+    filter(chr == "o") |> 
+    nrow()
+}
+
+```
+
+Count the grains using the puzzle input:
+
+```{r}
+
+obstacles |> 
+  fill_sand(grain_func = partial(drop_grain, x_cur = 500, y_cur = 0)) |> 
+  count_grains()
+
+```
+
+## Part 2
+
+Re-define the drop_grain function to allow for the boundless floor:
+
+```{r}
+
+drop_grain <- function(scan, x_cur, y_cur, floor) {
+  y_new <- y_cur + 1
+  
+  # Check if current location already has a grain of sand (entry blocked)
+  if (nrow(filter(scan, x == x_cur, y == y_cur)) > 0)
+    return(scan)
+  
+  # Check if the current sand grain is sitting on top of the floor
+  if (y_new == floor)
+    return(add_row(scan, x = x_cur, y = y_cur, chr = "o"))
+  
+  # If grain can flow into the next spot, recurse into next spot
+  for (x_new in c(x_cur, x_cur - 1, x_cur + 1)) {
+    if (nrow(filter(scan, x == x_new, y == y_new)) == 0)
+      return(drop_grain(scan, x_new, y_new, floor))
+  }
+
+  # If grain has nowhere to go, drop the grain in its current place and exit
+  return(add_row(scan, x = x_cur, y = y_cur, chr = "o"))
+}
+
+```
+
+Count the grains using the puzzle input:
+
+```{r}
+
+obstacles |> 
+  fill_sand(
+    grain_func = partial(
+      drop_grain, 
+      x_cur = 500, 
+      y_cur = 0, 
+      floor = max(obstacles$y) + 2
+    )
+  ) |> 
+  count_grains()
+
+```
+

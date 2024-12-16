@@ -12,6 +12,7 @@ website:
   sidebar:
     style: "floating"
     search: false
+    collapse-level: 1
     contents:
     - section: "2024"
       contents: 2024/R/*

@@ -1,0 +1,132 @@
+---
+title: "Day 15"
+date: 2024-12-15
+author:
+  name: https://adventofcode.com/2024/day/15
+  url: https://adventofcode.com/2024/day/15
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day15.txt")
+input_wh <- keep(input, ~ str_detect(.x, "#"))
+input_mv <- keep(input, ~ str_detect(.x, "<|>|\\^|v"))
+```
+
+## Part 1
+
+```{r, include = FALSE}
+
+# Debugging print:
+prnt_mtx <- function(data) {
+  data |> 
+    as_tibble() |>
+    as.list() |> 
+    reduce(str_c) |> 
+    cat(sep = "\n")
+}
+
+```
+
+Convert warehouse input to a row/column indexed dataframe
+
+```{r}
+
+# Convert WH input text to a matrix
+mtx <- input_wh |>
+  str_split("") |> 
+  matrix() |> 
+  unlist() |> 
+  matrix(byrow = TRUE, nrow = length(input_wh))
+
+
+# Convert movement sequence to a seq of characters
+move_seq <- input_mv |> 
+  str_c(collapse = "") |> 
+  str_split_1("")
+
+```
+
+Define function to update the map based on a single movement of the robot::
+
+```{r}
+
+move_robot <- function(mtx, dir) {
+  # Get the current coordinates of the robot
+  robot <- which(mtx == "@", arr.ind = TRUE)
+  row <- robot[1, "row"]
+  col <- robot[1, "col"]
+  
+  # Define the range of matrix values to adjust according to the movement dir
+  row_end <- case_match(dir, c("<", ">") ~ row, "^" ~ 1, "v" ~ nrow(mtx))
+  col_end <- case_match(dir, c("^", "v") ~ col, "<" ~ 1, ">" ~ nrow(mtx))
+  
+  # Using obstacle logic, determine the set of new characters
+  new <- tibble(
+    orig = mtx[row:row_end, col:col_end],
+    lag = lag(orig)
+  ) |> 
+    mutate(
+      is_empty = orig == ".",
+      is_wall  = orig == "#",
+      is_blocked = accumulate(is_wall, `|`),
+      is_fillable = is_empty & !is_blocked,
+      first_fillable = is_fillable & !lag(accumulate(is_fillable, `|`)),
+      can_move = accumulate(first_fillable, `|`, .dir = "backward"),
+      new = if_else(can_move, coalesce(lag, "."), orig)
+    ) |> 
+    pull(new)
+  
+  # Replace the affected characters in the matrix and return
+  mtx[row:row_end, col:col_end] <- new
+  return(mtx)
+}
+
+
+```
+
+Define a function to iteratively run the set of movements
+
+```{r}
+
+run_simulation <- function(mtx, move_seq) {
+  mtx_prv <- mtx
+  for (dir in move_seq) {
+    mtx_new <- move_robot(mtx_prv, dir)
+    mtx_prv <- mtx_new
+  }
+  return(mtx_new)
+}
+
+```
+
+Define a function to determine the GPS coordinates of all boxes
+
+```{r}
+
+get_boxes_gps <- function(mtx) {
+  which(mtx == "O", arr.ind = TRUE) |> 
+    as_tibble() |> 
+    mutate(
+      gps = 100 * (row - 1) + (col - 1)
+    ) |> 
+    pull(gps)
+}
+
+```
+
+Run puzzle input:
+
+```{r}
+mtx |> 
+  run_simulation(move_seq) |> 
+  get_boxes_gps() |>
+  sum()
+```
+
+
