@@ -1,0 +1,165 @@
+---
+title: "Day 17"
+date: 2024-12-17
+author:
+  name: https://adventofcode.com/2024/day/17
+  url: https://adventofcode.com/2024/day/17
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+library(unglue)
+
+# Read input from file
+input <- read_lines("../input/day17.txt", skip_empty_rows = TRUE) |> 
+  unglue_data(patterns = c(
+    "{label}: {value}"
+  ))
+
+```
+
+## Part 1
+
+Initialize the machine from the text input:
+
+```{r}
+
+program <- input |> 
+  filter(label == "Program") |> 
+  pull(value) |> 
+  str_split_1(",") |> 
+  as.integer()
+
+A <- input |> 
+  filter(label == "Register A") |> 
+  pull(value) |> 
+  as.integer()
+
+B <- input |> 
+  filter(label == "Register B") |> 
+  pull(value) |> 
+  as.integer()
+
+C <- input |> 
+  filter(label == "Register C") |> 
+  pull(value) |> 
+  as.integer()
+
+machine <- list(program = program, A = A, B = B, C = C, pointer = 0L, output = NULL)
+
+```
+
+Define machine's helper functions:
+
+```{r}
+
+combo <- function(machine, operand) {
+  case_match(operand,
+    0 ~ 0,
+    1 ~ 1,
+    2 ~ 2,
+    3 ~ 3,
+    4 ~ machine$A,
+    5 ~ machine$B,
+    6 ~ machine$C
+   )
+}
+
+run_opcode <- function(machine, opcode, operand) {
+  func <- case_match(opcode, 
+    0 ~ "adv",
+    1 ~ "bxl",
+    2 ~ "bst",
+    3 ~ "jnz",
+    4 ~ "bxc",
+    5 ~ "out",
+    6 ~ "bdv",
+    7 ~ "cdv"
+  )
+  
+  get(func)(machine, operand)
+}
+
+run_machine <- function(machine) {
+  while (machine$pointer < length(machine$program)) {
+    opcode  <- machine$program[machine$pointer + 1]
+    operand <- machine$program[machine$pointer + 2]
+    machine <- run_opcode(machine, opcode, operand)
+  }
+  print(machine$output)
+}
+
+```
+
+Define the opcode functions:
+
+```{r}
+
+adv <- function(machine, operand) {
+  machine$A <- floor(machine$A / 2^combo(machine, operand))
+  machine$pointer <- machine$pointer + 2
+  return(machine)
+}
+
+bxl <- function(machine, operand) {
+  machine$B <- bitwXor(machine$B, operand)
+  machine$pointer <- machine$pointer + 2
+  return(machine)
+}
+
+bst <- function(machine, operand) {
+  machine$B <- combo(machine, operand) %% 8
+  machine$pointer <- machine$pointer + 2
+  return(machine)
+}
+
+jnz <- function(machine, operand) {
+  if (machine$A != 0) 
+    machine$pointer <- operand
+  else 
+    machine$pointer <- machine$pointer + 2
+  return(machine)
+}
+
+bxc <- function(machine, operand) {
+  machine$B <- bitwXor(machine$B, machine$C)
+  machine$pointer <- machine$pointer + 2
+  return(machine)
+}
+
+out <- function(machine, operand) {
+  machine$output <- str_c(
+    machine$output, 
+    combo(machine, operand) %% 8, 
+    sep = ","
+  )
+  machine$pointer <- machine$pointer + 2
+  return(machine)
+}
+
+bdv <- function(machine, operand) {
+  machine$B <- floor(machine$A / 2^combo(machine, operand))
+  machine$pointer <- machine$pointer + 2
+  return(machine)
+}
+
+cdv <- function(machine, operand) {
+  machine$C <- floor(machine$A / 2^combo(machine, operand))
+  machine$pointer <- machine$pointer + 2
+  return(machine)
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+run_machine(machine)
+
+```
+
+
