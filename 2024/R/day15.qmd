@@ -129,4 +129,140 @@ mtx |>
   sum()
 ```
 
+## Part 2
+
+Widen the map:
+
+```{r}
+# Convert WH input text to a matrix
+mtx <- input_wh |> 
+  str_replace_all("#", "##") |> 
+  str_replace_all("O", "[]") |> 
+  str_replace_all("\\.", "..") |> 
+  str_replace_all("@", "@.") |>
+  str_split("") |> 
+  matrix() |> 
+  unlist() |> 
+  matrix(byrow = TRUE, nrow = length(input_wh))
+```
+
+Define functions to move boxes around the map:
+
+```{r}
+
+get_box_coords <- function(mtx, box_num) {
+  as_tibble(which(mtx == box_num, arr.ind = TRUE))
+}
+
+get_next_coords <- function(cur_coords, dir = c("<", "^", ">", "v")) {
+  cur_coords |>
+    mutate(
+      row = row + case_match(dir, "^" ~ -1, "v" ~ 1, .default = 0),
+      col = col + case_match(dir, "<" ~ -1, ">" ~ 1, .default = 0),
+    )
+}
+
+get_next_chrs <- function(mtx, cur_coords, dir = c("<", "^", ">", "v")) {
+  # Pull the values of the next cells in the intended direction
+  cur_coords |>
+    get_next_coords(dir) |> 
+    mutate(chr = map2_chr(row, col, ~ mtx[.x, .y])) |> 
+    anti_join(cur_coords, join_by(row, col)) |> 
+    pull(chr) |> 
+    unique()
+}
+
+is_blocked <- function(mtx, box_num, dir = c("<", "^", ">", "v")) {
+  
+  cur <- get_box_coords(mtx, box_num)
+  nxt_chrs <- get_next_chrs(mtx, cur, dir)
+  
+  # Test if the current box is completely blocked or completely free
+  if (any(nxt_chrs == '#')) 
+    return(TRUE)
+  else if (all(nxt_chrs == '.')) 
+    return(FALSE)
+  
+  # Recurse across all later boxes 
+  nxt_chrs |> 
+    keep(~ str_detect(.x, "^\\d+$")) |> 
+    map_lgl(~ is_blocked(mtx, .x, dir)) |> 
+    any()
+}
+
+move_box <- function(mtx, box_num, dir = c("<", "^", ">", "v")) {
+  # Get the coordinates of the current box and the place it'll move to
+  cur <- get_box_coords(mtx, box_num)
+  nxt <- get_next_coords(cur, dir)
+  
+  # Move all downstream boxes before moving self
+  next_boxes <- get_next_chrs(mtx, cur, dir) |> 
+    keep(~ str_detect(.x, "^\\d+$"))
+  
+  for (box in next_boxes) {
+    mtx <- move_box(mtx, box, dir)
+  }
+  
+  # # Replace the current coords with "." and the next coords with the box
+  mtx[cur$row, cur$col] <- "."
+  mtx[nxt$row, nxt$col] <- box_num
+  
+  return(mtx)
+}
+
+```
+
+Loop through puzzle input:
+
+```{r}
+
+run_simulation <- function(mtx, move_seq) {
+  # Convert boxes from format "[]" into ID numbers unique to each box:
+  coords <- list(l = which(mtx == "["), r = which(mtx == "]"))
+  for (i in 1:length(coords$l)) {
+    mtx[coords$l[i]] <- i
+    mtx[coords$r[i]] <- i
+  }
+
+  # Loop through sequence of moves and apply to the map
+  mtx_prv <- mtx
+  for (dir in move_seq) {
+    if (!is_blocked(mtx_prv, box_num = "@", dir = dir)) {
+      mtx_new <- move_box(mtx_prv, box_num = "@", dir = dir)
+      mtx_prv <- mtx_new
+    } 
+  }
+  
+  return(mtx_new)
+}
+
+output <- run_simulation(mtx, move_seq)
+```
+
+Convert the result to GPS coordinates:
+
+```{r}
+
+output |> 
+  as_tibble() |> 
+  mutate(row = row_number(), .before = everything()) |> 
+  pivot_longer(
+    -row, 
+    names_to = "col", 
+    names_prefix = "V", 
+    names_transform = as.integer
+  ) |> 
+  # Select only the leftmost cell of each boxes
+  filter(str_detect(value, "\\d+")) |> 
+  slice_min(col, by = value) |> 
+  mutate(
+    dist_top = row - 1,
+    dist_left = col - 1,
+    gps = 100 * dist_top + dist_left
+  ) |> 
+  pull(gps) |> 
+  sum()
+
+```
+
 

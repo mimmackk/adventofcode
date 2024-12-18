@@ -1,0 +1,169 @@
+---
+title: "Day 16"
+date: 2024-12-16
+author:
+  name: https://adventofcode.com/2024/day/16
+  url: https://adventofcode.com/2024/day/16
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+library(igraph)
+
+# Read input from file
+input <- read_lines("../input/day16.txt", skip_empty_rows = TRUE)
+```
+
+## Part 1
+
+Convert text input into a weighted, undirected graph
+
+```{r}
+
+# Convert input to a data frame
+df <- input |> 
+  str_split("") |> 
+  unlist() |> 
+  as_tibble_col(column_name = "cell") |> 
+  mutate(
+    input_id  = row_number() - 1,
+    row = floor(input_id / length(input)),
+    col = floor(input_id %% length(input))
+  )
+
+# Convert borders between grid cells to graph vertices and map edges by cell
+borders <- df |> 
+  mutate(border_e = (cell != "#" & lead(cell) != "#"), .by = row) |> 
+  mutate(border_s = (cell != "#" & lead(cell) != "#"), .by = col) |> 
+  mutate(
+    vtx_id_e = case_when(border_e ~ cumsum(border_e)),
+    vtx_id_s = case_when(border_s ~ cumsum(border_s) + max(vtx_id_e, na.rm = T))
+  ) |> 
+  mutate(vtx_id_n = lag(vtx_id_s), .by = col) |> 
+  mutate(vtx_id_w = lag(vtx_id_e), .by = row) |> 
+  mutate(
+    conn_ns = map2(vtx_id_n, vtx_id_s, ~ na.omit(c(.x, .y))),
+    conn_ew = map2(vtx_id_e, vtx_id_w, ~ na.omit(c(.x, .y))),
+    conn_ne = map2(vtx_id_n, vtx_id_e, ~ na.omit(c(.x, .y))),
+    conn_nw = map2(vtx_id_n, vtx_id_w, ~ na.omit(c(.x, .y))),
+    conn_se = map2(vtx_id_s, vtx_id_e, ~ na.omit(c(.x, .y))),
+    conn_sw = map2(vtx_id_s, vtx_id_w, ~ na.omit(c(.x, .y))),
+  )
+
+# Extract the list of all vertices
+vertices <- c(borders$vtx_id_e, borders$vtx_id_s) |> 
+  na.omit() |> 
+  sort()
+
+# Convert vertices and edges to an adjacency matrix
+mtx <- borders |> 
+  # Unnest lists of edge connections between vertices
+  select(starts_with("conn")) |> 
+  pivot_longer(everything(), names_to = "conn", names_prefix = "conn_") |> 
+  unnest_wider(value, names_sep = "_") |> 
+  drop_na(value_1, value_2) |> 
+  # Rotations get an extra 1k added to the weight
+  mutate(weight = case_match(conn, c("ns", "ew") ~ 1, .default = 1001)) |> 
+  select(-conn) |> 
+  # Convert to matrix format, where unconnected vertices have weight 0
+  complete(value_1 = vertices, value_2 = vertices, fill = list(weight = 0)) |> 
+  arrange(value_1, value_2) |> 
+  pivot_wider(names_from = value_2, values_from = weight) |> 
+  column_to_rownames(var = "value_1") |> 
+  as.matrix()
+
+# Make matrix symmetric (for an undirected graph)
+sym_mtx <- pmax(mtx, t(mtx))
+
+# Convert adjacency matrix to a graph
+g <- graph_from_adjacency_matrix(sym_mtx, mode = "undirected", weighted = TRUE)
+
+```
+
+Determine possible starting and ending locations from the input
+
+```{r}
+
+special_cells <- borders |> 
+  filter(cell %in% c("S", "E")) |> 
+  select(cell, starts_with("vtx_id")) |> 
+  pivot_longer(
+    starts_with("vtx_id"), 
+    names_prefix = "vtx_id_",
+    names_to = "dir",
+    values_to = "vertex"
+  ) |> 
+  drop_na(vertex)
+
+# Create all combinations of start & end cell borders
+combos <- special_cells |> 
+  filter(cell == "S") |> 
+  mutate(
+    init_rotation = case_match(dir, "e" ~ 0, c("n", "s") ~ 1, "w" ~ 2) * 1000
+  ) |>
+  select(start_vertex = vertex, init_rotation) |> 
+  cross_join(
+    special_cells |> 
+      filter(cell == "E") |> 
+      select(end_vertex = vertex)
+  )
+
+```
+
+Find the minimum path distance for each start/end vertex combo:
+
+```{r}
+
+min_dist <- combos |> 
+  mutate(
+    dist = map2_int(
+      start_vertex, 
+      end_vertex, 
+      ~ distances(g, .x, .y)) + init_rotation + 1
+  ) |> 
+  slice_min(dist)
+
+min_dist |> 
+  pull(dist)
+
+```
+
+## Part 2
+
+Pull all paths that have the minimum distance from start to end:
+
+```{r}
+
+shortest_paths <- min_dist |> 
+  pmap(function(start_vertex, init_rotation, end_vertex, ...) {
+    all_shortest_paths(g, start_vertex, end_vertex)$vpaths
+  }) |> 
+  flatten() |> 
+  map(as.integer)
+
+
+path_vertices <- shortest_paths |> 
+  unlist() |> 
+  unique() |> 
+  sort()
+
+```
+
+Count all non-wall cells with a border in the shortest path vertex list: 
+
+```{r}
+
+borders |> 
+  select(cell, input_id, starts_with("vtx_id")) |> 
+  pivot_longer(starts_with("vtx_id")) |> 
+  drop_na(value) |> 
+  filter(map_lgl(value, ~ .x %in% path_vertices)) |> 
+  filter(cell != "#") |> 
+  distinct(input_id) |> 
+  nrow()
+
+```
+
