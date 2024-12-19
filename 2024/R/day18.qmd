@@ -1,0 +1,120 @@
+---
+title: "Day 18"
+date: 2024-12-18
+author:
+  name: https://adventofcode.com/2024/day/18
+  url: https://adventofcode.com/2024/day/18
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+library(igraph)
+
+# Read input from file
+input <- read_lines("../input/day18.txt", skip_empty_rows = TRUE) |> 
+  unglue::unglue_data(patterns = "{col},{row}", convert = TRUE) |> 
+  mutate(byte_num = row_number())
+
+maxdim <- 70
+```
+
+## Part 1
+
+```{r}
+
+# Fill out the full grid with the provided dimensions
+grid <- input |> 
+  complete(col = 0:maxdim, row = 0:maxdim) |> 
+  mutate(id = row_number(), .before = everything()) |> 
+  
+  # Define the graph edges (cell borders) between vertices (cells)
+  mutate(edge_w = map2(id, lag(id), ~ c(.x, .y)), .by = row) |> 
+  mutate(edge_n = map2(id, lag(id), ~ c(.x, .y)), .by = col)
+
+# Define the IDs of the start and end vertices
+start <- grid |> filter(row == 0 & col == 0) |> pull(id)
+exit  <- grid |> filter(row == maxdim & col == maxdim) |> pull(id)
+
+```
+
+Convert the grid to a graph and count the steps from the start to the exit:
+
+```{r}
+
+compute_num_steps <- function(grid, start, exit, num_bytes) {
+
+  grid |> 
+    
+    # Flag and remove any graph edges between corrupted cells
+    mutate(corrupted = replace_na(byte_num <= num_bytes, FALSE)) |> 
+    mutate(edge_w = case_when(!corrupted & !lag(corrupted) ~ edge_w), .by = row) |> 
+    mutate(edge_n = case_when(!corrupted & !lag(corrupted) ~ edge_n), .by = col) |> 
+    
+    # Pull graph edges
+    select(edge_w, edge_n) |> 
+    pivot_longer(everything()) |> 
+    pull(value) |> 
+    discard(is.null) |> 
+    unlist() |> 
+    
+    # Convert to a graph
+    make_graph(n = max(grid$id), directed = FALSE) |> 
+    
+    # Count the steps from the start to the exit
+    distances(start, exit) |> 
+    as.list() |> 
+    unlist()
+  
+}
+
+```
+
+Run puzzle input:
+
+```{r}
+
+compute_num_steps(grid, start, exit, 1024)
+
+```
+
+## Part 2
+
+Loop through different byte values to find the first byte that blocks the path:
+
+```{r}
+
+# Initialize byte counts
+max_bytes <- max(grid$byte_num, na.rm = TRUE)
+max_walkable <- 1024
+min_unwalkable <- max_bytes
+num_bytes <- round(mean(c(max_walkable, min_unwalkable)))
+
+# Loop through bytes, a half at a time
+while (min_unwalkable - max_walkable > 1) {
+  
+  num_steps <- compute_num_steps(grid, start, exit, num_bytes)
+  
+  if (is.infinite(num_steps))
+    min_unwalkable <- num_bytes
+  else 
+    max_walkable <- num_bytes
+    
+  num_bytes <- round(mean(c(max_walkable, min_unwalkable)))
+}
+
+```
+
+Get the coordinates of the first byte that blocks the path:
+
+```{r}
+
+grid |> 
+  filter(byte_num == min_unwalkable) |> 
+  mutate(coord = str_c(col, row, sep = ",")) |> 
+  pull(coord)
+
+```
+
