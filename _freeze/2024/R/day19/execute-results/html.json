@@ -1,0 +1,15 @@
+{
+  "hash": "8e7448dadefb57913685b2353c855293",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 19\"\ndate: 2024-12-19\nauthor:\n  name: https://adventofcode.com/2024/day/19\n  url: https://adventofcode.com/2024/day/19\n---\n\n\n\n\n## Setup\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\n\n# Read input from file\navailable <- read_lines(\"../input/day19.txt\", n_max = 1) |> str_split_1(\", \")\ndesired   <- read_lines(\"../input/day19.txt\", skip = 2)\n```\n:::\n\n\n\n\n## Part 1\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Convert all possible available patterns into a regex string\nregex <- str_c(\"^(\", str_c(available, collapse = \"|\"), \")+$\")\n\n# Test each desired pattern for a regex match and count the number of matches\ndesired |> \n  str_detect(regex) |> \n  sum()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 363\n```\n\n\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

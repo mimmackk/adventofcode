@@ -1,0 +1,32 @@
+---
+title: "Day 19"
+date: 2024-12-19
+author:
+  name: https://adventofcode.com/2024/day/19
+  url: https://adventofcode.com/2024/day/19
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+
+# Read input from file
+available <- read_lines("../input/day19.txt", n_max = 1) |> str_split_1(", ")
+desired   <- read_lines("../input/day19.txt", skip = 2)
+```
+
+## Part 1
+
+```{r}
+
+# Convert all possible available patterns into a regex string
+regex <- str_c("^(", str_c(available, collapse = "|"), ")+$")
+
+# Test each desired pattern for a regex match and count the number of matches
+desired |> 
+  str_detect(regex) |> 
+  sum()
+
+```
