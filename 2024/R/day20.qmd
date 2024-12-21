@@ -1,9 +1,9 @@
 ---
-title: "Day 19"
-date: 2024-12-19
+title: "Day 20"
+date: 2024-12-20
 author:
-  name: https://adventofcode.com/2024/day/19
-  url: https://adventofcode.com/2024/day/19
+  name: https://adventofcode.com/2024/day/20
+  url: https://adventofcode.com/2024/day/20
 ---
 
 ## Setup

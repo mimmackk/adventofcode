@@ -1,0 +1,185 @@
+---
+title: "Day 21"
+date: 2024-12-21
+author:
+  name: https://adventofcode.com/2024/day/21
+  url: https://adventofcode.com/2024/day/21
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+library(igraph)
+
+# Read input from file
+input <- read_lines("../input/day21.txt")
+
+```
+
+## Part 1
+
+Define functions calculate minimum distances between keys on a keypad:
+
+```{r}
+
+# Helper function to convert pairs of adjacent keys to their directions
+keypad_to_df <- function(keys, rows, cols) {
+  df <- tibble(key = keys, row = rows, col = cols)
+  
+  cross_join(df, df, suffix = c("_from", "_to")) |> 
+    filter(abs(row_to - row_from) + abs(col_to - col_from) == 1) |> 
+    mutate(dir = case_when(
+      col_from < col_to ~ ">",
+      col_from > col_to ~ "<",
+      row_from < row_to ~ "^",
+      row_from > row_to ~ "v"
+    ))
+}
+
+# Convert a keypad (set of keys and their coordinates) to a graph
+keypad_to_graph <- function(keys, rows, cols) {
+  df <- keypad_to_df(keys, rows, cols)
+  g <- df |> 
+    transmute(from = key_from, to = key_to) |> 
+    graph_from_data_frame(vertices = keys)
+  f <- function(from, to) {
+    df |> 
+    filter(key_from == from & key_to == to) |> 
+    pull(dir)
+  }
+  list("df" = df, "g" = g, "f" = f)
+}
+
+# Return all shortests paths between two keys on a keypad
+keypad_paths <- function(keypad, key_from, key_to) {
+  all_shortest_paths(keypad$g, from = key_from, to = key_to)$vpaths |> 
+    map_chr(\(x) {
+      dirs <- map2_chr(
+        head(names(x), -1), 
+        head(lead(names(x)), -1), 
+        \(dir_from, dir_to) keypad$f(dir_from, dir_to)
+      )
+      str_c(c(dirs, "A"), collapse = "")
+    })
+}
+
+# Define the numeric keypad
+keys_num <- c("A", 0:9)
+rows_num <- case_match(keys_num,
+  c("A", "0")      ~ 1,
+  c("1", "2", "3") ~ 2,
+  c("4", "5", "6") ~ 3,
+  c("7", "8", "9") ~ 4
+)
+cols_num <- case_match(keys_num,
+  c("1", "4", "7")      ~ 1,
+  c("0", "2", "5", "8") ~ 2,
+  c("A", "3", "6", "9") ~ 3
+)
+keypad_num <- keypad_to_graph(keys = keys_num, row = rows_num, col = cols_num)
+
+# Define the directional keypad
+keys_dir <- c("<", "v", ">", "^", "A")
+rows_dir <- case_match(keys_dir,
+  c("<", "v", ">") ~ 1,
+  c("^", "A")      ~ 2
+)
+cols_dir <- case_match(keys_dir,
+  c("<")      ~ 1,
+  c("v", "^") ~ 2,
+  c(">", "A") ~ 3
+)
+keypad_dir <- keypad_to_graph(keys = keys_dir, row = rows_dir, col = cols_dir)
+
+# Recursively compute the minimum user input for a given input string
+min_path <- function(input_str, level = 0, max_level = 3) {
+  if (level == max_level)
+    return(str_length(input_str))
+  
+  keypad <- if (level == 0) keypad_num else keypad_dir
+  
+  input_to <- str_split_1(input_str, "")
+  input_from <- lag(input_to, default = "A")
+  steps <- map2_int(
+    input_from, 
+    input_to, 
+    \(from, to) keypad_paths(keypad, from, to) |> 
+      map_int(min_path, level = level + 1, max_level = max_level) |> 
+      min()
+  )
+  sum(steps)
+}
+```
+
+Run on puzzle input:
+
+```{r}
+
+tibble(input) |> 
+  mutate(
+    numeric_code = parse_number(input),
+    shortest_seq = map_int(input, min_path),
+    complexity = numeric_code * shortest_seq
+  ) |> 
+  pull(complexity) |> 
+  sum()
+
+```
+
+
+## Part 2
+
+Modify the min_path function to condense all inputs wherever possible so needless computation isn't repeated:
+
+```{r}
+
+min_path <- function(input_str, level = 0, max_level = 3) {
+  if (level == max_level)
+    return(str_length(input_str))
+  
+  keypad <- if (level == 0) keypad_num else keypad_dir
+  
+  df <- tibble(str = input_str) |> 
+    mutate(
+      id = row_number(),
+      key = map(str, ~ tibble(
+        input_to = str_split_1(.x, ""),
+        input_from = lag(input_to, default = "A")
+      ))
+    ) |> 
+      unnest(key)
+
+  steps <- df |> 
+    distinct(input_from, input_to) |> 
+    mutate(paths = map2(input_from, input_to, ~ keypad_paths(keypad, .x, .y))) |> 
+    unnest(paths) |> 
+    mutate(len = min_path(paths, level = level + 1, max_level = max_level)) |> 
+    slice_min(len, by = c(input_from, input_to), with_ties = FALSE)
+  
+  df |> 
+    left_join(steps, join_by(input_from, input_to)) |> 
+    summarize(steps = sum(len), .by = c(id, str)) |> 
+    pull(steps)
+}
+
+```
+
+Re-run puzzle input with a max level of 26:
+
+```{r}
+
+tibble(input) |> 
+  mutate(
+    numeric_code = parse_number(input),
+    shortest_seq = map_dbl(input, min_path, max_level = 26),
+    complexity = numeric_code * shortest_seq
+  ) |> 
+  pull(complexity) |> 
+  sum() |> 
+  format(scientific = FALSE)
+
+```
+
+
