@@ -12,13 +12,13 @@ author:
 # Libraries
 library(tidyverse)
 library(unglue)
+library(bit64)
 
 # Read input from file
 input <- read_lines("../input/day17.txt", skip_empty_rows = TRUE) |> 
   unglue_data(patterns = c(
     "{label}: {value}"
   ))
-
 ```
 
 ## Part 1
@@ -89,9 +89,28 @@ run_machine <- function(machine) {
     operand <- machine$program[machine$pointer + 2]
     machine <- run_opcode(machine, opcode, operand)
   }
-  print(machine$output)
+  return(machine$output)
 }
 
+```
+
+Need to define custom bitwise XOR function to handle very large integers without error:
+
+```{r}
+bitwXor64 <- function(x, y) {
+  x <- as.bitstring(as.integer64(x))
+  y <- as.bitstring(as.integer64(y))
+  
+  base::xor(
+    as.integer(str_split_1(x, "")), 
+    as.integer(str_split_1(y, ""))
+  ) |> 
+    as.integer() |> 
+    str_c(collapse = "") |> 
+    structure(class = "bitstring") |> 
+    as.integer64() |> 
+    as.numeric()
+}
 ```
 
 Define the opcode functions:
@@ -105,7 +124,7 @@ adv <- function(machine, operand) {
 }
 
 bxl <- function(machine, operand) {
-  machine$B <- bitwXor(machine$B, operand)
+  machine$B <- bitwXor64(machine$B, operand)
   machine$pointer <- machine$pointer + 2
   return(machine)
 }
@@ -125,16 +144,15 @@ jnz <- function(machine, operand) {
 }
 
 bxc <- function(machine, operand) {
-  machine$B <- bitwXor(machine$B, machine$C)
+  machine$B <- bitwXor64(machine$B, machine$C)
   machine$pointer <- machine$pointer + 2
   return(machine)
 }
 
 out <- function(machine, operand) {
-  machine$output <- str_c(
+  machine$output <- c(
     machine$output, 
-    combo(machine, operand) %% 8, 
-    sep = ","
+    combo(machine, operand) %% 8
   )
   machine$pointer <- machine$pointer + 2
   return(machine)
@@ -158,8 +176,46 @@ Run on puzzle input:
 
 ```{r}
 
-run_machine(machine)
+run_machine(machine) |> 
+  str_c(collapse = ",")
 
 ```
 
+## Part 2
 
+Reverse engineer, testing sequences of 3 bits at a time. Thanks to hints from [Reddit](https://www.reddit.com/r/adventofcode/comments/1hg38ah/comment/m2odsfl/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button):
+
+```{r}
+
+run_machine_a <- function(a) run_machine(list(
+  program = program, 
+  A = a, 
+  B = B, 
+  C = C, 
+  pointer = 0L, 
+  output = NULL
+))
+
+reveng <- function(program, digit = 1, a = 0) {
+  if (digit > length(program))
+    return(a)
+  
+  df <- tibble(candidates = 8 * a + 0:7) |> 
+    mutate(
+      output = map(candidates, run_machine_a),
+      output = map(output, head, n = 1)
+    ) |> 
+    filter(output == rev(program)[digit]) |> 
+    mutate(
+      res = map_dbl(candidates, ~ reveng(program, digit + 1, .x))
+    ) |> 
+    filter(!is.na(res))
+  
+  if (nrow(df) == 0) return(Inf)
+  else return(min(df$res))
+}
+
+reveng(program) |> 
+  format(scientific = FALSE)
+
+```

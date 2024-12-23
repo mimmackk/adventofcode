@@ -1,0 +1,121 @@
+---
+title: "Day 22"
+date: 2024-12-22
+author:
+  name: https://adventofcode.com/2024/day/22
+  url: https://adventofcode.com/2024/day/22
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+library(bit64)
+library(memoise)
+
+# Read input from file
+input <- read_lines("../input/day22.txt", skip_empty_rows = TRUE) |> 
+  as.numeric()
+```
+
+## Part 1
+
+Define custom bitwise XOR function, needed to handle large integers:
+
+```{r}
+bitwXor64 <- function(x, y) {
+  x <- as.bitstring(as.integer64(x))
+  y <- as.bitstring(as.integer64(y))
+  
+  map2_chr(
+    x |> str_split("") |> map(as.integer), 
+    y |> str_split("") |> map(as.integer),
+    ~ base::xor(.x, .y) |> 
+      as.integer() |> 
+      str_c(collapse = "")
+  ) |> 
+    structure(class = "bitstring") |>
+    as.integer64() |>
+    as.numeric()
+}
+```
+
+Define the algorithm for producing a sequence of "secret" numbers:
+
+```{r}
+
+mix   <- memoise::memoise(\(a, b) bitwXor64(a, b))
+prune <- \(x) x %% 16777216
+
+secret_alg <- function(x) {
+  x1 <- prune(mix(x, x * 64))
+  x2 <- prune(mix(x1, floor(x1 / 32)))
+  x3 <- prune(mix(x2, x2 * 2048))
+  return(x3)
+}
+
+secret_seq <- function(init, len) {
+  out <- list(init)
+  for (i in 2:len) {
+    out[[i]] <- secret_alg(pluck(out, i - 1))
+  }
+  out
+}
+
+```
+
+Run puzzle input:
+
+```{r}
+
+secret_nums <- secret_seq(input, len = 2001)
+
+secret_nums |> 
+  tail(n = 1) |> 
+  unlist() |> 
+  sum()
+
+```
+
+## Part 2
+
+```{r}
+
+# Convert sequences to a data frame by buyer and time
+diffs <- secret_nums |> 
+  imap_dfr(\(x, idx) tibble(time = idx, secret_number = x)) |> 
+  mutate(
+    buyer_id = row_number(),
+    .by = time
+  ) |> 
+  mutate(
+    # Get the price at each time by taking the ones digit of each secret number
+    price = secret_number %% 10L,
+    # Compute the difference in price at the current time vs the previous time
+    diff = price - lag(price),
+    # Compute the sequence of 4 price changes preceeding the current price
+    lag1 = lag(diff, n = 1L),
+    lag2 = lag(diff, n = 2L),
+    lag3 = lag(diff, n = 3L),
+    diff_seq = str_c(lag3, lag2, lag1, diff, sep = ","),
+    .by = buyer_id
+  ) |> 
+  arrange(buyer_id, time)
+
+# For each price change seq, compute the bananas you will get from each buyer:
+bananas_by_seq <- diffs |> 
+  filter(!is.na(diff_seq)) |> 
+  summarize(
+    bananas = head(price, 1),
+    .by = c(buyer_id, diff_seq)
+  )
+
+# Find the most advantageous sequence:
+bananas_by_seq |> 
+  summarize(bananas = sum(bananas), .by = diff_seq) |> 
+  slice_max(bananas) |> 
+  pull(bananas)
+
+```
+
