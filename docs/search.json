@@ -1470,6 +1470,17 @@
     ]
   },
   {
+    "objectID": "2024/R/day19.html#part-2",
+    "href": "2024/R/day19.html#part-2",
+    "title": "Day 19",
+    "section": "Part 2",
+    "text": "Part 2\nUse recursion to check for total possible values, and cache results with memoisation to speed up the process:\n\n# Recursively remove matches from the beginning of the string and sum result\nnum_matches &lt;- function(str) {\n  if (str_length(str) == 0)\n    return(1)\n  \n  available |&gt; \n    keep(~ str_starts(str, .x)) |&gt; \n    map_chr(~ str_remove(str, .x)) |&gt; \n    map_dbl(num_matches) |&gt; \n    sum()\n}\n\n# Memoize the recursive function for performance\nnum_matches &lt;- memoise::memoise(num_matches)\n\n# Run on puzzle input:\ndesired |&gt; \n  map_dbl(num_matches) |&gt; \n  sum() |&gt; \n  format(scientific = FALSE)\n\n[1] \"642535800868438\"",
+    "crumbs": [
+      "2024",
+      "Day 19"
+    ]
+  },
+  {
     "objectID": "2024/R/day22.html",
     "href": "2024/R/day22.html",
     "title": "Day 22",
@@ -1518,7 +1529,7 @@
     "href": "2024/R/day20.html",
     "title": "Day 20",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_table(\"../input/day20.txt\", col_names = \"char\") |&gt; \n  mutate(\n    row = row_number(),\n    char = str_split(char, \"\")\n  ) |&gt; \n  unnest_longer(char, indices_to = \"col\")",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_table(\"../input/day20.txt\", col_names = \"char\") |&gt; \n  mutate(\n    row = row_number(),\n    char = str_split(char, \"\")\n  ) |&gt; \n  unnest_longer(char, indices_to = \"col\")",
     "crumbs": [
       "2024",
       "Day 20"
@@ -1529,7 +1540,7 @@
     "href": "2024/R/day20.html#setup",
     "title": "Day 20",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_table(\"../input/day20.txt\", col_names = \"char\") |&gt; \n  mutate(\n    row = row_number(),\n    char = str_split(char, \"\")\n  ) |&gt; \n  unnest_longer(char, indices_to = \"col\")",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_table(\"../input/day20.txt\", col_names = \"char\") |&gt; \n  mutate(\n    row = row_number(),\n    char = str_split(char, \"\")\n  ) |&gt; \n  unnest_longer(char, indices_to = \"col\")",
     "crumbs": [
       "2024",
       "Day 20"
@@ -1540,7 +1551,18 @@
     "href": "2024/R/day20.html#part-1",
     "title": "Day 20",
     "section": "Part 1",
-    "text": "Part 1\nBuild the base-state graph:\n\n# Remove borders and define graph edges\ndf &lt;- input |&gt; \n  filter(row &gt; 1 & row &lt; max(row) & col &gt; 1 & col &lt; max(col)) |&gt; \n  mutate(\n    id = row_number(),\n    row = row - 1, \n    col = col - 1\n  ) |&gt; \n  mutate(is_wall = char == \"#\") |&gt; \n  mutate(id_n = lag(id), is_wall_n = lag(is_wall), .by = col) |&gt; \n  mutate(id_w = lag(id), is_wall_w = lag(is_wall), .by = row) |&gt; \n  mutate(\n    edge_n = case_when(!is_wall & !is_wall_n ~ map2(id, id_n, ~ c(.x, .y))),\n    edge_w = case_when(!is_wall & !is_wall_w ~ map2(id, id_w, ~ c(.x, .y)))\n  )\n\n# Define graph\ng &lt;- df |&gt; \n  select(edge_n, edge_w) |&gt; \n  pivot_longer(everything()) |&gt; \n  pull(value) |&gt; \n  unlist() |&gt; \n  make_graph(n = max(df$id), directed = FALSE)\n\n# Define start and end positions\nid_start &lt;- df |&gt; filter(char == \"S\") |&gt; pull(id)\nid_end   &lt;- df |&gt; filter(char == \"E\") |&gt; pull(id)\n\n# Get the base number of steps to compare against\nbase_steps &lt;- distances(g, id_start, id_end) |&gt; as.list() |&gt; unlist()\n\nLoop through alternate states, removing one wall at a time, and count how many steps each saves:\n\nwall_ids &lt;- df |&gt; \n  filter(char == \"#\") |&gt; \n  pull(id)\n\nshortcuts &lt;- NULL\n\nfor (x in wall_ids) {\n\n  new_edges_source &lt;- df |&gt; \n    filter(id == x) |&gt; \n    mutate(\n      edge_n = case_when(!is_wall_n ~ map2(id, id_n, ~ c(.x, .y))),\n      edge_w = case_when(!is_wall_w ~ map2(id, id_w, ~ c(.x, .y)))\n    ) |&gt; \n    select(edge_n, edge_w) |&gt; \n    pivot_longer(everything()) |&gt; \n    pull(value) |&gt; \n    unlist()\n  \n  new_edges_target &lt;- df |&gt; \n    filter(!is_wall & (id_n == x | id_w == x)) |&gt; \n    pull(id) |&gt; \n    map(~c(.x, x)) |&gt; \n    unlist()\n  \n  num_steps &lt;- g |&gt; \n    add_edges(c(new_edges_source, new_edges_target)) |&gt; \n    distances(id_start, id_end) |&gt; \n    as.list() |&gt; \n    unlist()\n  \n  shortcuts &lt;- c(shortcuts, num_steps)\n}\n\nCount the number of shortcuts by steps saved:\n\ncount_shortcuts &lt;- tibble(steps_saved = base_steps - shortcuts) |&gt; \n  filter(steps_saved &gt; 0) |&gt; \n  summarize(n = n(), .by = steps_saved) |&gt; \n  arrange(desc(n), steps_saved)\n\nCount the number of shortcuts that save at least 100 seconds:\n\ncount_shortcuts |&gt; \n  filter(steps_saved &gt;= 100) |&gt; \n  pull(n) |&gt; \n  sum()\n\n[1] 1417",
+    "text": "Part 1\nExtract the sequence of tiles in the original path:\n\n# Compute coordinates of each tile and extract the path sequence, ignoring walls\ndf &lt;- input |&gt; \n  filter(row &gt; 1 & row &lt; max(row) & col &gt; 1 & col &lt; max(col)) |&gt; \n  mutate(\n    id = row_number(),\n    row = row - 1, \n    col = col - 1\n  ) |&gt; \n  filter(char %in% c(\"S\", \"E\", \".\")) |&gt; \n  arrange(col, row)\n\n# Re-number the tiles on the path by their ordering from start to finish\npath_seq &lt;- df |&gt; \n  filter(char == \"S\") |&gt; \n  pull(id)\n\nwhile (length(path_seq) &lt; nrow(df)) {\n  path_seq &lt;- c(\n    path_seq, \n    df |&gt; \n      filter(id == tail(path_seq, 1)) |&gt; \n      cross_join(df) |&gt; \n      filter(\n        (abs(col.x - col.y) == 1 & abs(row.x - row.y) == 0) |\n        (abs(col.x - col.y) == 0 & abs(row.x - row.y) == 1)\n      ) |&gt; \n      filter(!(id.y %in% path_seq)) |&gt; \n      pull(id.y)\n  )\n}\n\n# Attach path order onto the list of path tiles with their coordinates\ndf_path &lt;- left_join(\n  df, \n  enframe(path_seq, name = \"path_idx\", value = \"id\"), \n  join_by(id)\n) |&gt; \n  select(path_idx, row, col) |&gt; \n  arrange(path_idx)\n\nCount the total seconds saved when collision is disabled for n seconds. Possible cheat end locations, and the time it takes to arrive there, can be calculated using Manhattan distance.\n\nmanhattan_dist &lt;- function(a_row, a_col, b_row, b_col) {\n  abs(a_row - b_row) + abs(a_col - b_col)\n}\n\ncount_cheats &lt;- function(cheat_length) {\n\n  df_path |&gt; \n    # Find all possible time-saving cheats if collision is disabled for n secs\n    left_join(df_path, join_by(x$path_idx &lt; y$path_idx)) |&gt; \n    mutate(dist = manhattan_dist(row.x, col.x, row.y, col.y)) |&gt; \n    filter(dist &lt;= cheat_length) |&gt; \n    mutate(saved = path_idx.y - path_idx.x - dist) |&gt; \n    summarize(n = n(), .by = saved) |&gt; \n    arrange(saved) |&gt; \n    \n    # Count the total number of cheats that save at least 100 seconds\n    filter(saved &gt;= 100) |&gt; \n    pull(n) |&gt;\n    sum()\n  \n}\n\nRun on puzzle input:\n\ncount_cheats(2)\n\n[1] 1417",
+    "crumbs": [
+      "2024",
+      "Day 20"
+    ]
+  },
+  {
+    "objectID": "2024/R/day20.html#part-2",
+    "href": "2024/R/day20.html#part-2",
+    "title": "Day 20",
+    "section": "Part 2",
+    "text": "Part 2\n\ncount_cheats(20)\n\n[1] 1014683",
     "crumbs": [
       "2024",
       "Day 20"

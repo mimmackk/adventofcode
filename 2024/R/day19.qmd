@@ -30,3 +30,33 @@ desired |>
   sum()
 
 ```
+
+## Part 2
+
+Use recursion to check for total possible values, and cache results with memoisation to speed up the process:
+
+```{r}
+
+# Recursively remove matches from the beginning of the string and sum result
+num_matches <- function(str) {
+  if (str_length(str) == 0)
+    return(1)
+  
+  available |> 
+    keep(~ str_starts(str, .x)) |> 
+    map_chr(~ str_remove(str, .x)) |> 
+    map_dbl(num_matches) |> 
+    sum()
+}
+
+# Memoize the recursive function for performance
+num_matches <- memoise::memoise(num_matches)
+
+# Run on puzzle input:
+desired |> 
+  map_dbl(num_matches) |> 
+  sum() |> 
+  format(scientific = FALSE)
+
+```
+

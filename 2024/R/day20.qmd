@@ -11,7 +11,6 @@ author:
 ```{r setup}
 # Libraries
 library(tidyverse)
-library(igraph)
 
 # Read input from file
 input <- read_table("../input/day20.txt", col_names = "char") |> 
@@ -25,11 +24,11 @@ input <- read_table("../input/day20.txt", col_names = "char") |>
 
 ## Part 1
 
-Build the base-state graph:
+Extract the sequence of tiles in the original path:
 
 ```{r}
 
-# Remove borders and define graph edges
+# Compute coordinates of each tile and extract the path sequence, ignoring walls
 df <- input |> 
   filter(row > 1 & row < max(row) & col > 1 & col < max(col)) |> 
   mutate(
@@ -37,90 +36,76 @@ df <- input |>
     row = row - 1, 
     col = col - 1
   ) |> 
-  mutate(is_wall = char == "#") |> 
-  mutate(id_n = lag(id), is_wall_n = lag(is_wall), .by = col) |> 
-  mutate(id_w = lag(id), is_wall_w = lag(is_wall), .by = row) |> 
-  mutate(
-    edge_n = case_when(!is_wall & !is_wall_n ~ map2(id, id_n, ~ c(.x, .y))),
-    edge_w = case_when(!is_wall & !is_wall_w ~ map2(id, id_w, ~ c(.x, .y)))
+  filter(char %in% c("S", "E", ".")) |> 
+  arrange(col, row)
+
+# Re-number the tiles on the path by their ordering from start to finish
+path_seq <- df |> 
+  filter(char == "S") |> 
+  pull(id)
+
+while (length(path_seq) < nrow(df)) {
+  path_seq <- c(
+    path_seq, 
+    df |> 
+      filter(id == tail(path_seq, 1)) |> 
+      cross_join(df) |> 
+      filter(
+        (abs(col.x - col.y) == 1 & abs(row.x - row.y) == 0) |
+        (abs(col.x - col.y) == 0 & abs(row.x - row.y) == 1)
+      ) |> 
+      filter(!(id.y %in% path_seq)) |> 
+      pull(id.y)
   )
+}
 
-# Define graph
-g <- df |> 
-  select(edge_n, edge_w) |> 
-  pivot_longer(everything()) |> 
-  pull(value) |> 
-  unlist() |> 
-  make_graph(n = max(df$id), directed = FALSE)
-
-# Define start and end positions
-id_start <- df |> filter(char == "S") |> pull(id)
-id_end   <- df |> filter(char == "E") |> pull(id)
-
-# Get the base number of steps to compare against
-base_steps <- distances(g, id_start, id_end) |> as.list() |> unlist()
+# Attach path order onto the list of path tiles with their coordinates
+df_path <- left_join(
+  df, 
+  enframe(path_seq, name = "path_idx", value = "id"), 
+  join_by(id)
+) |> 
+  select(path_idx, row, col) |> 
+  arrange(path_idx)
 
 ```
 
-Loop through alternate states, removing one wall at a time, and count how many steps each saves:
+Count the total seconds saved when collision is disabled for n seconds. Possible cheat end locations, and the time it takes to arrive there, can be calculated using Manhattan distance.
 
 ```{r}
 
-wall_ids <- df |> 
-  filter(char == "#") |> 
-  pull(id)
+manhattan_dist <- function(a_row, a_col, b_row, b_col) {
+  abs(a_row - b_row) + abs(a_col - b_col)
+}
 
-shortcuts <- NULL
+count_cheats <- function(cheat_length) {
 
-for (x in wall_ids) {
-
-  new_edges_source <- df |> 
-    filter(id == x) |> 
-    mutate(
-      edge_n = case_when(!is_wall_n ~ map2(id, id_n, ~ c(.x, .y))),
-      edge_w = case_when(!is_wall_w ~ map2(id, id_w, ~ c(.x, .y)))
-    ) |> 
-    select(edge_n, edge_w) |> 
-    pivot_longer(everything()) |> 
-    pull(value) |> 
-    unlist()
+  df_path |> 
+    # Find all possible time-saving cheats if collision is disabled for n secs
+    left_join(df_path, join_by(x$path_idx < y$path_idx)) |> 
+    mutate(dist = manhattan_dist(row.x, col.x, row.y, col.y)) |> 
+    filter(dist <= cheat_length) |> 
+    mutate(saved = path_idx.y - path_idx.x - dist) |> 
+    summarize(n = n(), .by = saved) |> 
+    arrange(saved) |> 
+    
+    # Count the total number of cheats that save at least 100 seconds
+    filter(saved >= 100) |> 
+    pull(n) |>
+    sum()
   
-  new_edges_target <- df |> 
-    filter(!is_wall & (id_n == x | id_w == x)) |> 
-    pull(id) |> 
-    map(~c(.x, x)) |> 
-    unlist()
-  
-  num_steps <- g |> 
-    add_edges(c(new_edges_source, new_edges_target)) |> 
-    distances(id_start, id_end) |> 
-    as.list() |> 
-    unlist()
-  
-  shortcuts <- c(shortcuts, num_steps)
 }
 
 ```
 
-Count the number of shortcuts by steps saved:
+Run on puzzle input:
 
 ```{r}
-
-count_shortcuts <- tibble(steps_saved = base_steps - shortcuts) |> 
-  filter(steps_saved > 0) |> 
-  summarize(n = n(), .by = steps_saved) |> 
-  arrange(desc(n), steps_saved)
-
+count_cheats(2)
 ```
 
-Count the number of shortcuts that save at least 100 seconds:
+## Part 2
 
 ```{r}
-
-count_shortcuts |> 
-  filter(steps_saved >= 100) |> 
-  pull(n) |> 
-  sum()
-
+count_cheats(20)
 ```
-
