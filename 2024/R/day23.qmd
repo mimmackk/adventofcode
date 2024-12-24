@@ -1,0 +1,63 @@
+---
+title: "Day 23"
+date: 2024-12-23
+author:
+  name: https://adventofcode.com/2024/day/23
+  url: https://adventofcode.com/2024/day/23
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+library(igraph)
+
+# Read input from file
+input <- read_lines("../input/day23.txt", skip_empty_rows = TRUE) |> 
+  unglue::unglue_data("{v1}-{v2}")
+```
+
+## Part 1
+
+```{r}
+
+# Convert list of connections to an undirected graph
+g <- input |> 
+  pmap(function(v1, v2) c(v1, v2)) |> 
+  unlist() |> 
+  make_graph(directed = FALSE)
+
+# Find all sets of 3 connected vertices
+cliques(g, min = 3, max = 3) |> 
+  
+  # Keep only the sets having some vertex starting with 't'
+  keep(
+    ~ names(.x) |> 
+      str_starts("t") |> 
+      any()
+  ) |> 
+  
+  # Count the number of resulting sets
+  length()
+
+```
+
+## Part 2
+
+```{r}
+
+g |> 
+  
+  # Find the largest interconnected set of vertices
+  largest_cliques() |> 
+  unlist() |> 
+
+  # Convert the list of vertices into the "password" by sorting alphabetically
+  names() |> 
+  sort() |> 
+  str_c(collapse = ",")
+
+```
+
+

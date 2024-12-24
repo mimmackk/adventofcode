@@ -1,0 +1,15 @@
+{
+  "hash": "6744983db5974eed82a86c32aba46c35",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 23\"\ndate: 2024-12-23\nauthor:\n  name: https://adventofcode.com/2024/day/23\n  url: https://adventofcode.com/2024/day/23\n---\n\n\n\n\n## Setup\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput <- read_lines(\"../input/day23.txt\", skip_empty_rows = TRUE) |> \n  unglue::unglue_data(\"{v1}-{v2}\")\n```\n:::\n\n\n\n\n## Part 1\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Convert list of connections to an undirected graph\ng <- input |> \n  pmap(function(v1, v2) c(v1, v2)) |> \n  unlist() |> \n  make_graph(directed = FALSE)\n\n# Find all sets of 3 connected vertices\ncliques(g, min = 3, max = 3) |> \n  \n  # Keep only the sets having some vertex starting with 't'\n  keep(\n    ~ names(.x) |> \n      str_starts(\"t\") |> \n      any()\n  ) |> \n  \n  # Count the number of resulting sets\n  length()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 1423\n```\n\n\n:::\n:::\n\n\n\n\n## Part 2\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ng |> \n  \n  # Find the largest interconnected set of vertices\n  largest_cliques() |> \n  unlist() |> \n\n  # Convert the list of vertices into the \"password\" by sorting alphabetically\n  names() |> \n  sort() |> \n  str_c(collapse = \",\")\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] \"gt,ha,ir,jn,jq,kb,lr,lt,nl,oj,pp,qh,vy\"\n```\n\n\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
