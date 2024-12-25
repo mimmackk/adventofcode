@@ -1,0 +1,40 @@
+---
+title: "Day 16"
+date: 2022-12-16
+author:
+  name: https://adventofcode.com/2022/day/16
+  url: https://adventofcode.com/2022/day/16
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+library(igraph)
+
+# Read input from file
+input <- read_lines("../input/day16.txt", skip_empty_rows = TRUE) |> 
+  unglue::unglue_data(
+    c(
+      "Valve {source} has flow rate={rate}; tunnels lead to valves {target}",
+      "Valve {source} has flow rate={rate}; tunnel leads to valve {target}"
+    ),
+    convert = TRUE
+  ) |> 
+  mutate(target = map(target, \(x) str_split_1(x, ", ")))
+```
+
+## Part 1
+
+```{r}
+edges <- input |>
+  unnest(target) |> 
+  pmap(function(source, target, ...) c(source, target)) |> 
+  unique() |> 
+  unlist() |> 
+  make_graph(directed = TRUE)
+
+plot(edges)
+```
+

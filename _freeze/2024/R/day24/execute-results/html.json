@@ -1,0 +1,15 @@
+{
+  "hash": "ff6b3b2e4bd09923c3cd47bfefe5126a",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 24\"\ndate: 2024-12-24\nauthor:\n  name: https://adventofcode.com/2024/day/24\n  url: https://adventofcode.com/2024/day/24\n---\n\n\n\n\n## Setup\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput <- read_lines(\"../input/day24.txt\", skip_empty_rows = TRUE)\n```\n:::\n\n\n\n\n## Part 1\n\nConvert input to lists of gates and wires:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninit <- input |> \n  unglue::unglue_data(\"{wire}: {value}\", convert = TRUE) |> \n  filter(!is.na(wire))\n\ngates <- input |> \n  unglue::unglue_data(\"{src1} {gate} {src2} -> {target}\") |> \n  filter(!is.na(gate)) |> \n  mutate(gate = case_match(gate, \"AND\" ~ \"&\", \"OR\" ~ \"|\", \"XOR\" ~ \"xor\"))\n\nwires <- init |> \n  complete(wire = unique(c(gates$src1, gates$src2, gates$target))) |> \n  deframe()\n```\n:::\n\n\n\n\nLoop through the lists of gates and wires, and whenever a new gate can be activated, get its resulting value. Repeat until all wires have a final output.\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndf <- wires |> \n  enframe(name = \"wire\") |>\n  left_join(gates, join_by(wire == target))\n\nrepeat {\n\n  cur_values <- df |> \n    select(wire, value) |> \n    deframe()\n  \n  df <- df |> \n    mutate(\n      val1 = cur_values[src1], \n      val2 = cur_values[src2],\n      value = coalesce(\n        value,\n        pmap_int(list(gate, val1, val2), \\(gate, val1, val2) {\n          if (!is.na(gate) & !is.na(val1) & !is.na(val2))\n            get(gate)(val1, val2)\n          else \n            NA_integer_\n        })\n      )\n    )\n  \n  if (all(!is.na(df$value))) break\n}\n```\n:::\n\n\n\n\nConvert the Z-coded wires to a binary number:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndf |> \n  filter(str_starts(wire, \"z\")) |> \n  arrange(wire) |> \n  pull(value) |> \n  imap_dbl(\\(x, i) x * 2^(i - 1)) |> \n  sum() |> \n  format(scientific = FALSE)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] \"59364044286798\"\n```\n\n\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

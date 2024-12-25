@@ -1,0 +1,17 @@
+{
+  "hash": "6a25bc5739310e419033dcbae5670a06",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 16\"\ndate: 2022-12-16\nauthor:\n  name: https://adventofcode.com/2022/day/16\n  url: https://adventofcode.com/2022/day/16\n---\n\n\n\n\n\n## Setup\n\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput <- read_lines(\"../input/day16.txt\", skip_empty_rows = TRUE) |> \n  unglue::unglue_data(\n    c(\n      \"Valve {source} has flow rate={rate}; tunnels lead to valves {target}\",\n      \"Valve {source} has flow rate={rate}; tunnel leads to valve {target}\"\n    ),\n    convert = TRUE\n  ) |> \n  mutate(target = map(target, \\(x) str_split_1(x, \", \")))\n```\n:::\n\n\n\n\n\n## Part 1\n\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nedges <- input |>\n  unnest(target) |> \n  pmap(function(source, target, ...) c(source, target)) |> \n  unique() |> \n  unlist() |> \n  make_graph(directed = TRUE)\n\nplot(edges)\n```\n\n::: {.cell-output-display}\n![](day16_files/figure-html/unnamed-chunk-1-1.png){width=672}\n:::\n:::\n",
+    "supporting": [
+      "day16_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

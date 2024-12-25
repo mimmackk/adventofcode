@@ -1,0 +1,87 @@
+---
+title: "Day 24"
+date: 2024-12-24
+author:
+  name: https://adventofcode.com/2024/day/24
+  url: https://adventofcode.com/2024/day/24
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day24.txt", skip_empty_rows = TRUE)
+```
+
+## Part 1
+
+Convert input to lists of gates and wires:
+
+```{r}
+
+init <- input |> 
+  unglue::unglue_data("{wire}: {value}", convert = TRUE) |> 
+  filter(!is.na(wire))
+
+gates <- input |> 
+  unglue::unglue_data("{src1} {gate} {src2} -> {target}") |> 
+  filter(!is.na(gate)) |> 
+  mutate(gate = case_match(gate, "AND" ~ "&", "OR" ~ "|", "XOR" ~ "xor"))
+
+wires <- init |> 
+  complete(wire = unique(c(gates$src1, gates$src2, gates$target))) |> 
+  deframe()
+
+```
+
+Loop through the lists of gates and wires, and whenever a new gate can be activated, get its resulting value. Repeat until all wires have a final output.
+
+```{r}
+
+df <- wires |> 
+  enframe(name = "wire") |>
+  left_join(gates, join_by(wire == target))
+
+repeat {
+
+  cur_values <- df |> 
+    select(wire, value) |> 
+    deframe()
+  
+  df <- df |> 
+    mutate(
+      val1 = cur_values[src1], 
+      val2 = cur_values[src2],
+      value = coalesce(
+        value,
+        pmap_int(list(gate, val1, val2), \(gate, val1, val2) {
+          if (!is.na(gate) & !is.na(val1) & !is.na(val2))
+            get(gate)(val1, val2)
+          else 
+            NA_integer_
+        })
+      )
+    )
+  
+  if (all(!is.na(df$value))) break
+}
+
+```
+
+Convert the Z-coded wires to a binary number:
+
+```{r}
+
+df |> 
+  filter(str_starts(wire, "z")) |> 
+  arrange(wire) |> 
+  pull(value) |> 
+  imap_dbl(\(x, i) x * 2^(i - 1)) |> 
+  sum() |> 
+  format(scientific = FALSE)
+
+```
+
