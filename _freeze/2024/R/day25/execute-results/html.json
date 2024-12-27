@@ -1,0 +1,15 @@
+{
+  "hash": "8226c74fc540b359f45b5fc9de62c942",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 25\"\ndate: 2024-12-25\nauthor:\n  name: https://adventofcode.com/2024/day/25\n  url: https://adventofcode.com/2024/day/25\n---\n\n\n\n\n## Setup\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput <- read_lines(\"../input/day25.txt\", skip_empty_rows = FALSE)\n```\n:::\n\n\n\n\n## Part 1\n\nConvert input to lists of keys and locks by height:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ngroups <- input |> \n  enframe(name = NULL) |> \n  mutate(group_id = cumsum(value == \"\"), .before = everything()) |> \n  filter(value != \"\") |> \n  mutate(\n    col = str_split(value, \"\"),\n    row = row_number(),\n    .by = group_id\n  ) |> \n  mutate(\n    type = case_when(row == 1 ~ if_else(str_detect(value, \"#\"), \"lock\", \"key\"))\n  ) |> \n  fill(type, .direction = \"down\") |> \n  unnest_wider(col, names_sep = \"\") |> \n  mutate(group_id = str_c(type, \"_\", group_id)) |> \n  select(-c(value, row, type, row)) |> \n  group_split(group_id)\n\ngroups <- set_names(\n  groups,\n  map_chr(groups, ~ unique(pull(.x, group_id)))\n)\n```\n:::\n\n\n\n\nTranspose data frames and count pin heights of each column:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\npins <- groups |> \n  map(\n    ~ .x |> \n      select(-group_id) |> \n      as.matrix() |> \n      t() |> \n      as_tibble() |> \n      transmute(height = rowSums(across(everything(), ~ .x == \"#\")) - 1) |> \n      pull(height)\n  )\n\nlocks <- keep_at(pins, ~ str_starts(.x, \"lock\"))\nkeys  <- keep_at(pins, ~ str_starts(.x, \"key\"))\n```\n:::\n\n\n\nCompute maximum height for any given lock/key combo:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nmax_height <- nrow(groups[[1]]) - 2\n```\n:::\n\n\n\n\nCross all locks with all keys and check for overlapping pins:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nexpand_grid(lock = locks, key = keys) |> \n  mutate(fits = map2_lgl(lock, key, ~ max(.x + .y) <= max_height)) |> \n  pull(fits) |> \n  sum()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 3495\n```\n\n\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

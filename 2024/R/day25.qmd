@@ -1,0 +1,89 @@
+---
+title: "Day 25"
+date: 2024-12-25
+author:
+  name: https://adventofcode.com/2024/day/25
+  url: https://adventofcode.com/2024/day/25
+---
+
+## Setup
+
+```{r setup}
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day25.txt", skip_empty_rows = FALSE)
+```
+
+## Part 1
+
+Convert input to lists of keys and locks by height:
+
+```{r}
+
+groups <- input |> 
+  enframe(name = NULL) |> 
+  mutate(group_id = cumsum(value == ""), .before = everything()) |> 
+  filter(value != "") |> 
+  mutate(
+    col = str_split(value, ""),
+    row = row_number(),
+    .by = group_id
+  ) |> 
+  mutate(
+    type = case_when(row == 1 ~ if_else(str_detect(value, "#"), "lock", "key"))
+  ) |> 
+  fill(type, .direction = "down") |> 
+  unnest_wider(col, names_sep = "") |> 
+  mutate(group_id = str_c(type, "_", group_id)) |> 
+  select(-c(value, row, type, row)) |> 
+  group_split(group_id)
+
+groups <- set_names(
+  groups,
+  map_chr(groups, ~ unique(pull(.x, group_id)))
+)
+
+```
+
+Transpose data frames and count pin heights of each column:
+
+```{r}
+
+pins <- groups |> 
+  map(
+    ~ .x |> 
+      select(-group_id) |> 
+      as.matrix() |> 
+      t() |> 
+      as_tibble() |> 
+      transmute(height = rowSums(across(everything(), ~ .x == "#")) - 1) |> 
+      pull(height)
+  )
+
+locks <- keep_at(pins, ~ str_starts(.x, "lock"))
+keys  <- keep_at(pins, ~ str_starts(.x, "key"))
+
+```
+Compute maximum height for any given lock/key combo:
+
+```{r}
+
+max_height <- nrow(groups[[1]]) - 2
+
+```
+
+Cross all locks with all keys and check for overlapping pins:
+
+```{r}
+
+expand_grid(lock = locks, key = keys) |> 
+  mutate(fits = map2_lgl(lock, key, ~ max(.x + .y) <= max_height)) |> 
+  pull(fits) |> 
+  sum()
+
+```
+
+
+
