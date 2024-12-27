@@ -409,6 +409,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#setup" id="toc-setup" class="nav-link active" data-scroll-target="#setup">Setup</a></li>
   <li><a href="#part-1" id="toc-part-1" class="nav-link" data-scroll-target="#part-1">Part 1</a></li>
+  <li><a href="#part-2" id="toc-part-2" class="nav-link" data-scroll-target="#part-2">Part 2</a></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/mimmackk/adventofcode/blob/main/2024/R/day24.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li></ul></div></nav>
     </div>
@@ -515,6 +516,116 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">format</span>(<span class="at">scientific =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "59364044286798"</code></pre>
+</div>
+</div>
+</section>
+<section id="part-2" class="level2">
+<h2 class="anchored" data-anchor-id="part-2">Part 2</h2>
+<p>Thanks to hint from Reddit: this method of binary addition using only AND, OR, XOR gates without negation is a “ripple-carry adder.”</p>
+<p>The gates follow a consistent algorithm, where “Z” digits are the final output digits, and “C” values are carried over to the next digit:</p>
+<pre><code>
+STEP 00: 
+
+Z00 = X00 XOR Y00  (Final output: Z00)
+
+C01 = X00 AND Y00  (Carry forward to next step)
+
+STEP 01: 
+
+Z01A = X01  XOR Y01  (Intermediate step)
+Z01  = Z01A XOR C01  (Final output: Z01)
+
+C02A = X01  AND Y01  (Intermediate step)
+C02B = Z01A AND C01  (Intermediate step)
+C02  = C02A OR  C02B (Carry forward to next step)
+
+(...)
+
+C44  = C44A OR C44B  (Carry forward to next step)
+
+STEP 44:
+
+Z44A = X44  XOR Y44  (Intermediate step)
+Z44  = Z44A XOR C44  (Final output: Z45)
+
+C45A = X44  AND Y44  (Intermediate step)
+C45B = Z44A AND C44  (Intermediate step)
+C45  = C45A OR  C45B (No further steps to carry over. Set as final output: Z45)</code></pre>
+<p>We can compare the expected versus actual logic to find steps that don’t match this algorithm.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pull lists of all wires of x, y, z, and other types for quick reference</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>nlist <span class="ot">&lt;-</span> <span class="fu">discard</span>(<span class="fu">names</span>(wires), <span class="sc">~</span> <span class="fu">str_starts</span>(.x, <span class="st">"x|y|z"</span>))</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>xlist <span class="ot">&lt;-</span> <span class="fu">keep</span>(<span class="fu">names</span>(wires), <span class="sc">~</span> <span class="fu">str_starts</span>(.x, <span class="st">"x"</span>))</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>ylist <span class="ot">&lt;-</span> <span class="fu">keep</span>(<span class="fu">names</span>(wires), <span class="sc">~</span> <span class="fu">str_starts</span>(.x, <span class="st">"y"</span>))</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>zlist <span class="ot">&lt;-</span> <span class="fu">keep</span>(<span class="fu">names</span>(wires), <span class="sc">~</span> <span class="fu">str_starts</span>(.x, <span class="st">"z"</span>))</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>xylist <span class="ot">&lt;-</span> <span class="fu">c</span>(xlist, ylist)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>zmax  <span class="ot">&lt;-</span> <span class="fu">max</span>(zlist)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Put source gates in alphabetical order for easier comparison</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>gates <span class="ot">&lt;-</span> gates <span class="sc">|&gt;</span> </span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">src =</span> <span class="fu">map2</span>(src1, src2, <span class="sc">~</span> <span class="fu">sort</span>(<span class="fu">c</span>(.x, .y)))) <span class="sc">|&gt;</span> </span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(src1, src2)) <span class="sc">|&gt;</span> </span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest_wider</span>(src, <span class="at">names_sep =</span> <span class="st">""</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Pull invalid outputs according to their gate type and inputs:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>invalid_by_gate <span class="ot">&lt;-</span> gates <span class="sc">|&gt;</span> </span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pmap_lgl</span>(\(gate, target, src1, src2) {</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">case_when</span>(</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>      <span class="co"># All z-target cases:</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>      target <span class="sc">==</span> <span class="st">"z00"</span>   <span class="sc">~</span> src1 <span class="sc">==</span> <span class="st">"x00"</span> <span class="sc">&amp;</span> src2 <span class="sc">==</span> <span class="st">"y00"</span> <span class="sc">&amp;</span> gate <span class="sc">==</span> <span class="st">"xor"</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>      target <span class="sc">==</span> zmax    <span class="sc">~</span> src1 <span class="sc">%in%</span> nlist <span class="sc">&amp;</span> src2 <span class="sc">%in%</span> nlist <span class="sc">&amp;</span> gate <span class="sc">==</span> <span class="st">"|"</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>      target <span class="sc">%in%</span> zlist <span class="sc">~</span> src1 <span class="sc">%in%</span> nlist <span class="sc">&amp;</span> src2 <span class="sc">%in%</span> nlist <span class="sc">&amp;</span> gate <span class="sc">==</span> <span class="st">"xor"</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>      <span class="co"># N-target cases by gate type:</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>      gate <span class="sc">==</span> <span class="st">"xor"</span> <span class="sc">~</span> src1 <span class="sc">%in%</span> xylist <span class="sc">&amp;</span> src2 <span class="sc">%in%</span> xylist,</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>      gate <span class="sc">==</span> <span class="st">"|"</span>   <span class="sc">~</span> src1 <span class="sc">%in%</span> nlist  <span class="sc">&amp;</span> src2 <span class="sc">%in%</span> nlist</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  }) <span class="sc">|&gt;</span> </span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_names</span>(gates<span class="sc">$</span>target) <span class="sc">|&gt;</span> </span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep</span>(<span class="sc">~</span> <span class="sc">!</span><span class="fu">is.na</span>(.x) <span class="sc">&amp;</span> .x <span class="sc">==</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">names</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Identify invalid outputs by following their logic trail forward and checking the gate types of the logic they are used as later input for:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>invalid_by_path <span class="ot">&lt;-</span> gates <span class="sc">|&gt;</span> </span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">select</span>(gates, src1, gate), <span class="fu">join_by</span>(x<span class="sc">$</span>target <span class="sc">==</span> y<span class="sc">$</span>src1), <span class="at">suffix =</span> <span class="fu">c</span>(<span class="st">""</span>, <span class="st">"1"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">select</span>(gates, src2, gate), <span class="fu">join_by</span>(x<span class="sc">$</span>target <span class="sc">==</span> y<span class="sc">$</span>src2), <span class="at">suffix =</span> <span class="fu">c</span>(<span class="st">""</span>, <span class="st">"2"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nest</span>(<span class="at">nxt =</span> <span class="fu">c</span>(gate1, gate2), <span class="at">.by =</span> <span class="sc">-</span><span class="fu">c</span>(gate1, gate2)) <span class="sc">|&gt;</span> </span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">nxt =</span> <span class="fu">map</span>(nxt, <span class="sc">~</span> .x <span class="sc">|&gt;</span> <span class="fu">unlist</span>() <span class="sc">|&gt;</span> <span class="fu">discard</span>(is.na) <span class="sc">|&gt;</span> <span class="fu">unname</span>())</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest_wider</span>(nxt, <span class="at">names_sep =</span> <span class="st">"_"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">valid =</span> <span class="fu">case_when</span>(</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>      target <span class="sc">%in%</span> zlist </span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        <span class="sc">~</span> <span class="cn">NA</span>,</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>      gate <span class="sc">==</span> <span class="st">"xor"</span> </span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>        <span class="sc">~</span> nxt_1 <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"xor"</span>, <span class="st">"&amp;"</span>) <span class="sc">&amp;</span> </span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>          nxt_2 <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"xor"</span>, <span class="st">"&amp;"</span>) <span class="sc">&amp;</span> </span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>          nxt_1 <span class="sc">!=</span> nxt_2 <span class="sc">&amp;</span> </span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>          <span class="sc">!</span><span class="fu">is.na</span>(nxt_1) <span class="sc">&amp;</span> </span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>          <span class="sc">!</span><span class="fu">is.na</span>(nxt_2),</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>      gate <span class="sc">==</span> <span class="st">"|"</span> </span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>        <span class="sc">~</span> nxt_1 <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"xor"</span>, <span class="st">"&amp;"</span>) <span class="sc">&amp;</span> </span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>          nxt_2 <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"xor"</span>, <span class="st">"&amp;"</span>) <span class="sc">&amp;</span> </span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>          nxt_1 <span class="sc">!=</span> nxt_2 <span class="sc">&amp;</span> </span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>          <span class="sc">!</span><span class="fu">is.na</span>(nxt_1) <span class="sc">&amp;</span> </span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>          <span class="sc">!</span><span class="fu">is.na</span>(nxt_2),</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>      gate <span class="sc">==</span> <span class="st">"&amp;"</span> <span class="sc">&amp;</span> <span class="sc">!</span>(src1 <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"x00"</span>, <span class="st">"y00"</span>))</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>        <span class="sc">~</span> nxt_1 <span class="sc">==</span> <span class="st">"|"</span> <span class="sc">|</span> nxt_2 <span class="sc">==</span> <span class="st">"|"</span></span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span>valid) <span class="sc">|&gt;</span> </span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(target)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Concatenate all invalid gates alphabetically:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(invalid_by_gate, invalid_by_path) <span class="sc">|&gt;</span> </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unique</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sort</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">str_c</span>(<span class="at">collapse =</span> <span class="st">","</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "cbj,cfk,dmn,gmt,qjj,z07,z18,z35"</code></pre>
 </div>
 </div>
 

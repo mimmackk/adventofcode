@@ -85,3 +85,130 @@ df |>
 
 ```
 
+## Part 2
+
+Thanks to hint from Reddit: this method of binary addition using only AND, OR, XOR gates without negation is a "ripple-carry adder."
+
+The gates follow a consistent algorithm, where "Z" digits are the final output digits, and "C" values are carried over to the next digit:
+
+```         
+
+STEP 00: 
+
+Z00 = X00 XOR Y00  (Final output: Z00)
+
+C01 = X00 AND Y00  (Carry forward to next step)
+
+STEP 01: 
+
+Z01A = X01  XOR Y01  (Intermediate step)
+Z01  = Z01A XOR C01  (Final output: Z01)
+
+C02A = X01  AND Y01  (Intermediate step)
+C02B = Z01A AND C01  (Intermediate step)
+C02  = C02A OR  C02B (Carry forward to next step)
+
+(...)
+
+C44  = C44A OR C44B  (Carry forward to next step)
+
+STEP 44:
+
+Z44A = X44  XOR Y44  (Intermediate step)
+Z44  = Z44A XOR C44  (Final output: Z45)
+
+C45A = X44  AND Y44  (Intermediate step)
+C45B = Z44A AND C44  (Intermediate step)
+C45  = C45A OR  C45B (No further steps to carry over. Set as final output: Z45)
+```
+
+We can compare the expected versus actual logic to find steps that don't match this algorithm.
+
+```{r}
+
+# Pull lists of all wires of x, y, z, and other types for quick reference
+nlist <- discard(names(wires), ~ str_starts(.x, "x|y|z"))
+xlist <- keep(names(wires), ~ str_starts(.x, "x"))
+ylist <- keep(names(wires), ~ str_starts(.x, "y"))
+zlist <- keep(names(wires), ~ str_starts(.x, "z"))
+xylist <- c(xlist, ylist)
+zmax  <- max(zlist)
+
+# Put source gates in alphabetical order for easier comparison
+gates <- gates |> 
+  mutate(src = map2(src1, src2, ~ sort(c(.x, .y)))) |> 
+  select(-c(src1, src2)) |> 
+  unnest_wider(src, names_sep = "")
+
+```
+
+Pull invalid outputs according to their gate type and inputs:
+
+```{r}
+
+invalid_by_gate <- gates |> 
+  pmap_lgl(\(gate, target, src1, src2) {
+    case_when(
+      # All z-target cases:
+      target == "z00"   ~ src1 == "x00" & src2 == "y00" & gate == "xor",
+      target == zmax    ~ src1 %in% nlist & src2 %in% nlist & gate == "|",
+      target %in% zlist ~ src1 %in% nlist & src2 %in% nlist & gate == "xor",
+      # N-target cases by gate type:
+      gate == "xor" ~ src1 %in% xylist & src2 %in% xylist,
+      gate == "|"   ~ src1 %in% nlist  & src2 %in% nlist
+    )
+  }) |> 
+  set_names(gates$target) |> 
+  keep(~ !is.na(.x) & .x == FALSE) |> 
+  names()
+
+```
+
+Identify invalid outputs by following their logic trail forward and checking the gate types of the logic they are used as later input for:
+
+```{r}
+
+invalid_by_path <- gates |> 
+  left_join(select(gates, src1, gate), join_by(x$target == y$src1), suffix = c("", "1")) |> 
+  left_join(select(gates, src2, gate), join_by(x$target == y$src2), suffix = c("", "2")) |> 
+  nest(nxt = c(gate1, gate2), .by = -c(gate1, gate2)) |> 
+  mutate(
+    nxt = map(nxt, ~ .x |> unlist() |> discard(is.na) |> unname())
+  ) |> 
+  unnest_wider(nxt, names_sep = "_") |> 
+  mutate(
+    valid = case_when(
+      target %in% zlist 
+        ~ NA,
+      gate == "xor" 
+        ~ nxt_1 %in% c("xor", "&") & 
+          nxt_2 %in% c("xor", "&") & 
+          nxt_1 != nxt_2 & 
+          !is.na(nxt_1) & 
+          !is.na(nxt_2),
+      gate == "|" 
+        ~ nxt_1 %in% c("xor", "&") & 
+          nxt_2 %in% c("xor", "&") & 
+          nxt_1 != nxt_2 & 
+          !is.na(nxt_1) & 
+          !is.na(nxt_2),
+      gate == "&" & !(src1 %in% c("x00", "y00"))
+        ~ nxt_1 == "|" | nxt_2 == "|"
+    )
+  ) |> 
+  filter(!valid) |> 
+  pull(target)
+
+
+```
+
+Concatenate all invalid gates alphabetically:
+
+```{r}
+
+c(invalid_by_gate, invalid_by_path) |> 
+  unique() |> 
+  sort() |> 
+  str_c(collapse = ",")
+
+```
