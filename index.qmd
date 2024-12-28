@@ -9,3 +9,4 @@ author-title: "About"
 ---
 
 Worked solutions to the Advent of Code – a yearly advent calendar of programming puzzles – in R.
+

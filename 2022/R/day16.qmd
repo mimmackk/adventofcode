@@ -27,14 +27,135 @@ input <- read_lines("../input/day16.txt", skip_empty_rows = TRUE) |>
 
 ## Part 1
 
+Represent tunnels and valves as a graph:
+
 ```{r}
-edges <- input |>
+
+g <- input |>
   unnest(target) |> 
   pmap(function(source, target, ...) c(source, target)) |> 
   unique() |> 
   unlist() |> 
-  make_graph(directed = TRUE)
+  make_graph(directed = TRUE) |> 
+  as_undirected()
 
-plot(edges)
+```
+
+Get the list of valves with nonzero flow:
+
+```{r}
+
+flows <- input |> 
+  filter(rate > 0 | source == "AA") |> 
+  select(source, rate) |> 
+  deframe()
+
+non_init_flows <- flows |> 
+  discard_at("AA")
+
+valves <- names(flows)
+
+dists <- distances(g, valves, valves)
+
+```
+
+List all permutations of possible valves to visit with a total distance less than 30:
+
+```{r}
+
+get_path <- function(choices, last, cur_length, max_length) {
+  if (cur_length >= max_length)
+    return(head(last, -1))
+  if (length(choices) == 0)
+    return(last)
+  
+  ls <- list()
+  for (valve in choices) {
+    ls <- append(
+      ls, 
+      list(get_path(
+        choices[choices != valve], 
+        c(last, valve), 
+        cur_length + dists[tail(last, 1), valve] + 1,
+        max_length
+      ))
+    )
+  }
+  ls |> 
+    discard(is_null) |> 
+    list_flatten() |> 
+    unique()
+}
+
+combos <- get_path(names(non_init_flows), names(flows["AA"]), 0, 30)
+
+```
+
+Compute total pressure released for each permutation:
+
+```{r}
+
+get_pressures <- function(paths, max_time) {
+  map_dbl(paths, \(path) {
+    valve      <- tail(path, -1)
+    valve_lag  <- head(path, -1)
+    flow       <- tail(flows[path], -1)
+    
+    dist       <- map2_int(valve_lag, valve, \(src, target) dists[src, target])
+    time_start <- cumsum(dist) + 1:length(dist) + 1
+    pressure   <- (max_time - time_start + 1) * flow
+    
+    sum(pressure[time_start <= max_time])
+  })
+}
+
+pressures <- get_pressures(combos, 30)
+
+```
+
+Find the permutation that gives the maximum pressure:
+
+```{r}
+
+max_idx <- which.max(pressures)
+pressures[max_idx]
+
+```
+
+## Part 2
+
+List all permutations of possible valves to visit with a total distance less than 26:
+
+```{r}
+
+el_combos    <- get_path(names(non_init_flows), names(flows["AA"]), 0, 26)
+el_pressures <- get_pressures(el_combos, 26)
+
+```
+
+For each set of permutations, get the best pressure.
+
+```{r}
+
+el_best <- tibble(valves = map(el_combos, sort), pressure = el_pressures) |> 
+  slice_max(pressure, by = valves, with_ties = FALSE)
+
+```
+
+Get best combinations of permutations between yourself and the elephant:
+
+```{r}
+
+el_best |> 
+  rename(el_valves = valves, el_pressure = pressure) |> 
+  pmap_dbl(\(el_valves, el_pressure) {
+    el_valves <- el_valves[el_valves != "AA"]
+    el_pressure + el_best |>
+      filter(map_lgl(valves, ~ length(intersect(.x, el_valves)) == 0)) |> 
+      pull(pressure) |> 
+      max()
+  }) |> 
+  max()
+
 ```
 

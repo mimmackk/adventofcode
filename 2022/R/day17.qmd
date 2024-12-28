@@ -1,0 +1,24 @@
+---
+title: "Day 17"
+date: 2022-12-17
+author:
+  name: https://adventofcode.com/2022/day/17
+  url: https://adventofcode.com/2022/day/17
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day17.txt", skip_empty_rows = TRUE)
+
+```
+
+```{r}
+
+```
+

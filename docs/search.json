@@ -682,7 +682,18 @@
     "href": "2022/R/day16.html#part-1",
     "title": "Day 16",
     "section": "Part 1",
-    "text": "Part 1\n\nedges &lt;- input |&gt;\n  unnest(target) |&gt; \n  pmap(function(source, target, ...) c(source, target)) |&gt; \n  unique() |&gt; \n  unlist() |&gt; \n  make_graph(directed = TRUE)\n\nplot(edges)",
+    "text": "Part 1\nRepresent tunnels and valves as a graph:\n\ng &lt;- input |&gt;\n  unnest(target) |&gt; \n  pmap(function(source, target, ...) c(source, target)) |&gt; \n  unique() |&gt; \n  unlist() |&gt; \n  make_graph(directed = TRUE) |&gt; \n  as_undirected()\n\nGet the list of valves with nonzero flow:\n\nflows &lt;- input |&gt; \n  filter(rate &gt; 0 | source == \"AA\") |&gt; \n  select(source, rate) |&gt; \n  deframe()\n\nnon_init_flows &lt;- flows |&gt; \n  discard_at(\"AA\")\n\nvalves &lt;- names(flows)\n\ndists &lt;- distances(g, valves, valves)\n\nList all permutations of possible valves to visit with a total distance less than 30:\n\nget_path &lt;- function(choices, last, cur_length, max_length) {\n  if (cur_length &gt;= max_length)\n    return(head(last, -1))\n  if (length(choices) == 0)\n    return(last)\n  \n  ls &lt;- list()\n  for (valve in choices) {\n    ls &lt;- append(\n      ls, \n      list(get_path(\n        choices[choices != valve], \n        c(last, valve), \n        cur_length + dists[tail(last, 1), valve] + 1,\n        max_length\n      ))\n    )\n  }\n  ls |&gt; \n    discard(is_null) |&gt; \n    list_flatten() |&gt; \n    unique()\n}\n\ncombos &lt;- get_path(names(non_init_flows), names(flows[\"AA\"]), 0, 30)\n\nCompute total pressure released for each permutation:\n\nget_pressures &lt;- function(paths, max_time) {\n  map_dbl(paths, \\(path) {\n    valve      &lt;- tail(path, -1)\n    valve_lag  &lt;- head(path, -1)\n    flow       &lt;- tail(flows[path], -1)\n    \n    dist       &lt;- map2_int(valve_lag, valve, \\(src, target) dists[src, target])\n    time_start &lt;- cumsum(dist) + 1:length(dist) + 1\n    pressure   &lt;- (max_time - time_start + 1) * flow\n    \n    sum(pressure[time_start &lt;= max_time])\n  })\n}\n\npressures &lt;- get_pressures(combos, 30)\n\nFind the permutation that gives the maximum pressure:\n\nmax_idx &lt;- which.max(pressures)\npressures[max_idx]\n\n[1] 1947",
+    "crumbs": [
+      "2022",
+      "Day 16"
+    ]
+  },
+  {
+    "objectID": "2022/R/day16.html#part-2",
+    "href": "2022/R/day16.html#part-2",
+    "title": "Day 16",
+    "section": "Part 2",
+    "text": "Part 2\nList all permutations of possible valves to visit with a total distance less than 26:\n\nel_combos    &lt;- get_path(names(non_init_flows), names(flows[\"AA\"]), 0, 26)\nel_pressures &lt;- get_pressures(el_combos, 26)\n\nFor each set of permutations, get the best pressure.\n\nel_best &lt;- tibble(valves = map(el_combos, sort), pressure = el_pressures) |&gt; \n  slice_max(pressure, by = valves, with_ties = FALSE)\n\nGet best combinations of permutations between yourself and the elephant:\n\nel_best |&gt; \n  rename(el_valves = valves, el_pressure = pressure) |&gt; \n  pmap_dbl(\\(el_valves, el_pressure) {\n    el_valves &lt;- el_valves[el_valves != \"AA\"]\n    el_pressure + el_best |&gt;\n      filter(map_lgl(valves, ~ length(intersect(.x, el_valves)) == 0)) |&gt; \n      pull(pressure) |&gt; \n      max()\n  }) |&gt; \n  max()\n\n[1] 2556",
     "crumbs": [
       "2022",
       "Day 16"
