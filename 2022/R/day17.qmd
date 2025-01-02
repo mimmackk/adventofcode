@@ -14,11 +14,282 @@ author:
 library(tidyverse)
 
 # Read input from file
-input <- read_lines("../input/day17.txt", skip_empty_rows = TRUE)
+input <- read_lines("../input/day17.txt", skip_empty_rows = TRUE) |> 
+  str_split_1("") 
 
 ```
 
+## Part 1
+
+Representing obstacles as 1s and empty space as 0s, represent the shapes of the falling blocks, the floor, and the walls as bitwise integers:
+
 ```{r}
+
+block1 <- strtoi(c("000111100"                                    ), base = 2)
+block2 <- strtoi(c("000010000","000111000","000010000"            ), base = 2)
+block3 <- strtoi(c("000111000","000001000","000001000"            ), base = 2)
+block4 <- strtoi(c("000100000","000100000","000100000","000100000"), base = 2)
+block5 <- strtoi(c("000110000","000110000"                        ), base = 2)
+
+walls  <- strtoi("100000001", base = 2)
+floor  <- strtoi("111111111", base = 2)
+
+blocks <- list(block1, block2, block3, block4, block5)
+
+```
+
+Define functions that give properties of the tower:
+
+```{r}
+
+# Print tower to terminal (for debugging)
+print_tower <- function(tower) {
+  tower |>
+  imap_chr(\(row, name) {
+    row |> 
+      intToBits() |> 
+      rev() |> 
+      tail(9) |> 
+      as.integer() |> 
+      case_match(0 ~ "·", 1 ~ "#") |> 
+      modify_at(.at = c(1L, 9L), .f = ~ "|") |> 
+      str_c(collapse = "") |> 
+      str_c(name, sep = " ")
+  }) |> 
+  modify_at(.at = 1L, .f = ~ if_else(.x == "|#######| 0", "+-------+ 0", .x)) |> 
+  rev() |> 
+  cat(sep = "\n")
+}
+
+tower_height <- function(tower) {
+  idx <- max(which(tower != walls))
+  tower[idx] |>
+    names() |> 
+    as.double()
+}
+
+tower_base <- function(tower) {
+  idx <- max(which(accumulate(tower, bitwOr, .dir = "backward") == floor))
+  tower[idx] |>
+    names() |> 
+    as.double()
+}
+
+trim_tower <- function(tower) {
+  base <- tower_base(tower)
+  top  <- tower_height(tower)
+  tower[as.character(base:top)]
+}
+
+```
+
+Define functions that move blocks and check if the move is valid:
+
+```{r}
+
+shift_block <- function(block, dir) {
+  f <- switch(dir, 
+    "<" = bitwShiftL, 
+    ">" = bitwShiftR
+  )
+  f(block, 1)
+}
+
+is_collision <- function(block, tower_slice) {
+  any(bitwAnd(block, tower_slice) > 0)
+}
+
+# Try to move the block L/R if the move is valid, or return the old one if not
+try_shift_block <- function(block, dir, tower_slice) {
+  new <- shift_block(block, dir)
+  if (is_collision(new, tower_slice))
+    block
+  else
+    new
+}
+
+```
+
+Define a function to drop blocks onto a tower:
+
+```{r}
+
+drop_blocks <- function(jets, n_blocks) {
+  
+  tower        <- floor
+  names(tower) <- 1:length(tower) - 1
+  
+  n_jets <- length(jets)
+  time   <- 0
+  
+  # Cycle through the list of blocks and drop them in order
+  for (i in 1:n_blocks) {
+    
+    block_idx <- (i - 1) %% length(blocks) + 1
+    block     <- blocks[[block_idx]]
+    
+    # Initialize the vertical location of the block
+    block_loc <- 1:length(block) + 3 + tower_height(tower)
+    
+    # Add empty wall space to the top of the tower
+    add_walls <- rep(walls, length(block) + 3) |> 
+      set_names(c(min(block_loc) - 3:1, block_loc))
+    tower <- c(tower, add_walls)
+    
+    # Drop block until it comes to rest
+    repeat {
+      jet_idx <- time %% n_jets + 1
+      
+      # Apply jet blast & increment time
+      block <- try_shift_block(block, jets[jet_idx], tower[as.character(block_loc)])
+      time <- time + 1
+      
+      # Check if block has come to rest; if so, add block to tower
+      if (is_collision(block, tower[as.character(block_loc - 1)])) {
+        tower[as.character(block_loc)] <- bitwOr(tower[as.character(block_loc)], block)
+        tower <- trim_tower(tower)
+        break
+        
+      } 
+      # Otherwise drop block one unit and repeat the block jet seq
+      else {
+        block_loc <- block_loc - 1
+      }
+    }
+  }
+  
+  tower
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+input |> 
+  drop_blocks(2022) |> 
+  tower_height()
+
+```
+
+## Part 2
+
+Modify the drop_blocks function to loop until a cycle is found and return cycle info:
+
+```{r}
+
+find_cycle <- function(jets) {
+  
+  tower        <- floor
+  names(tower) <- 1:length(tower) - 1
+  
+  n_jets <- length(jets)
+  time   <- 0
+  states <- tibble(
+    n_blocks  = numeric(0),
+    tower_idx = list(),
+    tower_val = list(), 
+    block_idx = numeric(0), 
+    jet_idx   = numeric(0)
+  )
+  
+  i <- 1
+  # Cycle through the list of blocks and drop them in order
+  repeat {
+    
+    block_idx <- (i - 1) %% length(blocks) + 1
+    block     <- blocks[[block_idx]]
+    
+    # Initialize the vertical location of the block
+    block_loc <- 1:length(block) + 3 + tower_height(tower)
+    
+    # Add empty wall space to the top of the tower
+    add_walls <- rep(walls, length(block) + 3) |> 
+      set_names(c(min(block_loc) - 3:1, block_loc))
+    tower <- c(tower, add_walls)
+    
+    # Drop block until it comes to rest
+    repeat {
+      jet_idx <- time %% n_jets + 1
+      
+      # Apply jet blast & increment time
+      block <- try_shift_block(block, jets[jet_idx], tower[as.character(block_loc)])
+      time <- time + 1
+      
+      # Check if block has come to rest; if so, add block to tower
+      if (is_collision(block, tower[as.character(block_loc - 1)])) {
+        tower[as.character(block_loc)] <- bitwOr(tower[as.character(block_loc)], block)
+        tower <- trim_tower(tower)
+        
+        # Add block and jet index to the states list
+        states <- states |> 
+          add_row(
+            n_blocks  = i,
+            tower_idx = list(names(tower)),
+            tower_val = list(unname(tower)),
+            block_idx = block_idx,
+            jet_idx   = jet_idx
+          )
+        # print(tower)
+        break
+        
+      } 
+      # Otherwise drop block one unit and repeat the block jet seq
+      else {
+        block_loc <- block_loc - 1
+      }
+    }
+    
+    i <- i + 1
+    
+    # After each block is dropped, check if a cycle has been found and return it
+    dupes <- states |> 
+      filter(n_distinct(tower_val) != n(), .by = c(block_idx, jet_idx))
+    
+    if (nrow(dupes) > 0) {
+      
+      cycle_length <- dupes |>
+        pull(n_blocks) |>
+        reduce(`-`) |>
+        abs()
+
+      cycle_start <- dupes |>
+        pull(n_blocks) |>
+        min()
+      
+      cycle_height <- dupes |>
+        pull(tower_idx) |> 
+        map(as.numeric) |> 
+        reduce(`-`) |> 
+        unique() |> 
+        abs()
+
+      return(list(length = cycle_length, start = cycle_start, height = cycle_height))
+      return(dupes)
+    }
+  }
+}
+
+```
+
+Get the cycle of the puzzle input:
+
+```{r}
+
+cycle <- find_cycle(input)
+
+```
+
+Using the cycle info from the output, compute the majority of the height using the cycle, then and add the height of the remaineder:
+
+```{r}
+
+n_cycles <- floor((1000000000000 - cycle$start) / cycle$length)
+n_blocks <- (1000000000000 - cycle$start) %% cycle$length + cycle$start
+
+((n_cycles * cycle$height) + tower_height(drop_blocks(input, n_blocks))) |> 
+  format(scientific = FALSE)
 
 ```
 
