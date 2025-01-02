@@ -1,0 +1,118 @@
+---
+title: "Day 18"
+date: 2022-12-18
+author:
+  name: https://adventofcode.com/2022/day/18
+  url: https://adventofcode.com/2022/day/18
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+library(igraph)
+
+# Read input from file
+input <- read_lines("../input/day18.txt", skip_empty_rows = TRUE) |> 
+  unglue::unglue_data("{x},{y},{z}", convert = TRUE) |> 
+  mutate(id = row_number(), .before = everything())
+
+```
+
+## Part 1
+
+Create a containing box for the set of cubes, padded by 1 voxel of air in each direction, and convert the full rectangular area into a graph:
+
+```{r}
+
+xrange <- (min(input$x) - 1):(max(input$x) + 1)
+yrange <- (min(input$y) - 1):(max(input$y) + 1)
+zrange <- (min(input$z) - 1):(max(input$z) + 1)
+
+# Fill out each coordinate of the containing box with air
+container <- input |> 
+  mutate(type = "cube") |> 
+  complete(x = xrange, y = yrange, z = zrange, fill = list(type = "air")) |> 
+  mutate(id = row_number())
+
+# For each coordinate, create edges between adjacent coords of the same type
+edges <- container |>
+  arrange(x, y, z) |> 
+  mutate(
+    edge_x1 = case_when(type == lag(type)  ~ lag(id)),
+    edge_x2 = case_when(type == lead(type) ~ lead(id)),
+    .by = c(y, z)
+  ) |> 
+  mutate(
+    edge_y1 = case_when(type == lag(type)  ~ lag(id)),
+    edge_y2 = case_when(type == lead(type) ~ lead(id)),
+    .by = c(x, z)
+  ) |> 
+  mutate(
+    edge_z1 = case_when(type == lag(type)  ~ lag(id)),
+    edge_z2 = case_when(type == lead(type) ~ lead(id)),
+    .by = c(x, y)
+  ) |> 
+  mutate(across(starts_with("edge"), \(col) {
+    case_when(!is.na(col) ~ map2(id, col, ~ c(.x, .y)))
+  })) |> 
+  select(starts_with("edge")) |> 
+  pivot_longer(everything()) |> 
+  pull(value) |> 
+  unlist()
+
+
+# Convert to a graph
+g <- make_graph(edges = edges, n = max(container$id), directed = TRUE) |> 
+  as_undirected()
+
+```
+
+Compute the surface area of the cubes. Start by giving every cube a surface area of 6, then subtract the cube's vertex degree (which is the number of adjacent cubes):
+
+```{r}
+
+# Get the vertex IDs of all cubes
+cube_ids <- container |> 
+  filter(type == "cube") |> 
+  pull(id)
+
+# Compute the surface area of all cubes
+g |> 
+  degree() |> 
+  keep_at(cube_ids) |> 
+  map_dbl(~ 6 - .x) |> 
+  sum()
+
+```
+
+## Part 2
+
+To compute the external surface area, we compute the total surface area of the outermost containing box of air, then subtract away its known rectangular external surface area.
+
+```{r}
+
+# First vertex is external air padding, so we pull all vertices having its group
+outside_ids <- which(components(g)$membership == components(g)$membership[1])
+
+# Compute the surface area of the external air voxels using their vertex degree
+total_sa <- g |> 
+  degree() |> 
+  keep_at(outside_ids) |> 
+  map_dbl(~ 6 - .x) |> 
+  sum()
+
+# Compute the outer surface of the bounding box
+xlen <- max(xrange) - min(xrange) + 1
+ylen <- max(yrange) - min(yrange) + 1
+zlen <- max(zrange) - min(zrange) + 1
+bounding_sa <- 2 * (xlen * ylen + xlen * zlen + ylen * zlen)
+
+# Subtract the outer surface area from the total surface area of the air padding
+total_sa - bounding_sa
+
+```
+
+
