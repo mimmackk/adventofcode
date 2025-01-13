@@ -1,0 +1,79 @@
+---
+title: "Day 20"
+date: 2022-12-20
+author:
+  name: https://adventofcode.com/2022/day/20
+  url: https://adventofcode.com/2022/day/20
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day20.txt", skip_empty_rows = TRUE) |> 
+  as.numeric()
+
+```
+
+## Part 1
+
+```{r}
+
+# Shift the value at the given index by n steps
+shift_value <- function(vec, idx_old, n) {
+  idx_new <- (idx_old + n - 2) %% (length(vec) - 1) + 1
+  value <- vec[idx_old]
+  
+  vec |> 
+    discard_at(idx_old) |> 
+    append(value, after = idx_new)
+}
+
+# Mix the given list of integers in order by shifting values one-by-one 
+mix <- function(file, n = 1) {
+  ids <- 1:length(file)
+  
+  for (rep in 1:n) {
+    for (i in 1:length(file)) {
+      ids <- shift_value(ids, which(ids == i), file[i])
+    }
+  }
+  
+  file[ids]
+}
+
+# Sum the grove coordinates in a given vector
+grove_coords <- function(vec) {
+  c(1000, 2000, 3000) |> 
+    map_dbl(~ vec[(which(vec == 0) + .x) %% length(vec)]) |> 
+    sum()
+}
+
+```
+
+Run on puzzle input: 
+
+```{r}
+
+input |> 
+  mix() |> 
+  grove_coords()
+
+```
+
+## Part 2
+
+Apply decryption key and mix 10 times:
+
+```{r}
+
+(input * 811589153) |> 
+  mix(n = 10) |> 
+  grove_coords()
+
+```
+

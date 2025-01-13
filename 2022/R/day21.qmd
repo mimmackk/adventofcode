@@ -1,0 +1,134 @@
+---
+title: "Day 21"
+date: 2022-12-21
+author:
+  name: https://adventofcode.com/2022/day/21
+  url: https://adventofcode.com/2022/day/21
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day21.txt", skip_empty_rows = TRUE) |> 
+  unglue::unglue_data(
+    patterns = c(
+      "{monkey}: {input_1} {operation} {input_2}",
+      "{monkey}: {number}"
+    ),
+    convert = TRUE
+  )
+
+```
+
+## Part 1
+
+Iteratively apply each monkey-to-monnkey operation until complete:
+
+```{r}
+
+numbers <- input |> 
+  select(monkey, number) |> 
+  deframe()
+
+eqns <- input |> 
+  filter(!is.na(operation)) |> 
+  select(-number)
+
+compute_monkeys <- function(numbers, eqns) {
+  repeat {
+    new_values <- eqns |> 
+      mutate(
+        value_1 = numbers[input_1],
+        value_2 = numbers[input_2]
+      ) |> 
+      drop_na(value_1, value_2) |> 
+      mutate(output = pmap_dbl(
+        list(operation, value_1, value_2), 
+        ~ get(..1)(..2, ..3)
+      )) |> 
+      select(monkey, output) |> 
+      deframe()
+    
+    if (length(new_values) == 0) {
+      break
+    } else {
+      numbers[names(new_values)] <- new_values
+      eqns <- filter(eqns, !(monkey %in% names(new_values)))
+    }
+  }
+  
+  numbers
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+compute_monkeys(numbers, eqns) |> 
+  keep_at("root") |>  
+  format(scientific = FALSE)
+
+```
+
+
+## Part 2
+
+```{r}
+
+# Replace 'humn' number with NA and re-compute known equation values
+modified_numbers <- compute_monkeys(
+  modify_at(numbers, "humn", ~ NA),
+  mutate(eqns, operation = if_else(monkey == "root", "==", operation))
+)
+
+monkey_funcs <- eqns |> 
+  
+  # Reformat equations
+  mutate(operation = if_else(monkey == "root", "==", operation)) |> 
+  mutate(
+    value_1 = modified_numbers[input_1], 
+    value_2 = modified_numbers[input_2],
+    const = unname(coalesce(value_1, value_2)),
+    xposn = if_else(is.na(value_1), 1, 2),
+    input = if_else(is.na(value_1), input_1, input_2),
+  ) |> 
+  filter(is.na(value_1) | is.na(value_2)) |> 
+  
+  # Convert each operation into an inverse function
+  mutate(
+    f = pmap(list(operation, const, xposn), \(op, const, xposn) {
+      if (op == "+")                   partial(`-`, ... = , const)
+      else if (op == "*")              partial(`/`, ... = , const)
+      else if (op == "-" & xposn == 1) partial(`+`, ... = , const)
+      else if (op == "/" & xposn == 1) partial(`*`, ... = , const)
+      else if (op == "-" & xposn == 2) partial(`-`, const, ... = )
+      else if (op == "/" & xposn == 2) partial(`/`, const, ... = )
+    }),
+  ) |> 
+  select(output = monkey, f, input, const)
+
+# Initiate starting monkey value at the root monkey
+cur_monkey  <- filter(monkey_funcs, output == "root")
+cur_value   <- cur_monkey$const
+next_monkey <- cur_monkey$input
+
+# Compute function inverse for each monkey until "humn" is reached
+while (next_monkey != "humn") {
+  cur_monkey  <- filter(monkey_funcs, output == next_monkey)
+  cur_value   <- cur_monkey$f[[1]](cur_value)
+  next_monkey <- cur_monkey$input
+}
+
+# View final input needed to achieve equality
+cur_value |> 
+  format(scientific = FALSE)
+
+```
+
