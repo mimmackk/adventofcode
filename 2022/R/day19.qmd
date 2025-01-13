@@ -1,0 +1,164 @@
+---
+title: "Day 19"
+date: 2022-12-19
+author:
+  name: https://adventofcode.com/2022/day/19
+  url: https://adventofcode.com/2022/day/19
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day19.txt", skip_empty_rows = TRUE)
+
+```
+
+## Part 1
+
+Reformat the input as lists of robots with inputs and outputs for each blueprint:
+
+```{r}
+
+ore      <- c("ore" = 1, "clay" = 0, "obsidian" = 0, "geode" = 0)
+clay     <- c("ore" = 0, "clay" = 1, "obsidian" = 0, "geode" = 0)
+obsidian <- c("ore" = 0, "clay" = 0, "obsidian" = 1, "geode" = 0)
+geode    <- c("ore" = 0, "clay" = 0, "obsidian" = 0, "geode" = 1)
+empty    <- c("ore" = 0, "clay" = 0, "obsidian" = 0, "geode" = 0)
+
+unglue_pattern <- str_c(
+  "Blueprint {blueprint}:",
+  "Each ore robot costs {ore_ore} ore.",
+  "Each clay robot costs {clay_ore} ore.",
+  "Each obsidian robot costs {obsidian_ore} ore and {obsidian_clay} clay.",
+  "Each geode robot costs {geode_ore} ore and {geode_obsidian} obsidian.",
+  sep = " "
+)
+
+blueprints <- input |> 
+  unglue::unglue_data(unglue_pattern, convert = TRUE) |> 
+  pivot_longer(
+    -blueprint, 
+    names_to = c("robot", "cost_type"), 
+    values_to = "cost_value",
+    names_sep = "_"
+  ) |> 
+  pivot_wider(names_from = cost_type, values_from = cost_value, values_fill = 0) |> 
+  mutate(geode = 0) |> 
+  nest(cost = c(ore, clay, obsidian, geode)) |> 
+  mutate(
+    cost = map(cost, unlist),
+    output = map(robot, get)
+  ) |> 
+  group_split(blueprint)
+
+```
+
+Define a set of functions to find the maximum number of geodes for each blueprint.
+
+Optimizations to improve runtime were sourced from Reddit ([1](https://www.reddit.com/r/adventofcode/comments/zpihwi/comment/j0tvzgz/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button), [2](https://www.reddit.com/r/adventofcode/comments/zpy5rm/comment/j0vtecm/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button)).
+
+```{r}
+
+max_geodes <- function(blueprint, inventory, production, time_left, max_cost, cur_best = 0) {
+  
+  # If the best possible set of geode robots in this branch can't outdo the current
+  # best, then don't traverse this branch.
+  theoretical_best <- inventory["geode"] + 
+    production["geode"] * time_left +
+    sum(1:time_left - 1)
+  
+  if (time_left == 0 | theoretical_best <= cur_best)
+    return(inventory["geode"])
+    
+  # Determine the amount of time required to build each robot next
+  time_to_build <- map_dbl(blueprint$cost, 
+    ~ ceiling((.x - inventory) / production) |> 
+      keep(.x > 0) |> 
+      map_dbl(~ max(.x, 0) + 1) |> 
+      max()
+  )
+  
+  # Determine which robots are buildable within the remaining time
+  idx <- which(
+    is.finite(time_to_build) & 
+      time_to_build < time_left & 
+      production < max_cost
+  )
+  
+  # Quit if there are no remaining options
+  if (length(idx) == 0)
+    return((inventory + time_left * production)["geode"])
+  
+  # Loop through each branch of options
+  for (i in rev(idx)) {
+    branch_best <- max_geodes(
+        blueprint  = blueprint,
+        inventory  = inventory + 
+          production * time_to_build[[i]] - 
+          blueprint$cost[[i]],
+        production = production + blueprint$output[[i]],
+        time_left  = time_left - time_to_build[[i]],
+        max_cost   = max_cost,
+        cur_best   = cur_best
+      )
+    if (branch_best > cur_best)
+      cur_best <- branch_best
+  }
+  
+  return(cur_best)
+}
+
+blueprint_geodes <- function(blueprints, total_time) {
+  
+  best <- c()
+  
+  for (blueprint in blueprints) {
+    max_cost <- blueprint |> 
+      pull(cost) |> 
+      do.call(what = pmax) |> 
+      modify_at(.at = "geode", ~ Inf)
+    best <- c(
+      best,
+      max_geodes(
+        blueprint  = blueprint,
+        inventory  = empty,
+        production = ore,
+        time_left  = total_time, 
+        max_cost   = max_cost,
+        cur_best   = 0
+      )
+    )
+  }
+  
+  unname(best)
+}
+
+```
+
+Compute total quality score by multiplying the max geodes for each blueprint by its index:
+
+```{r}
+
+blueprint_geodes(blueprints, total_time = 24) |> 
+  imap_dbl(\(geodes, i) i * geodes) |> 
+  sum()
+
+```
+
+## Part 2
+
+Filter to the first 3 blueprints, increase the total time to 32 seconds, and take the product of the max geodes:
+
+```{r}
+
+blueprints |> 
+  keep_at(1:3) |> 
+  blueprint_geodes(total_time = 32) |> 
+  prod()
+  
+```
