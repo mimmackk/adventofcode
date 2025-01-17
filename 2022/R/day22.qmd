@@ -1,0 +1,273 @@
+---
+title: "Day 22"
+date: 2022-12-22
+author:
+  name: https://adventofcode.com/2022/day/22
+  url: https://adventofcode.com/2022/day/22
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+library(igraph)
+
+# Read input from file
+input <- read_lines("../input/day22.txt", skip_empty_rows = TRUE)
+
+```
+
+## Part 1
+
+Convert input to a grid board and a series of steps in the path:
+
+```{r}
+
+board <- input |> 
+  head(-1) |> 
+  enframe(name = "row") |> 
+  mutate(value = str_split(value, "")) |> 
+  unnest(value) |> 
+  mutate(col = row_number(), .by = row, .after = row) |> 
+  filter(value %in% c(".", "#")) |> 
+  mutate(id = row_number(), .before = everything())
+
+path <- input |>
+  tail(1) |> 
+  str_split_1("(?<=.)(?=[LR])") |> 
+  as_tibble_col(column_name = "input") |> 
+  mutate(
+    turn = case_match(str_extract(input, "L|R"), 
+      "R" ~ 1, 
+      "L" ~ -1, 
+      .default = 0
+    ),
+    walk = parse_number(input),
+  )
+
+```
+
+Create a set of 2D lists by direction:
+
+```{r}
+
+vecs <- map(
+  c(row = "row", col = "col"),
+  ~ board |> 
+    select({{ .x }}, id, value) |> 
+    arrange(.data[[.x]]) |> 
+    nest(vec = c(id, value)) |> 
+    mutate(vec = map(vec, deframe)) |> 
+    select(vec) |> 
+    deframe()
+)
+
+```
+
+```{r}
+
+wrap_head <- \(x, n) c(tail(x,  n), head(x, -n))
+wrap_tail <- \(x, n) c(tail(x, -n), head(x,  n))
+
+dirs_2d <- c("row_pos", "col_pos", "row_neg", "col_neg")
+
+next_dir <- function(dir_vec, prv_dir, turn) {
+  dir_vec[((which(dir_vec == prv_dir) + turn - 1) %% length(dir_vec)) + 1]
+}
+
+walk_n <- function(id_start, dir_start, n) {
+  dir_vec  <- str_extract(dir_start, "row|col")
+  dir_sign <- case_match(str_extract(dir_start, "pos|neg"), 
+    "pos" ~ 1, 
+    "neg" ~ -1
+  )
+  
+  vec_idx <- board |> 
+    filter(id == id_start) |> 
+    pull({{ dir_vec }})
+  
+  x   <- vecs[[dir_vec]][[vec_idx]]
+  idx <- which(names(x) == id_start)
+  
+  for (i in 1:n) {
+    idx_next <- (idx + dir_sign - 1) %% length(x) + 1
+    
+    if (x[idx_next] == "#")
+      break
+    else
+      idx <- idx_next
+  }
+  
+  as.numeric(names(x)[idx])
+}
+
+compute_pwd <- function(cell_id, dir_num) {
+  final <- filter(board, id == cell_id)
+  1000 * final$row + 4 * final$col + unname(dir_num)
+}
+
+init_cell <- board |> 
+  filter(value == ".") |> 
+  pull(id) |> 
+  min()
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+cell <- init_cell
+dir  <- "row_pos"
+  
+for (i in 1:nrow(path)) {
+  prv_dir  <- dir
+  prv_cell <- cell
+  
+  dir  <- next_dir(dirs_2d, prv_dir, path$turn[i])
+  cell <- walk_n(cell, dir, path$walk[i])
+}
+
+compute_pwd(cell, which(dirs_2d == dir) - 1)
+
+```
+
+## Part 2
+
+Convert from row/col vectors to roll/pitch/yaw vectors:
+
+```{r}
+
+box_dim <- 50
+
+vecs[["roll"]] <- pmap(
+  list(
+    vecs$row[1:box_dim],
+    vecs$row[1:box_dim + box_dim * 2] |> 
+      rev() |> 
+      map(rev)
+  ),
+  ~ c(..1, ..2)
+)
+
+vecs[["pitch"]] <- pmap(
+  list(
+    vecs$col[1:box_dim + box_dim],
+    vecs$row[1:box_dim + box_dim * 3] |> 
+      map(rev)
+  ),
+  ~ c(..1, ..2)
+)
+
+vecs[["yaw"]] <- pmap(
+  list(
+    vecs$row[1:box_dim + box_dim],
+    vecs$col[1:box_dim + box_dim * 2] |> 
+      map(rev),
+    vecs$col[1:box_dim] |> 
+      map(rev)
+  ),
+  ~ c(..1, ..2, ..3)
+)
+
+coords_3d <- map(
+  c(roll = "roll", pitch = "pitch", yaw = "yaw"),
+  ~ vecs[[.x]] |> 
+    map(~ as.numeric(names(.x))) |> 
+    enframe(name = .x, value = "id") |> 
+    unnest(id) |> 
+    relocate(id)
+) |> 
+  reduce(partial(full_join, by = join_by(id)))
+
+```
+
+Create a new set of instructions for making left/right turns that depend on which box face is currently occupied:
+
+```{r}
+
+dirs_3d <- list(
+  f1 = c("roll_pos",  "pitch_pos", "roll_neg",  "pitch_neg"),
+  f2 = c("roll_pos",  "yaw_neg",   "roll_neg",  "yaw_pos"),
+  f3 = c("yaw_pos",   "pitch_pos", "yaw_neg",   "pitch_neg"),
+  f4 = c("roll_neg",  "yaw_neg",   "roll_pos",  "yaw_pos"),
+  f5 = c("roll_neg",  "pitch_pos", "roll_pos",  "pitch_neg"),
+  f6 = c("pitch_neg", "yaw_neg",   "pitch_pos", "yaw_pos")
+) |> 
+  map(partial(set_names, nm = c("row_pos", "col_pos", "row_neg", "col_neg")))
+
+faces <- board |> 
+  mutate(
+    face_row = ceiling(row / box_dim), 
+    face_col = ceiling(col / box_dim)
+  ) |>
+  arrange(id) |> 
+  mutate(
+    box_face = cur_group_id(),
+    .by = c(face_row, face_col)
+  ) |> 
+  select(id, box_face)
+
+board_3d <- board |> 
+  left_join(coords_3d, join_by(id)) |> 
+  left_join(faces, join_by(id))
+
+```
+
+Redefine the walk function to take roll/pitch/yaw directions:
+
+```{r}
+
+walk_n <- function(id_start, dir_start, n) {
+  dir_vec  <- str_extract(dir_start, "roll|pitch|yaw")
+  dir_sign <- case_match(str_extract(dir_start, "pos|neg"), 
+    "pos" ~ 1, 
+    "neg" ~ -1
+  )
+  
+  vec_idx <- board_3d |> 
+    filter(id == id_start) |> 
+    pull({{ dir_vec }})
+  
+  x   <- vecs[[dir_vec]][[vec_idx]]
+  idx <- which(names(x) == id_start)
+  
+  for (i in 1:n) {
+    idx_next <- (idx + dir_sign - 1) %% length(x) + 1
+    
+    if (x[idx_next] == "#")
+      break
+    else
+      idx <- idx_next
+  }
+  
+  as.numeric(names(x)[idx])
+}
+
+```
+
+Re-run the puzzle input:
+
+```{r}
+
+cell <- init_cell
+dir  <- "roll_pos"
+dir_vec <- dirs_3d$f1
+  
+for (i in 1:nrow(path)) {
+  prv_dir  <- dir
+  prv_cell <- cell
+  
+  dir_vec <- dirs_3d[[board_3d$box_face[[prv_cell]]]]
+  
+  dir  <- next_dir(dir_vec, prv_dir, path$turn[i])
+  cell <- walk_n(cell, dir, path$walk[i])
+}
+
+compute_pwd(cell, which(dir_vec == dir) - 1)
+
+```
+
+
