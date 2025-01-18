@@ -1,0 +1,138 @@
+---
+title: "Day 23"
+date: 2022-12-23
+author:
+  name: https://adventofcode.com/2022/day/23
+  url: https://adventofcode.com/2022/day/23
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day23.txt", skip_empty_rows = TRUE) |> 
+  enframe(name = "row") |> 
+  mutate(value = map(value, ~ enframe(str_split_1(.x, ""), name = "col"))) |> 
+  unnest(value)
+
+```
+
+## Part 1
+
+Convert map to a list of positions for each elf, using complex numbers to store 2D coords:
+
+```{r}
+
+elves <- input |> 
+  filter(value == "#") |> 
+  mutate(z = complex(real = col, imaginary = row)) |> 
+  pull(z)
+
+```
+
+Define function to move elves in each round:
+
+```{r}
+
+cardinal_dirs <- c(
+  n  =  0 - 1i,
+  s  =  0 + 1i,
+  w  = -1 + 0i,
+  e  =  1 + 0i,
+  nw = -1 - 1i,
+  ne =  1 - 1i,
+  sw = -1 + 1i,
+  se =  1 + 1i
+)
+
+adjacent_dirs <- list(
+  n = c("n", "nw", "ne"),
+  s = c("s", "sw", "se"),
+  w = c("w", "nw", "sw"),
+  e = c("e", "ne", "se")
+)
+
+move_elves <- function(elves, round_num) {
+
+  # Determine which neighboring cells are occupied
+  neighbors <- map(cardinal_dirs, \(dir) elves + dir)
+  occupied  <- map(neighbors, ~ .x %in% elves)
+  
+  # Determine which n/s/w/e moves are valid
+  valid <- map(adjacent_dirs, \(dir_set) {
+    dir_set |> 
+      map(~!occupied[[.x]]) |> 
+      reduce(`&`)
+  })
+  
+  # Re-order the n/s/w/e priority according to the current round number
+  valid <- valid[(1:4 + round_num - 2) %% 4 + 1]
+  
+  # For all elves not surrounded by empty cells, determine their proposed move
+  all_borders_empty <- reduce(valid, `&`)
+  proposals <- valid |> 
+    imap(\(vec, dir) case_when(vec ~ neighbors[[dir]])) |>
+    pmap(
+      ~ c(discard(c(..1, ..2, ..3, ..4), is.na), NA) |> 
+        head(1)
+    ) |> 
+    unlist() |> 
+    modify_if(all_borders_empty, ~ NA)
+  
+  # Nullify any colliding proposed moves
+  collisions <- na.omit(proposals)[duplicated(na.omit(proposals))]
+  movements <- if_else(proposals %in% collisions, NA, proposals)
+  
+  # Return the new elf coordinates
+  coalesce(movements, elves)
+}
+
+```
+
+Define a function to compute the area of the bounding box then subtract away the number of elves:
+
+```{r}
+
+n_empty_tiles <- function(elves) {
+  height <- 1 + diff(range(Im(elves)))
+  width  <- 1 + diff(range(Re(elves)))
+  
+  height * width - length(elves)
+}
+
+```
+
+Run 10 rounds on puzzle input:
+
+```{r}
+
+reduce(1:10, move_elves, .init = elves) |> 
+  n_empty_tiles()
+
+```
+
+## Part 2
+
+Run until no further movements occur:
+
+```{r}
+
+i <- 1
+cur_elves <- elves
+
+repeat {
+  new_elves <- move_elves(cur_elves, i)
+  
+  if (all(new_elves == cur_elves)) break
+  
+  cur_elves <- new_elves
+  i <- i + 1
+}
+
+i
+
+```

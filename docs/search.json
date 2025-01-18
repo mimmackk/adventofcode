@@ -656,652 +656,47 @@
     ]
   },
   {
-    "objectID": "2022/R/day19.html",
-    "href": "2022/R/day19.html",
-    "title": "Day 19",
+    "objectID": "2022/R/day18.html",
+    "href": "2022/R/day18.html",
+    "title": "Day 18",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day19.txt\", skip_empty_rows = TRUE)",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day18.txt\", skip_empty_rows = TRUE) |&gt; \n  unglue::unglue_data(\"{x},{y},{z}\", convert = TRUE) |&gt; \n  mutate(id = row_number(), .before = everything())",
     "crumbs": [
       "2022",
-      "Day 19"
+      "Day 18"
     ]
   },
   {
-    "objectID": "2022/R/day19.html#setup",
-    "href": "2022/R/day19.html#setup",
-    "title": "Day 19",
+    "objectID": "2022/R/day18.html#setup",
+    "href": "2022/R/day18.html#setup",
+    "title": "Day 18",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day19.txt\", skip_empty_rows = TRUE)",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day18.txt\", skip_empty_rows = TRUE) |&gt; \n  unglue::unglue_data(\"{x},{y},{z}\", convert = TRUE) |&gt; \n  mutate(id = row_number(), .before = everything())",
     "crumbs": [
       "2022",
-      "Day 19"
+      "Day 18"
     ]
   },
   {
-    "objectID": "2022/R/day19.html#part-1",
-    "href": "2022/R/day19.html#part-1",
-    "title": "Day 19",
+    "objectID": "2022/R/day18.html#part-1",
+    "href": "2022/R/day18.html#part-1",
+    "title": "Day 18",
     "section": "Part 1",
-    "text": "Part 1\nReformat the input as lists of robots with inputs and outputs for each blueprint:\n\nore      &lt;- c(\"ore\" = 1, \"clay\" = 0, \"obsidian\" = 0, \"geode\" = 0)\nclay     &lt;- c(\"ore\" = 0, \"clay\" = 1, \"obsidian\" = 0, \"geode\" = 0)\nobsidian &lt;- c(\"ore\" = 0, \"clay\" = 0, \"obsidian\" = 1, \"geode\" = 0)\ngeode    &lt;- c(\"ore\" = 0, \"clay\" = 0, \"obsidian\" = 0, \"geode\" = 1)\nempty    &lt;- c(\"ore\" = 0, \"clay\" = 0, \"obsidian\" = 0, \"geode\" = 0)\n\nunglue_pattern &lt;- str_c(\n  \"Blueprint {blueprint}:\",\n  \"Each ore robot costs {ore_ore} ore.\",\n  \"Each clay robot costs {clay_ore} ore.\",\n  \"Each obsidian robot costs {obsidian_ore} ore and {obsidian_clay} clay.\",\n  \"Each geode robot costs {geode_ore} ore and {geode_obsidian} obsidian.\",\n  sep = \" \"\n)\n\nblueprints &lt;- input |&gt; \n  unglue::unglue_data(unglue_pattern, convert = TRUE) |&gt; \n  pivot_longer(\n    -blueprint, \n    names_to = c(\"robot\", \"cost_type\"), \n    values_to = \"cost_value\",\n    names_sep = \"_\"\n  ) |&gt; \n  pivot_wider(names_from = cost_type, values_from = cost_value, values_fill = 0) |&gt; \n  mutate(geode = 0) |&gt; \n  nest(cost = c(ore, clay, obsidian, geode)) |&gt; \n  mutate(\n    cost = map(cost, unlist),\n    output = map(robot, get)\n  ) |&gt; \n  group_split(blueprint)\n\nDefine a set of functions to find the maximum number of geodes for each blueprint.\nOptimizations to improve runtime were sourced from Reddit (1, 2).\n\nmax_geodes &lt;- function(blueprint, inventory, production, time_left, max_cost, cur_best = 0) {\n  \n  # If the best possible set of geode robots in this branch can't outdo the current\n  # best, then don't traverse this branch.\n  theoretical_best &lt;- inventory[\"geode\"] + \n    production[\"geode\"] * time_left +\n    sum(1:time_left - 1)\n  \n  if (time_left == 0 | theoretical_best &lt;= cur_best)\n    return(inventory[\"geode\"])\n    \n  # Determine the amount of time required to build each robot next\n  time_to_build &lt;- map_dbl(blueprint$cost, \n    ~ ceiling((.x - inventory) / production) |&gt; \n      keep(.x &gt; 0) |&gt; \n      map_dbl(~ max(.x, 0) + 1) |&gt; \n      max()\n  )\n  \n  # Determine which robots are buildable within the remaining time\n  idx &lt;- which(\n    is.finite(time_to_build) & \n      time_to_build &lt; time_left & \n      production &lt; max_cost\n  )\n  \n  # Quit if there are no remaining options\n  if (length(idx) == 0)\n    return((inventory + time_left * production)[\"geode\"])\n  \n  # Loop through each branch of options\n  for (i in rev(idx)) {\n    branch_best &lt;- max_geodes(\n        blueprint  = blueprint,\n        inventory  = inventory + \n          production * time_to_build[[i]] - \n          blueprint$cost[[i]],\n        production = production + blueprint$output[[i]],\n        time_left  = time_left - time_to_build[[i]],\n        max_cost   = max_cost,\n        cur_best   = cur_best\n      )\n    if (branch_best &gt; cur_best)\n      cur_best &lt;- branch_best\n  }\n  \n  return(cur_best)\n}\n\nblueprint_geodes &lt;- function(blueprints, total_time) {\n  \n  best &lt;- c()\n  \n  for (blueprint in blueprints) {\n    max_cost &lt;- blueprint |&gt; \n      pull(cost) |&gt; \n      do.call(what = pmax) |&gt; \n      modify_at(.at = \"geode\", ~ Inf)\n    best &lt;- c(\n      best,\n      max_geodes(\n        blueprint  = blueprint,\n        inventory  = empty,\n        production = ore,\n        time_left  = total_time, \n        max_cost   = max_cost,\n        cur_best   = 0\n      )\n    )\n  }\n  \n  unname(best)\n}\n\nCompute total quality score by multiplying the max geodes for each blueprint by its index:\n\nblueprint_geodes(blueprints, total_time = 24) |&gt; \n  imap_dbl(\\(geodes, i) i * geodes) |&gt; \n  sum()\n\n[1] 2160",
+    "text": "Part 1\nCreate a containing box for the set of cubes, padded by 1 voxel of air in each direction, and convert the full rectangular area into a graph:\n\nxrange &lt;- (min(input$x) - 1):(max(input$x) + 1)\nyrange &lt;- (min(input$y) - 1):(max(input$y) + 1)\nzrange &lt;- (min(input$z) - 1):(max(input$z) + 1)\n\n# Fill out each coordinate of the containing box with air\ncontainer &lt;- input |&gt; \n  mutate(type = \"cube\") |&gt; \n  complete(x = xrange, y = yrange, z = zrange, fill = list(type = \"air\")) |&gt; \n  mutate(id = row_number())\n\n# For each coordinate, create edges between adjacent coords of the same type\nedges &lt;- container |&gt;\n  arrange(x, y, z) |&gt; \n  mutate(\n    edge_x1 = case_when(type == lag(type)  ~ lag(id)),\n    edge_x2 = case_when(type == lead(type) ~ lead(id)),\n    .by = c(y, z)\n  ) |&gt; \n  mutate(\n    edge_y1 = case_when(type == lag(type)  ~ lag(id)),\n    edge_y2 = case_when(type == lead(type) ~ lead(id)),\n    .by = c(x, z)\n  ) |&gt; \n  mutate(\n    edge_z1 = case_when(type == lag(type)  ~ lag(id)),\n    edge_z2 = case_when(type == lead(type) ~ lead(id)),\n    .by = c(x, y)\n  ) |&gt; \n  mutate(across(starts_with(\"edge\"), \\(col) {\n    case_when(!is.na(col) ~ map2(id, col, ~ c(.x, .y)))\n  })) |&gt; \n  select(starts_with(\"edge\")) |&gt; \n  pivot_longer(everything()) |&gt; \n  pull(value) |&gt; \n  unlist()\n\n\n# Convert to a graph\ng &lt;- make_graph(edges = edges, n = max(container$id), directed = TRUE) |&gt; \n  as_undirected()\n\nCompute the surface area of the cubes. Start by giving every cube a surface area of 6, then subtract the cube’s vertex degree (which is the number of adjacent cubes):\n\n# Get the vertex IDs of all cubes\ncube_ids &lt;- container |&gt; \n  filter(type == \"cube\") |&gt; \n  pull(id)\n\n# Compute the surface area of all cubes\ng |&gt; \n  degree() |&gt; \n  keep_at(cube_ids) |&gt; \n  map_dbl(~ 6 - .x) |&gt; \n  sum()\n\n[1] 3470",
     "crumbs": [
       "2022",
-      "Day 19"
+      "Day 18"
     ]
   },
   {
-    "objectID": "2022/R/day19.html#part-2",
-    "href": "2022/R/day19.html#part-2",
-    "title": "Day 19",
+    "objectID": "2022/R/day18.html#part-2",
+    "href": "2022/R/day18.html#part-2",
+    "title": "Day 18",
     "section": "Part 2",
-    "text": "Part 2\nFilter to the first 3 blueprints, increase the total time to 32 seconds, and take the product of the max geodes:\n\nblueprints |&gt; \n  keep_at(1:3) |&gt; \n  blueprint_geodes(total_time = 32) |&gt; \n  prod()\n\n[1] 13340",
+    "text": "Part 2\nTo compute the external surface area, we compute the total surface area of the outermost containing box of air, then subtract away its known rectangular external surface area.\n\n# First vertex is external air padding, so we pull all vertices having its group\noutside_ids &lt;- which(components(g)$membership == components(g)$membership[1])\n\n# Compute the surface area of the external air voxels using their vertex degree\ntotal_sa &lt;- g |&gt; \n  degree() |&gt; \n  keep_at(outside_ids) |&gt; \n  map_dbl(~ 6 - .x) |&gt; \n  sum()\n\n# Compute the outer surface of the bounding box\nxlen &lt;- max(xrange) - min(xrange) + 1\nylen &lt;- max(yrange) - min(yrange) + 1\nzlen &lt;- max(zrange) - min(zrange) + 1\nbounding_sa &lt;- 2 * (xlen * ylen + xlen * zlen + ylen * zlen)\n\n# Subtract the outer surface area from the total surface area of the air padding\ntotal_sa - bounding_sa\n\n[1] 1986",
     "crumbs": [
       "2022",
-      "Day 19"
-    ]
-  },
-  {
-    "objectID": "2022/R/day01.html",
-    "href": "2022/R/day01.html",
-    "title": "Day 1",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; \n  as.integer()",
-    "crumbs": [
-      "2022",
-      "Day 1"
-    ]
-  },
-  {
-    "objectID": "2022/R/day01.html#setup",
-    "href": "2022/R/day01.html#setup",
-    "title": "Day 1",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; \n  as.integer()",
-    "crumbs": [
-      "2022",
-      "Day 1"
-    ]
-  },
-  {
-    "objectID": "2022/R/day01.html#part-1",
-    "href": "2022/R/day01.html#part-1",
-    "title": "Day 1",
-    "section": "Part 1",
-    "text": "Part 1\n\n# Format input as a data frame and number the elves\ndf &lt;- tibble(\n  cal = input,\n  elf_id = cumsum(is.na(cal)) + 1\n) |&gt;\n  filter(!is.na(cal))\n\n# Compute calorie sum for each elf, get the top n elves, and combine totals\ncount_max &lt;- function(df, num_top_elves) {\n  df |&gt; \n    group_by(elf_id) |&gt;\n    summarize(total_cal = sum(cal)) |&gt;\n    slice_max(total_cal, n = num_top_elves) |&gt;\n    pull(total_cal) |&gt;\n    sum()\n}\n\nRun puzzle input:\n\ncount_max(df, 1)\n\n[1] 68787",
-    "crumbs": [
-      "2022",
-      "Day 1"
-    ]
-  },
-  {
-    "objectID": "2022/R/day01.html#part-2",
-    "href": "2022/R/day01.html#part-2",
-    "title": "Day 1",
-    "section": "Part 2",
-    "text": "Part 2\n\ncount_max(df, 3)\n\n[1] 198041",
-    "crumbs": [
-      "2022",
-      "Day 1"
-    ]
-  },
-  {
-    "objectID": "2022/R/day03.html",
-    "href": "2022/R/day03.html",
-    "title": "Day 3",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_table(\"../input/day03.txt\", col_names = \"str\")",
-    "crumbs": [
-      "2022",
-      "Day 3"
-    ]
-  },
-  {
-    "objectID": "2022/R/day03.html#setup",
-    "href": "2022/R/day03.html#setup",
-    "title": "Day 3",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_table(\"../input/day03.txt\", col_names = \"str\")",
-    "crumbs": [
-      "2022",
-      "Day 3"
-    ]
-  },
-  {
-    "objectID": "2022/R/day03.html#part-1",
-    "href": "2022/R/day03.html#part-1",
-    "title": "Day 3",
-    "section": "Part 1",
-    "text": "Part 1\n\ninput |&gt;\n  mutate(\n    # Separate each line into two compartments\n    str_length = str_length(str) / 2,\n    str_1 = str_sub(str, start = 1L, end = str_length),\n    str_2 = str_sub(str, start = str_length + 1, end = -1L),\n\n    # Find the letter in common between each pair of compartments\n    across(c(str_1, str_2), ~ str_split(.x, \"\")),\n    dup = map2_chr(str_1, str_2, ~ intersect(.x, .y)),\n\n    # Convert to priority value\n    priority = match(dup, c(letters, LETTERS))\n  ) |&gt;\n\n  # Compute total sum\n  pull(priority) |&gt;\n  sum()\n\n[1] 8252",
-    "crumbs": [
-      "2022",
-      "Day 3"
-    ]
-  },
-  {
-    "objectID": "2022/R/day03.html#part-2",
-    "href": "2022/R/day03.html#part-2",
-    "title": "Day 3",
-    "section": "Part 2",
-    "text": "Part 2\n\ninput |&gt;\n\n  # Reshape to one row per group, one column per elf\n  mutate(\n    str = str_split(str, \"\"),\n    group_num = floor((row_number() - 1) / 3),\n    elf_num = as.character(row_number() %% 3)\n  ) |&gt;\n  pivot_wider(names_from = elf_num, values_from = str, names_prefix = \"elf_\") |&gt;\n\n  # Find the character in common between all 3 elves & convert to priority val\n  mutate(\n    dup = pmap_chr(\n      list(elf_0, elf_1, elf_2),\n      ~ reduce(list(..1, ..2, ..3), intersect)\n    ),\n    priority = match(dup, c(letters, LETTERS))\n  ) |&gt;\n\n  # Compute total sum\n  pull(priority) |&gt;\n  sum()\n\n[1] 2828",
-    "crumbs": [
-      "2022",
-      "Day 3"
-    ]
-  },
-  {
-    "objectID": "2022/R/day16.html",
-    "href": "2022/R/day16.html",
-    "title": "Day 16",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day16.txt\", skip_empty_rows = TRUE) |&gt; \n  unglue::unglue_data(\n    c(\n      \"Valve {source} has flow rate={rate}; tunnels lead to valves {target}\",\n      \"Valve {source} has flow rate={rate}; tunnel leads to valve {target}\"\n    ),\n    convert = TRUE\n  ) |&gt; \n  mutate(target = map(target, \\(x) str_split_1(x, \", \")))",
-    "crumbs": [
-      "2022",
-      "Day 16"
-    ]
-  },
-  {
-    "objectID": "2022/R/day16.html#setup",
-    "href": "2022/R/day16.html#setup",
-    "title": "Day 16",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day16.txt\", skip_empty_rows = TRUE) |&gt; \n  unglue::unglue_data(\n    c(\n      \"Valve {source} has flow rate={rate}; tunnels lead to valves {target}\",\n      \"Valve {source} has flow rate={rate}; tunnel leads to valve {target}\"\n    ),\n    convert = TRUE\n  ) |&gt; \n  mutate(target = map(target, \\(x) str_split_1(x, \", \")))",
-    "crumbs": [
-      "2022",
-      "Day 16"
-    ]
-  },
-  {
-    "objectID": "2022/R/day16.html#part-1",
-    "href": "2022/R/day16.html#part-1",
-    "title": "Day 16",
-    "section": "Part 1",
-    "text": "Part 1\nRepresent tunnels and valves as a graph:\n\ng &lt;- input |&gt;\n  unnest(target) |&gt; \n  pmap(function(source, target, ...) c(source, target)) |&gt; \n  unique() |&gt; \n  unlist() |&gt; \n  make_graph(directed = TRUE) |&gt; \n  as_undirected()\n\nGet the list of valves with nonzero flow:\n\nflows &lt;- input |&gt; \n  filter(rate &gt; 0 | source == \"AA\") |&gt; \n  select(source, rate) |&gt; \n  deframe()\n\nnon_init_flows &lt;- flows |&gt; \n  discard_at(\"AA\")\n\nvalves &lt;- names(flows)\n\ndists &lt;- distances(g, valves, valves)\n\nList all permutations of possible valves to visit with a total distance less than 30:\n\nget_path &lt;- function(choices, last, cur_length, max_length) {\n  if (cur_length &gt;= max_length)\n    return(head(last, -1))\n  if (length(choices) == 0)\n    return(last)\n  \n  ls &lt;- list()\n  for (valve in choices) {\n    ls &lt;- append(\n      ls, \n      list(get_path(\n        choices[choices != valve], \n        c(last, valve), \n        cur_length + dists[tail(last, 1), valve] + 1,\n        max_length\n      ))\n    )\n  }\n  ls |&gt; \n    discard(is_null) |&gt; \n    list_flatten() |&gt; \n    unique()\n}\n\ncombos &lt;- get_path(names(non_init_flows), names(flows[\"AA\"]), 0, 30)\n\nCompute total pressure released for each permutation:\n\nget_pressures &lt;- function(paths, max_time) {\n  map_dbl(paths, \\(path) {\n    valve      &lt;- tail(path, -1)\n    valve_lag  &lt;- head(path, -1)\n    flow       &lt;- tail(flows[path], -1)\n    \n    dist       &lt;- map2_int(valve_lag, valve, \\(src, target) dists[src, target])\n    time_start &lt;- cumsum(dist) + 1:length(dist) + 1\n    pressure   &lt;- (max_time - time_start + 1) * flow\n    \n    sum(pressure[time_start &lt;= max_time])\n  })\n}\n\npressures &lt;- get_pressures(combos, 30)\n\nFind the permutation that gives the maximum pressure:\n\nmax_idx &lt;- which.max(pressures)\npressures[max_idx]\n\n[1] 1947",
-    "crumbs": [
-      "2022",
-      "Day 16"
-    ]
-  },
-  {
-    "objectID": "2022/R/day16.html#part-2",
-    "href": "2022/R/day16.html#part-2",
-    "title": "Day 16",
-    "section": "Part 2",
-    "text": "Part 2\nList all permutations of possible valves to visit with a total distance less than 26:\n\nel_combos    &lt;- get_path(names(non_init_flows), names(flows[\"AA\"]), 0, 26)\nel_pressures &lt;- get_pressures(el_combos, 26)\n\nFor each set of permutations, get the best pressure.\n\nel_best &lt;- tibble(valves = map(el_combos, sort), pressure = el_pressures) |&gt; \n  slice_max(pressure, by = valves, with_ties = FALSE)\n\nGet best combinations of permutations between yourself and the elephant:\n\nel_best |&gt; \n  rename(el_valves = valves, el_pressure = pressure) |&gt; \n  pmap_dbl(\\(el_valves, el_pressure) {\n    el_valves &lt;- el_valves[el_valves != \"AA\"]\n    el_pressure + el_best |&gt;\n      filter(map_lgl(valves, ~ length(intersect(.x, el_valves)) == 0)) |&gt; \n      pull(pressure) |&gt; \n      max()\n  }) |&gt; \n  max()\n\n[1] 2556",
-    "crumbs": [
-      "2022",
-      "Day 16"
-    ]
-  },
-  {
-    "objectID": "2022/R/day06.html",
-    "href": "2022/R/day06.html",
-    "title": "Day 6",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day06.txt\") |&gt;\n  str_split_1(\"\") |&gt;\n  enframe(name = \"idx\", value = \"char\")",
-    "crumbs": [
-      "2022",
-      "Day 6"
-    ]
-  },
-  {
-    "objectID": "2022/R/day06.html#setup",
-    "href": "2022/R/day06.html#setup",
-    "title": "Day 6",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day06.txt\") |&gt;\n  str_split_1(\"\") |&gt;\n  enframe(name = \"idx\", value = \"char\")",
-    "crumbs": [
-      "2022",
-      "Day 6"
-    ]
-  },
-  {
-    "objectID": "2022/R/day06.html#part-1",
-    "href": "2022/R/day06.html#part-1",
-    "title": "Day 6",
-    "section": "Part 1",
-    "text": "Part 1\n\nfind_marker &lt;- function(df, marker_length) {\n  df |&gt; \n    # Construct sequences of next n chars and count # of unique chars in each\n    transmute(\n      marker_idx = idx + marker_length - 1,\n      char_seq = reduce(\n        .x = map(0:(marker_length - 1), ~ lead(char, n = .x)),\n        .f = str_c\n      ),\n      n_unique = map_int(\n        char_seq,\n        ~ .x |&gt;\n          str_split(\"\") |&gt;\n          unlist() |&gt;\n          unique() |&gt;\n          length()\n      )\n    ) |&gt;\n\n    # Extract first instance where all n chars are unique\n    filter(n_unique == marker_length) |&gt;\n    pull(marker_idx) |&gt;\n    min()\n}\n\n\nfind_marker(input, marker_length = 4)\n\n[1] 1802",
-    "crumbs": [
-      "2022",
-      "Day 6"
-    ]
-  },
-  {
-    "objectID": "2022/R/day06.html#part-2",
-    "href": "2022/R/day06.html#part-2",
-    "title": "Day 6",
-    "section": "Part 2",
-    "text": "Part 2\n\nfind_marker(input, marker_length = 14)\n\n[1] 3551",
-    "crumbs": [
-      "2022",
-      "Day 6"
-    ]
-  },
-  {
-    "objectID": "2022/R/day13.html",
-    "href": "2022/R/day13.html",
-    "title": "Day 13",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input into a data frame and convert to indexed nested lists\ndf &lt;- read_table(\"../input/day13.txt\", col_names = \"txt\") |&gt; \n  mutate(\n    row_id   = row_number(),\n    group_id = floor((row_id - 1) / 2) + 1,\n    item_id  = (row_id - 1) %% 2 + 1,\n    lst      = map(txt, jsonlite::fromJSON, simplifyVector = FALSE)\n  )",
-    "crumbs": [
-      "2022",
-      "Day 13"
-    ]
-  },
-  {
-    "objectID": "2022/R/day13.html#setup",
-    "href": "2022/R/day13.html#setup",
-    "title": "Day 13",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input into a data frame and convert to indexed nested lists\ndf &lt;- read_table(\"../input/day13.txt\", col_names = \"txt\") |&gt; \n  mutate(\n    row_id   = row_number(),\n    group_id = floor((row_id - 1) / 2) + 1,\n    item_id  = (row_id - 1) %% 2 + 1,\n    lst      = map(txt, jsonlite::fromJSON, simplifyVector = FALSE)\n  )",
-    "crumbs": [
-      "2022",
-      "Day 13"
-    ]
-  },
-  {
-    "objectID": "2022/R/day13.html#part-1",
-    "href": "2022/R/day13.html#part-1",
-    "title": "Day 13",
-    "section": "Part 1",
-    "text": "Part 1\nDefine a function to compare nested lists:\n\ncompare_nested &lt;- function(a, b) {\n\n  # Compare if both inputs are numeric\n  if (is.numeric(a) & is.numeric(b)) {\n    if (a &lt; b)  return(-1)\n    if (a &gt; b)  return(1)\n    if (a == b) return(0)\n  }\n\n  # Compare if only one input is numeric\n  if (is.numeric(a) != is.numeric(b)) {\n    if (is.numeric(a))\n      return(compare_nested(list(a), b))\n    if (is.numeric(b))\n      return(compare_nested(a, list(b)))\n  }\n\n  # Compare if both inputs are lists\n  i &lt;- 1\n  while (i &lt;= min(length(a), length(b))) {\n    result &lt;- compare_nested(a[[i]], b[[i]])\n    if (result %in% c(1, -1))\n      return(result)\n    i &lt;- i + 1\n  }\n  # When all comparable values are equal, compare lengths\n  return(compare_nested(length(a), length(b)))\n}\n\nSum the indices of packet pairs that are in order:\n\ndf |&gt;\n  select(group_id, item_id, lst) |&gt;\n  pivot_wider(\n    names_from = item_id,\n    names_prefix = \"item_\",\n    values_from = lst\n  ) |&gt;\n  mutate(comparison = map2_int(item_1, item_2, compare_nested)) |&gt;\n  filter(comparison == -1) |&gt;\n  pull(group_id) |&gt; \n  sum()\n\n[1] 5684",
-    "crumbs": [
-      "2022",
-      "Day 13"
-    ]
-  },
-  {
-    "objectID": "2022/R/day13.html#part-2",
-    "href": "2022/R/day13.html#part-2",
-    "title": "Day 13",
-    "section": "Part 2",
-    "text": "Part 2\nDefine a function to determine the pairwise order of nested lists:\n\nsort_nested &lt;- function(lst) {\n  n &lt;- length(lst)\n  indices &lt;- 1:n\n\n  if (n == 0) return()\n  if (n == 1) return(indices)\n\n  # Bubble sort: loop through list and swap elements until sorted\n  repeat {\n    swap_occurred &lt;- FALSE\n    for (i in 1:(n - 1)) {\n      j1 &lt;- which(indices == i)\n      j2 &lt;- which(indices == i + 1)\n      if (compare_nested(lst[[j1]], lst[[j2]]) == 1) {\n        indices[j1] &lt;- i + 1\n        indices[j2] &lt;- i\n        swap_occurred &lt;- TRUE\n      }\n    }\n    if (!swap_occurred) break\n  }\n  return(indices)\n}\n\nAdd new flagged packets, sort all, and multiply flagged indices:\n\nnew_packets &lt;- list(\"[[2]]\", \"[[6]]\") |&gt;\n  map(jsonlite::fromJSON, simplifyVector = FALSE) |&gt;\n  as_tibble_col(column_name = \"lst\")\n\ndf |&gt;\n  transmute(lst, flag = FALSE) |&gt;\n  add_row(new_packets, flag = TRUE) |&gt;\n  mutate(ord = sort_nested(lst)) |&gt;\n  filter(flag) |&gt;\n  pull(ord) |&gt; \n  prod()\n\n[1] 22932",
-    "crumbs": [
-      "2022",
-      "Day 13"
-    ]
-  },
-  {
-    "objectID": "2022/R/day11.html",
-    "href": "2022/R/day11.html",
-    "title": "Day 11",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day11.txt\") |&gt;\n  trimws() |&gt;\n  discard(~ .x == \"\")",
-    "crumbs": [
-      "2022",
-      "Day 11"
-    ]
-  },
-  {
-    "objectID": "2022/R/day11.html#setup",
-    "href": "2022/R/day11.html#setup",
-    "title": "Day 11",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day11.txt\") |&gt;\n  trimws() |&gt;\n  discard(~ .x == \"\")",
-    "crumbs": [
-      "2022",
-      "Day 11"
-    ]
-  },
-  {
-    "objectID": "2022/R/day11.html#part-1",
-    "href": "2022/R/day11.html#part-1",
-    "title": "Day 11",
-    "section": "Part 1",
-    "text": "Part 1\n\n# Reformat input\nitems &lt;- str_match(input, \"Starting items:(.*)\")[,2] |&gt;\n  discard(is.na) |&gt;\n  str_split(\",\") |&gt;\n  map(parse_number)\n\noperations &lt;- input |&gt;\n  keep(~ str_detect(.x, \"Operation:\")) |&gt;\n  str_replace(\"Operation: new = \", \"~ \") |&gt;\n  str_replace_all(\"old\", \".x\") |&gt;\n  map(~ rlang::as_function(as.formula(.x)))\n\ndiv  &lt;- parse_number(keep(input, ~ str_detect(.x, \"Test:\")))\ndivt &lt;- parse_number(keep(input, ~ str_detect(.x, \"If true:\")))\ndivf &lt;- parse_number(keep(input, ~ str_detect(.x, \"If false:\")))\n\ntest &lt;- pmap(\n  list(div, divt, divf),\n  ~ function(x) if_else(x %% ..1 == 0, ..2 + 1, ..3 + 1)\n)\n\nnum_monkeys &lt;- length(input) / 6\n\n\ncompute_monkey_business &lt;- function(num_rounds, worry_func) {\n  # Initialize\n  activity &lt;- rep(0, num_monkeys)\n\n  # Perform the tosses\n  for (round in 1:num_rounds) {\n    for (monkey in 1:num_monkeys) {\n      for (item in items[[monkey]]) {\n        worry &lt;- worry_func(operations[[monkey]](item))\n        toss  &lt;- test[[monkey]](worry)\n        items[[toss]] &lt;- c(items[[toss]], worry)\n      }\n      activity[[monkey]] &lt;- activity[[monkey]] + length(items[[monkey]])\n      items[[monkey]] &lt;- numeric(0)\n    }\n  }\n\n  # Compute monkey business score\n  activity |&gt;\n    sort() |&gt;\n    tail(2) |&gt;\n    reduce(`*`)\n}\n\n\ncompute_monkey_business(num_rounds = 20, worry_func = \\(x) floor(x / 3))\n\n[1] 78678",
-    "crumbs": [
-      "2022",
-      "Day 11"
-    ]
-  },
-  {
-    "objectID": "2022/R/day11.html#part-2",
-    "href": "2022/R/day11.html#part-2",
-    "title": "Day 11",
-    "section": "Part 2",
-    "text": "Part 2\n\nlcm &lt;- DescTools::LCM(div)\ncompute_monkey_business(num_rounds = 10000, worry_func = \\(x) x %% lcm)\n\n[1] 15333249714",
-    "crumbs": [
-      "2022",
-      "Day 11"
-    ]
-  },
-  {
-    "objectID": "2022/R/day04.html",
-    "href": "2022/R/day04.html",
-    "title": "Day 4",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_csv(\"../input/day04.txt\", col_names = FALSE)",
-    "crumbs": [
-      "2022",
-      "Day 4"
-    ]
-  },
-  {
-    "objectID": "2022/R/day04.html#setup",
-    "href": "2022/R/day04.html#setup",
-    "title": "Day 4",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_csv(\"../input/day04.txt\", col_names = FALSE)",
-    "crumbs": [
-      "2022",
-      "Day 4"
-    ]
-  },
-  {
-    "objectID": "2022/R/day04.html#parts-1-2",
-    "href": "2022/R/day04.html#parts-1-2",
-    "title": "Day 4",
-    "section": "Parts 1 & 2",
-    "text": "Parts 1 & 2\n\ninput |&gt;  \n  separate(X1, into = c(\"start1\", \"end1\"), sep = \"-\", convert = TRUE) |&gt;\n  separate(X2, into = c(\"start2\", \"end2\"), sep = \"-\", convert = TRUE) |&gt;\n  mutate(\n    range1 = map2(start1, end1, ~ .x:.y),\n    range2 = map2(start2, end2, ~ .x:.y),\n    contained = map2_lgl(range1, range2, ~ all(.x %in% .y) | all(.y %in% .x)),\n    overlap   = map2_lgl(range1, range2, ~ length(intersect(.x, .y)) &gt; 0)\n  ) |&gt;\n  summarize(num_contained = sum(contained), num_overlap = sum(overlap))\n\n# A tibble: 1 × 2\n  num_contained num_overlap\n          &lt;int&gt;       &lt;int&gt;\n1           550         931",
-    "crumbs": [
-      "2022",
-      "Day 4"
-    ]
-  },
-  {
-    "objectID": "2022/R/day10.html",
-    "href": "2022/R/day10.html",
-    "title": "Day 10",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day10.txt\") |&gt;\n  enframe(name = \"cmd_num\")",
-    "crumbs": [
-      "2022",
-      "Day 10"
-    ]
-  },
-  {
-    "objectID": "2022/R/day10.html#setup",
-    "href": "2022/R/day10.html#setup",
-    "title": "Day 10",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day10.txt\") |&gt;\n  enframe(name = \"cmd_num\")",
-    "crumbs": [
-      "2022",
-      "Day 10"
-    ]
-  },
-  {
-    "objectID": "2022/R/day10.html#part-1",
-    "href": "2022/R/day10.html#part-1",
-    "title": "Day 10",
-    "section": "Part 1",
-    "text": "Part 1\n\nsignal &lt;- input |&gt;\n\n  # Convert multi-cycle commands into list of changes to X at each cycle\n  separate(value, into = c(\"cmd\", \"V\"), sep = \" \", convert = TRUE) |&gt;\n  transmute(cmd_num, v1 = 0, v2 = V) |&gt;\n  pivot_longer(\n    c(v1, v2),\n    names_to = \"cycle_count\",\n    values_to = \"x_change\",\n    values_drop_na = TRUE\n  ) |&gt;\n  pull(x_change) |&gt;\n\n  # Iterate through changes to X to get value of X during each cycle\n  accumulate(`+`, .init = 1) |&gt;\n  enframe(name = \"cycle\", value = \"X\") |&gt;\n  slice_head(n = -1)\n\n\n# Sum the signal strength at 20th cycle & every 40 cycles after that\nsignal |&gt;\n  filter(cycle %% 40 == 20) |&gt;\n  mutate(signal_strength = cycle * X) |&gt;\n  pull(signal_strength) |&gt;\n  sum()\n\n[1] 16020",
-    "crumbs": [
-      "2022",
-      "Day 10"
-    ]
-  },
-  {
-    "objectID": "2022/R/day10.html#part-2",
-    "href": "2022/R/day10.html#part-2",
-    "title": "Day 10",
-    "section": "Part 2",
-    "text": "Part 2\n\n# Draw pixel when position of 3px-wide sprite overlaps w/ CRT position\nsignal |&gt;\n  mutate(\n    row = floor((cycle - 1) / 40),\n    col = (cycle - 1) %% 40\n  ) |&gt;\n  mutate(pixel = if_else(X &lt;= col + 1 & X &gt;= col - 1, \"#\", \".\")) |&gt;\n  group_by(row) |&gt;\n  summarize(val = str_c(pixel, collapse = \"\")) |&gt;\n  pull(val) |&gt;\n  cat(sep = \"\\n\")\n\n####..##..####.#..#.####..##..#....###..\n#....#..#....#.#..#....#.#..#.#....#..#.\n###..#......#..#..#...#..#..#.#....#..#.\n#....#.....#...#..#..#...####.#....###..\n#....#..#.#....#..#.#....#..#.#....#.#..\n####..##..####..##..####.#..#.####.#..#.",
-    "crumbs": [
-      "2022",
-      "Day 10"
-    ]
-  },
-  {
-    "objectID": "2022/R/day05.html",
-    "href": "2022/R/day05.html",
-    "title": "Day 5",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\npath &lt;- \"../input/day05.txt\"\ninput &lt;- read_lines(path)",
-    "crumbs": [
-      "2022",
-      "Day 5"
-    ]
-  },
-  {
-    "objectID": "2022/R/day05.html#setup",
-    "href": "2022/R/day05.html#setup",
-    "title": "Day 5",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\npath &lt;- \"../input/day05.txt\"\ninput &lt;- read_lines(path)",
-    "crumbs": [
-      "2022",
-      "Day 5"
-    ]
-  },
-  {
-    "objectID": "2022/R/day05.html#part-1",
-    "href": "2022/R/day05.html#part-1",
-    "title": "Day 5",
-    "section": "Part 1",
-    "text": "Part 1\n\n# Format raw input\nmoves &lt;- input |&gt;\n  tail_while(~ .x != \"\") |&gt;\n  str_extract_all(\"\\\\d+\") |&gt;\n  map(as.integer)\n\nstacks &lt;- read_fwf(\n  path,\n  n_max = length(input) - length(moves) - 2,\n  col_types = \"c\"\n) |&gt;\n  mutate(across(everything(), ~ str_extract(.x, \"[A-Z]\"))) |&gt;\n  as.list() |&gt;\n  map(discard, is.na) |&gt;\n  map(rev)\n\nmove_crates &lt;- function(moves, stacks, func) {\n  \n  # Execute moves\n  for (curr_move in moves) {\n    count &lt;- curr_move[1]\n    from  &lt;- curr_move[2]\n    to    &lt;- curr_move[3]\n    \n    crates &lt;- func(tail(stacks[[from]], count))\n\n    stacks[[to]]   &lt;- append(stacks[[to]], crates)\n    stacks[[from]] &lt;- head(stacks[[from]], -1 * count)\n  }\n\n  # Examine final top row of crates\n  stacks |&gt;\n    map(~ tail(.x, 1)) |&gt;\n    str_c(collapse = \"\")\n}\n\n\nmove_crates(moves, stacks, rev)\n\n[1] \"RLFNRTNFB\"",
-    "crumbs": [
-      "2022",
-      "Day 5"
-    ]
-  },
-  {
-    "objectID": "2022/R/day05.html#part-2",
-    "href": "2022/R/day05.html#part-2",
-    "title": "Day 5",
-    "section": "Part 2",
-    "text": "Part 2\n\nmove_crates(moves, stacks, identity)\n\n[1] \"MHQTLJRLB\"",
-    "crumbs": [
-      "2022",
-      "Day 5"
-    ]
-  },
-  {
-    "objectID": "2022/R/day07.html",
-    "href": "2022/R/day07.html",
-    "title": "Day 7",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day07.txt\") |&gt; \n  enframe(name = NULL)",
-    "crumbs": [
-      "2022",
-      "Day 7"
-    ]
-  },
-  {
-    "objectID": "2022/R/day07.html#setup",
-    "href": "2022/R/day07.html#setup",
-    "title": "Day 7",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day07.txt\") |&gt; \n  enframe(name = NULL)",
-    "crumbs": [
-      "2022",
-      "Day 7"
-    ]
-  },
-  {
-    "objectID": "2022/R/day07.html#part-1",
-    "href": "2022/R/day07.html#part-1",
-    "title": "Day 7",
-    "section": "Part 1",
-    "text": "Part 1\n\ndir_sizes &lt;- input |&gt; \n  mutate(\n\n    # Determine path of each file by accumulating preceding cd terms\n    path = value |&gt;\n      str_extract(\"(?&lt;=^\\\\$ cd ).*\") |&gt;\n      str_c(\"/\") |&gt;\n      replace_na(\"\") |&gt;\n      accumulate(\n        ~ if (.y == \"../\") {\n          str_remove(.x, \"(?&lt;=/)[a-z]+/$\")\n        } else {\n          str_c(.x, .y)\n        }\n      ) |&gt;\n      str_remove_all(\"^/|/$\"),\n\n    # Convert paths to lists of all containing directories\n    dirs = path |&gt;\n      str_split(\"/\") |&gt;\n      map(~accumulate(.x, str_c, sep = \"/\"))\n  ) |&gt;\n\n  # Remove commands & directories from output and format file info as cols\n  filter(!str_detect(value, \"^\\\\$|dir \")) |&gt;\n  separate(value, into = c(\"size\", \"file\"), sep = \" \") |&gt;\n  mutate(size = as.integer(size)) |&gt;\n\n  # Convert nested lists of directories to long-format\n  unnest_wider(dirs, names_sep = \"_\") |&gt;\n  mutate(dirs_1 = \"/\") |&gt;\n  pivot_longer(\n    cols = matches(\"dirs_\\\\d+\"),\n    names_to = NULL,\n    values_to = \"dir\",\n    values_drop_na = TRUE\n  ) |&gt;\n\n  # Compute size of each directory\n  group_by(dir) |&gt;\n  summarize(size = sum(size)) |&gt;\n  ungroup()\n\nSum sizes of all directories with maximum size 100000:\n\ndir_sizes |&gt;\n  filter(size &lt;= 100000) |&gt;\n  pull(size) |&gt;\n  sum()\n\n[1] 1243729",
-    "crumbs": [
-      "2022",
-      "Day 7"
-    ]
-  },
-  {
-    "objectID": "2022/R/day07.html#part-2",
-    "href": "2022/R/day07.html#part-2",
-    "title": "Day 7",
-    "section": "Part 2",
-    "text": "Part 2\nFind size of the smallest necessary directory to delete:\n\ncurr_system_size &lt;- dir_sizes |&gt;\n  filter(dir == \"/\") |&gt;\n  pull(size)\n\ndir_sizes |&gt;\n  filter(size &gt;= (30000000 - (70000000 - curr_system_size))) |&gt;\n  slice_min(size) |&gt;\n  pull(size)\n\n[1] 4443914",
-    "crumbs": [
-      "2022",
-      "Day 7"
-    ]
-  },
-  {
-    "objectID": "2022/R/day12.html",
-    "href": "2022/R/day12.html",
-    "title": "Day 12",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day12.txt\", skip_empty_rows = TRUE)",
-    "crumbs": [
-      "2022",
-      "Day 12"
-    ]
-  },
-  {
-    "objectID": "2022/R/day12.html#setup",
-    "href": "2022/R/day12.html#setup",
-    "title": "Day 12",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day12.txt\", skip_empty_rows = TRUE)",
-    "crumbs": [
-      "2022",
-      "Day 12"
-    ]
-  },
-  {
-    "objectID": "2022/R/day12.html#part-1",
-    "href": "2022/R/day12.html#part-1",
-    "title": "Day 12",
-    "section": "Part 1",
-    "text": "Part 1\nReformat input as a data frame of coordinates and elevations:\n\ndf &lt;- input |&gt;\n  str_split(\"\") |&gt;\n  unlist() |&gt;\n  as_tibble() |&gt;\n  transmute(\n    id = row_number(),\n    letter = value,\n    elevation = case_when(\n      letter == \"S\" ~  Inf,\n      letter == \"E\" ~ -Inf,\n      .default = match(letter, letters)\n    ),\n    row = floor((id - 1) / str_length(input[1]) + 1),\n    col = (id - 1) %% str_length(input[1]) + 1\n  )\n\n\ndf_to_graph &lt;- function(df) {\n\n  # Flag whether each neighbor of each vertex is walkable\n  neighbors &lt;- df |&gt;\n    mutate(up   = lag(id), down  = lead(id), .by = col) |&gt;\n    mutate(left = lag(id), right = lead(id), .by = row) |&gt;\n    mutate(\n      across(\n        c(up, down, left, right),\n        ~ elevation[.x],\n        .names = \"{.col}_elev\"\n      ),\n      across(\n        ends_with(\"_elev\"),\n        ~ (.x - elevation) &lt;= 1,\n        .names = \"{str_remove(.col, '_elev')}_walkable\"\n      )\n    ) |&gt;\n    rename_with(.cols = c(up, down, left, right), ~ str_c(.x, \"_idx\")) |&gt;\n    select(source_idx = id, ends_with(c(\"idx\", \"walkable\")))\n\n  # Construct a list of edges\n  edge_list &lt;- neighbors |&gt;\n    pivot_longer(\n      !source_idx,\n      names_to = c(\"target_dir\", \".value\"),\n      names_sep = \"_\"\n    ) |&gt;\n    rename(\n      target_idx = idx,\n      target_walkable = walkable\n    ) |&gt;\n    filter(target_walkable == TRUE) |&gt;\n    pmap(function(source_idx, target_idx, ...) { c(source_idx, target_idx) }) |&gt;\n    unlist()\n\n  # Convert to a directed graph\n  g &lt;- make_empty_graph() |&gt;\n    add_vertices(length(df$id)) |&gt;\n    add_edges(edge_list)\n\n}\n\nshortest_path_length &lt;- function(g, source_idx, target_idx) {\n  shortest_paths(g, from = source_idx, to = target_idx)$vpath[[1]] |&gt;\n    length() - 1\n}\n\n\ng &lt;- df_to_graph(df)\n\n\n# Get the indices of the start and end vertices\nidx_start &lt;- match(\"S\", df$letter)\nidx_end   &lt;- match(\"E\", df$letter)\n\n# Compute shortest path from start to end\nshortest_path_length(g, idx_start, idx_end)\n\n[1] 462",
-    "crumbs": [
-      "2022",
-      "Day 12"
-    ]
-  },
-  {
-    "objectID": "2022/R/day12.html#part-2",
-    "href": "2022/R/day12.html#part-2",
-    "title": "Day 12",
-    "section": "Part 2",
-    "text": "Part 2\n\n# Loop over all starting locations and find the shortest path to the end\nmin_dist &lt;- Inf\nfor (i in c(idx_start, which(df$letter == \"a\"))) {\n  cur &lt;- shortest_path_length(g, i, idx_end)\n  if (cur &gt;= 0 & cur &lt; min_dist) {\n    min_dist &lt;- cur\n  }\n}\nmin_dist\n\n[1] 451",
-    "crumbs": [
-      "2022",
-      "Day 12"
-    ]
-  },
-  {
-    "objectID": "2022/R/day02.html",
-    "href": "2022/R/day02.html",
-    "title": "Day 2",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_fwf(\"../input/day02.txt\", col_types = \"c\")",
-    "crumbs": [
-      "2022",
-      "Day 2"
-    ]
-  },
-  {
-    "objectID": "2022/R/day02.html#setup",
-    "href": "2022/R/day02.html#setup",
-    "title": "Day 2",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_fwf(\"../input/day02.txt\", col_types = \"c\")",
-    "crumbs": [
-      "2022",
-      "Day 2"
-    ]
-  },
-  {
-    "objectID": "2022/R/day02.html#part-1",
-    "href": "2022/R/day02.html#part-1",
-    "title": "Day 2",
-    "section": "Part 1",
-    "text": "Part 1\n\n# Format shapes/strategies as numbers 1-3 for modular arithmetic\ndf &lt;- tibble(\n  opponent = as.numeric(factor(input$X1, levels = c(\"A\", \"B\", \"C\"))),\n  strategy = as.numeric(factor(input$X2, levels = c(\"X\", \"Y\", \"Z\")))\n)\n\nscore_shape &lt;- function(df) {\n  df |&gt; \n    mutate(\n      self = strategy,\n      outcome = (self - opponent + 1) %% 3 * 3,\n      score = self + outcome\n    ) |&gt;\n    pull(score) |&gt;\n    sum()\n}\n\nRun puzzle input:\n\nscore_shape(df)\n\n[1] 15422",
-    "crumbs": [
-      "2022",
-      "Day 2"
-    ]
-  },
-  {
-    "objectID": "2022/R/day02.html#part-2",
-    "href": "2022/R/day02.html#part-2",
-    "title": "Day 2",
-    "section": "Part 2",
-    "text": "Part 2\n\nscore_outcome &lt;- function(df) {\n  df |&gt; \n    mutate(\n      self = (opponent + strategy) %% 3 + 1,\n      outcome = (strategy - 1) * 3,\n      score = self + outcome\n    ) |&gt;\n    pull(score) |&gt;\n    sum()\n}\n\n\nscore_outcome(df)\n\n[1] 15442",
-    "crumbs": [
-      "2022",
-      "Day 2"
-    ]
-  },
-  {
-    "objectID": "2022/R/day17.html",
-    "href": "2022/R/day17.html",
-    "title": "Day 17",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day17.txt\", skip_empty_rows = TRUE) |&gt; \n  str_split_1(\"\")",
-    "crumbs": [
-      "2022",
-      "Day 17"
-    ]
-  },
-  {
-    "objectID": "2022/R/day17.html#setup",
-    "href": "2022/R/day17.html#setup",
-    "title": "Day 17",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day17.txt\", skip_empty_rows = TRUE) |&gt; \n  str_split_1(\"\")",
-    "crumbs": [
-      "2022",
-      "Day 17"
-    ]
-  },
-  {
-    "objectID": "2022/R/day17.html#part-1",
-    "href": "2022/R/day17.html#part-1",
-    "title": "Day 17",
-    "section": "Part 1",
-    "text": "Part 1\nRepresenting obstacles as 1s and empty space as 0s, represent the shapes of the falling blocks, the floor, and the walls as bitwise integers:\n\nblock1 &lt;- strtoi(c(\"000111100\"                                    ), base = 2)\nblock2 &lt;- strtoi(c(\"000010000\",\"000111000\",\"000010000\"            ), base = 2)\nblock3 &lt;- strtoi(c(\"000111000\",\"000001000\",\"000001000\"            ), base = 2)\nblock4 &lt;- strtoi(c(\"000100000\",\"000100000\",\"000100000\",\"000100000\"), base = 2)\nblock5 &lt;- strtoi(c(\"000110000\",\"000110000\"                        ), base = 2)\n\nwalls  &lt;- strtoi(\"100000001\", base = 2)\nfloor  &lt;- strtoi(\"111111111\", base = 2)\n\nblocks &lt;- list(block1, block2, block3, block4, block5)\n\nDefine functions that give properties of the tower:\n\n# Print tower to terminal (for debugging)\nprint_tower &lt;- function(tower) {\n  tower |&gt;\n  imap_chr(\\(row, name) {\n    row |&gt; \n      intToBits() |&gt; \n      rev() |&gt; \n      tail(9) |&gt; \n      as.integer() |&gt; \n      case_match(0 ~ \"·\", 1 ~ \"#\") |&gt; \n      modify_at(.at = c(1L, 9L), .f = ~ \"|\") |&gt; \n      str_c(collapse = \"\") |&gt; \n      str_c(name, sep = \" \")\n  }) |&gt; \n  modify_at(.at = 1L, .f = ~ if_else(.x == \"|#######| 0\", \"+-------+ 0\", .x)) |&gt; \n  rev() |&gt; \n  cat(sep = \"\\n\")\n}\n\ntower_height &lt;- function(tower) {\n  idx &lt;- max(which(tower != walls))\n  tower[idx] |&gt;\n    names() |&gt; \n    as.double()\n}\n\ntower_base &lt;- function(tower) {\n  idx &lt;- max(which(accumulate(tower, bitwOr, .dir = \"backward\") == floor))\n  tower[idx] |&gt;\n    names() |&gt; \n    as.double()\n}\n\ntrim_tower &lt;- function(tower) {\n  base &lt;- tower_base(tower)\n  top  &lt;- tower_height(tower)\n  tower[as.character(base:top)]\n}\n\nDefine functions that move blocks and check if the move is valid:\n\nshift_block &lt;- function(block, dir) {\n  f &lt;- switch(dir, \n    \"&lt;\" = bitwShiftL, \n    \"&gt;\" = bitwShiftR\n  )\n  f(block, 1)\n}\n\nis_collision &lt;- function(block, tower_slice) {\n  any(bitwAnd(block, tower_slice) &gt; 0)\n}\n\n# Try to move the block L/R if the move is valid, or return the old one if not\ntry_shift_block &lt;- function(block, dir, tower_slice) {\n  new &lt;- shift_block(block, dir)\n  if (is_collision(new, tower_slice))\n    block\n  else\n    new\n}\n\nDefine a function to drop blocks onto a tower:\n\ndrop_blocks &lt;- function(jets, n_blocks) {\n  \n  tower        &lt;- floor\n  names(tower) &lt;- 1:length(tower) - 1\n  \n  n_jets &lt;- length(jets)\n  time   &lt;- 0\n  \n  # Cycle through the list of blocks and drop them in order\n  for (i in 1:n_blocks) {\n    \n    block_idx &lt;- (i - 1) %% length(blocks) + 1\n    block     &lt;- blocks[[block_idx]]\n    \n    # Initialize the vertical location of the block\n    block_loc &lt;- 1:length(block) + 3 + tower_height(tower)\n    \n    # Add empty wall space to the top of the tower\n    add_walls &lt;- rep(walls, length(block) + 3) |&gt; \n      set_names(c(min(block_loc) - 3:1, block_loc))\n    tower &lt;- c(tower, add_walls)\n    \n    # Drop block until it comes to rest\n    repeat {\n      jet_idx &lt;- time %% n_jets + 1\n      \n      # Apply jet blast & increment time\n      block &lt;- try_shift_block(block, jets[jet_idx], tower[as.character(block_loc)])\n      time &lt;- time + 1\n      \n      # Check if block has come to rest; if so, add block to tower\n      if (is_collision(block, tower[as.character(block_loc - 1)])) {\n        tower[as.character(block_loc)] &lt;- bitwOr(tower[as.character(block_loc)], block)\n        tower &lt;- trim_tower(tower)\n        break\n        \n      } \n      # Otherwise drop block one unit and repeat the block jet seq\n      else {\n        block_loc &lt;- block_loc - 1\n      }\n    }\n  }\n  \n  tower\n}\n\nRun on puzzle input:\n\ninput |&gt; \n  drop_blocks(2022) |&gt; \n  tower_height()\n\n[1] 3133",
-    "crumbs": [
-      "2022",
-      "Day 17"
-    ]
-  },
-  {
-    "objectID": "2022/R/day17.html#part-2",
-    "href": "2022/R/day17.html#part-2",
-    "title": "Day 17",
-    "section": "Part 2",
-    "text": "Part 2\nModify the drop_blocks function to loop until a cycle is found and return cycle info:\n\nfind_cycle &lt;- function(jets) {\n  \n  tower        &lt;- floor\n  names(tower) &lt;- 1:length(tower) - 1\n  \n  n_jets &lt;- length(jets)\n  time   &lt;- 0\n  states &lt;- tibble(\n    n_blocks  = numeric(0),\n    tower_idx = list(),\n    tower_val = list(), \n    block_idx = numeric(0), \n    jet_idx   = numeric(0)\n  )\n  \n  i &lt;- 1\n  # Cycle through the list of blocks and drop them in order\n  repeat {\n    \n    block_idx &lt;- (i - 1) %% length(blocks) + 1\n    block     &lt;- blocks[[block_idx]]\n    \n    # Initialize the vertical location of the block\n    block_loc &lt;- 1:length(block) + 3 + tower_height(tower)\n    \n    # Add empty wall space to the top of the tower\n    add_walls &lt;- rep(walls, length(block) + 3) |&gt; \n      set_names(c(min(block_loc) - 3:1, block_loc))\n    tower &lt;- c(tower, add_walls)\n    \n    # Drop block until it comes to rest\n    repeat {\n      jet_idx &lt;- time %% n_jets + 1\n      \n      # Apply jet blast & increment time\n      block &lt;- try_shift_block(block, jets[jet_idx], tower[as.character(block_loc)])\n      time &lt;- time + 1\n      \n      # Check if block has come to rest; if so, add block to tower\n      if (is_collision(block, tower[as.character(block_loc - 1)])) {\n        tower[as.character(block_loc)] &lt;- bitwOr(tower[as.character(block_loc)], block)\n        tower &lt;- trim_tower(tower)\n        \n        # Add block and jet index to the states list\n        states &lt;- states |&gt; \n          add_row(\n            n_blocks  = i,\n            tower_idx = list(names(tower)),\n            tower_val = list(unname(tower)),\n            block_idx = block_idx,\n            jet_idx   = jet_idx\n          )\n        # print(tower)\n        break\n        \n      } \n      # Otherwise drop block one unit and repeat the block jet seq\n      else {\n        block_loc &lt;- block_loc - 1\n      }\n    }\n    \n    i &lt;- i + 1\n    \n    # After each block is dropped, check if a cycle has been found and return it\n    dupes &lt;- states |&gt; \n      filter(n_distinct(tower_val) != n(), .by = c(block_idx, jet_idx))\n    \n    if (nrow(dupes) &gt; 0) {\n      \n      cycle_length &lt;- dupes |&gt;\n        pull(n_blocks) |&gt;\n        reduce(`-`) |&gt;\n        abs()\n\n      cycle_start &lt;- dupes |&gt;\n        pull(n_blocks) |&gt;\n        min()\n      \n      cycle_height &lt;- dupes |&gt;\n        pull(tower_idx) |&gt; \n        map(as.numeric) |&gt; \n        reduce(`-`) |&gt; \n        unique() |&gt; \n        abs()\n\n      return(list(length = cycle_length, start = cycle_start, height = cycle_height))\n      return(dupes)\n    }\n  }\n}\n\nGet the cycle of the puzzle input:\n\ncycle &lt;- find_cycle(input)\n\nUsing the cycle info from the output, compute the majority of the height using the cycle, then and add the height of the remaineder:\n\nn_cycles &lt;- floor((1000000000000 - cycle$start) / cycle$length)\nn_blocks &lt;- (1000000000000 - cycle$start) %% cycle$length + cycle$start\n\n((n_cycles * cycle$height) + tower_height(drop_blocks(input, n_blocks))) |&gt; \n  format(scientific = FALSE)\n\n[1] \"1547953216393\"",
-    "crumbs": [
-      "2022",
-      "Day 17"
-    ]
-  },
-  {
-    "objectID": "2022/R/day15.html",
-    "href": "2022/R/day15.html",
-    "title": "Day 15",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(sf)\n\ntheme_set(theme_bw())\n\n# Read input from text and extract numeric values into a data frame\ninput &lt;- read_lines(\"../input/day15.txt\") |&gt; \n  unglue_data(\n    \"Sensor at x={s_x}, y={s_y}: closest beacon is at x={b_x}, y={b_y}\",\n    convert = TRUE\n  )",
-    "crumbs": [
-      "2022",
-      "Day 15"
-    ]
-  },
-  {
-    "objectID": "2022/R/day15.html#setup",
-    "href": "2022/R/day15.html#setup",
-    "title": "Day 15",
-    "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(sf)\n\ntheme_set(theme_bw())\n\n# Read input from text and extract numeric values into a data frame\ninput &lt;- read_lines(\"../input/day15.txt\") |&gt; \n  unglue_data(\n    \"Sensor at x={s_x}, y={s_y}: closest beacon is at x={b_x}, y={b_y}\",\n    convert = TRUE\n  )",
-    "crumbs": [
-      "2022",
-      "Day 15"
-    ]
-  },
-  {
-    "objectID": "2022/R/day15.html#part-1",
-    "href": "2022/R/day15.html#part-1",
-    "title": "Day 15",
-    "section": "Part 1",
-    "text": "Part 1\nConvert input into a list of beacons, sensors, and total detection distances:\n\nsensors &lt;- input |&gt; \n  distinct(\n    s_x, \n    s_y, \n    max_dist = abs(b_x - s_x) + abs(b_y - s_y)\n  )\n\nbeacons &lt;- input |&gt; \n  distinct(x = b_x, y = b_y)\n\nGenerate a set of polygons that defines the regions detectible by each sensor:\n\n# Convert each sensor's detection distance into a region defined by a polygon\npoly &lt;- sensors |&gt; \n  mutate(\n    polygon = pmap(list(s_x, s_y, max_dist), function(x, y, dist) {\n      rbind(\n        c(x - dist, y),\n        c(x, y - dist),\n        c(x + dist, y),\n        c(x, y + dist),\n        c(x - dist, y)\n      ) |&gt; \n        list() |&gt; \n        st_polygon()\n    }),\n    geometry = st_sfc(polygon)\n  ) |&gt; \n  transmute(idx = row_number(), geometry) |&gt; \n  st_as_sf()\n\n# Merge all polygons into a single geometric shape\npoly_union &lt;- st_union(poly)\n\nVisualize:\n\n# Overlapping regions\nggplot() + \n  geom_sf(data = poly, aes(fill = factor(idx))) + \n  scale_fill_viridis_d(guide = \"none\")\n\n\n\n\n\n\n\n# Merged region\nggplot() + \n  geom_sf(data = poly_union)\n\n\n\n\n\n\n\n\nDefine a set of functions to count the number of integer points that cannot have a beacon within the detection region\n\n# Convert a set of x/y boundaries to a spatial rectangle object\npoly_rect &lt;- function(xmin, xmax, ymin, ymax) {\n  rbind(\n    c(xmin, ymax), \n    c(xmin, ymin), \n    c(xmax, ymin), \n    c(xmax, ymax), \n    c(xmin, ymax)\n  ) |&gt; \n    list() |&gt; \n    st_polygon() |&gt; \n    st_sfc()\n}\n\n# Get the coordinates within a poly, optionally limited within x/y bounds\nsf_points_in_poly &lt;- function(poly, xlim = NULL, ylim = NULL) {\n  \n  # Define a rectangular region within which to generate grid points\n  points_region &lt;- poly_rect(\n    xmin = (if (is_null(xlim)) st_bbox(poly)$xmin else head(xlim, 1)) - 0.5, \n    xmax = (if (is_null(xlim)) st_bbox(poly)$xmax else tail(xlim, 1)) + 0.5, \n    ymin = (if (is_null(ylim)) st_bbox(poly)$ymin else head(ylim, 1)) - 0.5,\n    ymax = (if (is_null(ylim)) st_bbox(poly)$ymax else tail(ylim, 1)) + 0.5\n  )\n  \n  # Generate the grid points that sit within the polygon\n  points_region |&gt; \n    st_make_grid(cellsize = 1, what = \"centers\") |&gt; \n    st_intersection(poly) |&gt; \n    \n    # Convert the set of points from spatial objects to x-y coordinates\n    st_coordinates() |&gt; \n    as_tibble() |&gt; \n    mutate(across(everything(), as.integer)) |&gt; \n    rename_with(tolower)\n}\n\n# Count the points in a sf region (with optional x/y lims) that can't be a beacon\ncount_nonbeacon &lt;- function(detection_region, known_beacons, x = NULL, y = NULL) {\n  \n  # Get the set of integer points within the polygon and x-y region specified\n  detection_region |&gt; \n    sf_points_in_poly(xlim = x, ylim = y) |&gt;\n  \n    # Remove known beacons from the list of points and count\n    anti_join(known_beacons, join_by(x, y)) |&gt;\n    nrow()\n}\n\nRun puzzle input:\n\ncount_nonbeacon(poly_union, beacons, y = 2000000)\n\n[1] 5367037",
-    "crumbs": [
-      "2022",
-      "Day 15"
-    ]
-  },
-  {
-    "objectID": "2022/R/day15.html#part-2",
-    "href": "2022/R/day15.html#part-2",
-    "title": "Day 15",
-    "section": "Part 2",
-    "text": "Part 2\nDefine a function to get the location of an undetected beacon within a viewport:\n\nfind_undetected_beacon &lt;- function(detection_region, xlim, ylim) {\n  boundary &lt;- poly_rect(xlim[1], xlim[2], ylim[1], ylim[2])\n  \n  # Find the polygon region where an undetected beacon could occur\n  undetected_region &lt;- st_difference(boundary, detection_region)\n  \n  # Get all integer points in the region\n  points &lt;- sf_points_in_poly(undetected_region)\n  \n  # Compute the region's boundary points to exclude\n  undetected_region_boundary &lt;- undetected_region |&gt;\n    st_bbox() |&gt;\n    as.list() |&gt;\n    pmap(\\(xmin, xmax, ymin, ymax) poly_rect(xmin, xmax, ymin, ymax)) |&gt;\n    pluck(1) |&gt; \n    st_difference(undetected_region) |&gt; \n    sf_points_in_poly()\n  \n  # Exclude all boundary points from the region\n  anti_join(points, undetected_region_boundary, join_by(x, y))\n  \n}\n\ntuning_freq &lt;- function(x, y) format(4000000 * x + y, scientific = FALSE)\n\nRun on puzzle input:\n\npoint &lt;- find_undetected_beacon(poly_union, c(0, 4000000), c(0, 4000000))\n\ntuning_freq(point$x, point$y)\n\n[1] \"11914583249288\"",
-    "crumbs": [
-      "2022",
-      "Day 15"
+      "Day 18"
     ]
   },
   {
@@ -1349,47 +744,696 @@
     ]
   },
   {
-    "objectID": "2022/R/day18.html",
-    "href": "2022/R/day18.html",
-    "title": "Day 18",
+    "objectID": "2022/R/day15.html",
+    "href": "2022/R/day15.html",
+    "title": "Day 15",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day18.txt\", skip_empty_rows = TRUE) |&gt; \n  unglue::unglue_data(\"{x},{y},{z}\", convert = TRUE) |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(sf)\n\ntheme_set(theme_bw())\n\n# Read input from text and extract numeric values into a data frame\ninput &lt;- read_lines(\"../input/day15.txt\") |&gt; \n  unglue_data(\n    \"Sensor at x={s_x}, y={s_y}: closest beacon is at x={b_x}, y={b_y}\",\n    convert = TRUE\n  )",
     "crumbs": [
       "2022",
-      "Day 18"
+      "Day 15"
     ]
   },
   {
-    "objectID": "2022/R/day18.html#setup",
-    "href": "2022/R/day18.html#setup",
-    "title": "Day 18",
+    "objectID": "2022/R/day15.html#setup",
+    "href": "2022/R/day15.html#setup",
+    "title": "Day 15",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day18.txt\", skip_empty_rows = TRUE) |&gt; \n  unglue::unglue_data(\"{x},{y},{z}\", convert = TRUE) |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(sf)\n\ntheme_set(theme_bw())\n\n# Read input from text and extract numeric values into a data frame\ninput &lt;- read_lines(\"../input/day15.txt\") |&gt; \n  unglue_data(\n    \"Sensor at x={s_x}, y={s_y}: closest beacon is at x={b_x}, y={b_y}\",\n    convert = TRUE\n  )",
     "crumbs": [
       "2022",
-      "Day 18"
+      "Day 15"
     ]
   },
   {
-    "objectID": "2022/R/day18.html#part-1",
-    "href": "2022/R/day18.html#part-1",
-    "title": "Day 18",
+    "objectID": "2022/R/day15.html#part-1",
+    "href": "2022/R/day15.html#part-1",
+    "title": "Day 15",
     "section": "Part 1",
-    "text": "Part 1\nCreate a containing box for the set of cubes, padded by 1 voxel of air in each direction, and convert the full rectangular area into a graph:\n\nxrange &lt;- (min(input$x) - 1):(max(input$x) + 1)\nyrange &lt;- (min(input$y) - 1):(max(input$y) + 1)\nzrange &lt;- (min(input$z) - 1):(max(input$z) + 1)\n\n# Fill out each coordinate of the containing box with air\ncontainer &lt;- input |&gt; \n  mutate(type = \"cube\") |&gt; \n  complete(x = xrange, y = yrange, z = zrange, fill = list(type = \"air\")) |&gt; \n  mutate(id = row_number())\n\n# For each coordinate, create edges between adjacent coords of the same type\nedges &lt;- container |&gt;\n  arrange(x, y, z) |&gt; \n  mutate(\n    edge_x1 = case_when(type == lag(type)  ~ lag(id)),\n    edge_x2 = case_when(type == lead(type) ~ lead(id)),\n    .by = c(y, z)\n  ) |&gt; \n  mutate(\n    edge_y1 = case_when(type == lag(type)  ~ lag(id)),\n    edge_y2 = case_when(type == lead(type) ~ lead(id)),\n    .by = c(x, z)\n  ) |&gt; \n  mutate(\n    edge_z1 = case_when(type == lag(type)  ~ lag(id)),\n    edge_z2 = case_when(type == lead(type) ~ lead(id)),\n    .by = c(x, y)\n  ) |&gt; \n  mutate(across(starts_with(\"edge\"), \\(col) {\n    case_when(!is.na(col) ~ map2(id, col, ~ c(.x, .y)))\n  })) |&gt; \n  select(starts_with(\"edge\")) |&gt; \n  pivot_longer(everything()) |&gt; \n  pull(value) |&gt; \n  unlist()\n\n\n# Convert to a graph\ng &lt;- make_graph(edges = edges, n = max(container$id), directed = TRUE) |&gt; \n  as_undirected()\n\nCompute the surface area of the cubes. Start by giving every cube a surface area of 6, then subtract the cube’s vertex degree (which is the number of adjacent cubes):\n\n# Get the vertex IDs of all cubes\ncube_ids &lt;- container |&gt; \n  filter(type == \"cube\") |&gt; \n  pull(id)\n\n# Compute the surface area of all cubes\ng |&gt; \n  degree() |&gt; \n  keep_at(cube_ids) |&gt; \n  map_dbl(~ 6 - .x) |&gt; \n  sum()\n\n[1] 3470",
+    "text": "Part 1\nConvert input into a list of beacons, sensors, and total detection distances:\n\nsensors &lt;- input |&gt; \n  distinct(\n    s_x, \n    s_y, \n    max_dist = abs(b_x - s_x) + abs(b_y - s_y)\n  )\n\nbeacons &lt;- input |&gt; \n  distinct(x = b_x, y = b_y)\n\nGenerate a set of polygons that defines the regions detectible by each sensor:\n\n# Convert each sensor's detection distance into a region defined by a polygon\npoly &lt;- sensors |&gt; \n  mutate(\n    polygon = pmap(list(s_x, s_y, max_dist), function(x, y, dist) {\n      rbind(\n        c(x - dist, y),\n        c(x, y - dist),\n        c(x + dist, y),\n        c(x, y + dist),\n        c(x - dist, y)\n      ) |&gt; \n        list() |&gt; \n        st_polygon()\n    }),\n    geometry = st_sfc(polygon)\n  ) |&gt; \n  transmute(idx = row_number(), geometry) |&gt; \n  st_as_sf()\n\n# Merge all polygons into a single geometric shape\npoly_union &lt;- st_union(poly)\n\nVisualize:\n\n# Overlapping regions\nggplot() + \n  geom_sf(data = poly, aes(fill = factor(idx))) + \n  scale_fill_viridis_d(guide = \"none\")\n\n\n\n\n\n\n\n# Merged region\nggplot() + \n  geom_sf(data = poly_union)\n\n\n\n\n\n\n\n\nDefine a set of functions to count the number of integer points that cannot have a beacon within the detection region\n\n# Convert a set of x/y boundaries to a spatial rectangle object\npoly_rect &lt;- function(xmin, xmax, ymin, ymax) {\n  rbind(\n    c(xmin, ymax), \n    c(xmin, ymin), \n    c(xmax, ymin), \n    c(xmax, ymax), \n    c(xmin, ymax)\n  ) |&gt; \n    list() |&gt; \n    st_polygon() |&gt; \n    st_sfc()\n}\n\n# Get the coordinates within a poly, optionally limited within x/y bounds\nsf_points_in_poly &lt;- function(poly, xlim = NULL, ylim = NULL) {\n  \n  # Define a rectangular region within which to generate grid points\n  points_region &lt;- poly_rect(\n    xmin = (if (is_null(xlim)) st_bbox(poly)$xmin else head(xlim, 1)) - 0.5, \n    xmax = (if (is_null(xlim)) st_bbox(poly)$xmax else tail(xlim, 1)) + 0.5, \n    ymin = (if (is_null(ylim)) st_bbox(poly)$ymin else head(ylim, 1)) - 0.5,\n    ymax = (if (is_null(ylim)) st_bbox(poly)$ymax else tail(ylim, 1)) + 0.5\n  )\n  \n  # Generate the grid points that sit within the polygon\n  points_region |&gt; \n    st_make_grid(cellsize = 1, what = \"centers\") |&gt; \n    st_intersection(poly) |&gt; \n    \n    # Convert the set of points from spatial objects to x-y coordinates\n    st_coordinates() |&gt; \n    as_tibble() |&gt; \n    mutate(across(everything(), as.integer)) |&gt; \n    rename_with(tolower)\n}\n\n# Count the points in a sf region (with optional x/y lims) that can't be a beacon\ncount_nonbeacon &lt;- function(detection_region, known_beacons, x = NULL, y = NULL) {\n  \n  # Get the set of integer points within the polygon and x-y region specified\n  detection_region |&gt; \n    sf_points_in_poly(xlim = x, ylim = y) |&gt;\n  \n    # Remove known beacons from the list of points and count\n    anti_join(known_beacons, join_by(x, y)) |&gt;\n    nrow()\n}\n\nRun puzzle input:\n\ncount_nonbeacon(poly_union, beacons, y = 2000000)\n\n[1] 5367037",
     "crumbs": [
       "2022",
-      "Day 18"
+      "Day 15"
     ]
   },
   {
-    "objectID": "2022/R/day18.html#part-2",
-    "href": "2022/R/day18.html#part-2",
-    "title": "Day 18",
+    "objectID": "2022/R/day15.html#part-2",
+    "href": "2022/R/day15.html#part-2",
+    "title": "Day 15",
     "section": "Part 2",
-    "text": "Part 2\nTo compute the external surface area, we compute the total surface area of the outermost containing box of air, then subtract away its known rectangular external surface area.\n\n# First vertex is external air padding, so we pull all vertices having its group\noutside_ids &lt;- which(components(g)$membership == components(g)$membership[1])\n\n# Compute the surface area of the external air voxels using their vertex degree\ntotal_sa &lt;- g |&gt; \n  degree() |&gt; \n  keep_at(outside_ids) |&gt; \n  map_dbl(~ 6 - .x) |&gt; \n  sum()\n\n# Compute the outer surface of the bounding box\nxlen &lt;- max(xrange) - min(xrange) + 1\nylen &lt;- max(yrange) - min(yrange) + 1\nzlen &lt;- max(zrange) - min(zrange) + 1\nbounding_sa &lt;- 2 * (xlen * ylen + xlen * zlen + ylen * zlen)\n\n# Subtract the outer surface area from the total surface area of the air padding\ntotal_sa - bounding_sa\n\n[1] 1986",
+    "text": "Part 2\nDefine a function to get the location of an undetected beacon within a viewport:\n\nfind_undetected_beacon &lt;- function(detection_region, xlim, ylim) {\n  boundary &lt;- poly_rect(xlim[1], xlim[2], ylim[1], ylim[2])\n  \n  # Find the polygon region where an undetected beacon could occur\n  undetected_region &lt;- st_difference(boundary, detection_region)\n  \n  # Get all integer points in the region\n  points &lt;- sf_points_in_poly(undetected_region)\n  \n  # Compute the region's boundary points to exclude\n  undetected_region_boundary &lt;- undetected_region |&gt;\n    st_bbox() |&gt;\n    as.list() |&gt;\n    pmap(\\(xmin, xmax, ymin, ymax) poly_rect(xmin, xmax, ymin, ymax)) |&gt;\n    pluck(1) |&gt; \n    st_difference(undetected_region) |&gt; \n    sf_points_in_poly()\n  \n  # Exclude all boundary points from the region\n  anti_join(points, undetected_region_boundary, join_by(x, y))\n  \n}\n\ntuning_freq &lt;- function(x, y) format(4000000 * x + y, scientific = FALSE)\n\nRun on puzzle input:\n\npoint &lt;- find_undetected_beacon(poly_union, c(0, 4000000), c(0, 4000000))\n\ntuning_freq(point$x, point$y)\n\n[1] \"11914583249288\"",
     "crumbs": [
       "2022",
-      "Day 18"
+      "Day 15"
+    ]
+  },
+  {
+    "objectID": "2022/R/day17.html",
+    "href": "2022/R/day17.html",
+    "title": "Day 17",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day17.txt\", skip_empty_rows = TRUE) |&gt; \n  str_split_1(\"\")",
+    "crumbs": [
+      "2022",
+      "Day 17"
+    ]
+  },
+  {
+    "objectID": "2022/R/day17.html#setup",
+    "href": "2022/R/day17.html#setup",
+    "title": "Day 17",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day17.txt\", skip_empty_rows = TRUE) |&gt; \n  str_split_1(\"\")",
+    "crumbs": [
+      "2022",
+      "Day 17"
+    ]
+  },
+  {
+    "objectID": "2022/R/day17.html#part-1",
+    "href": "2022/R/day17.html#part-1",
+    "title": "Day 17",
+    "section": "Part 1",
+    "text": "Part 1\nRepresenting obstacles as 1s and empty space as 0s, represent the shapes of the falling blocks, the floor, and the walls as bitwise integers:\n\nblock1 &lt;- strtoi(c(\"000111100\"                                    ), base = 2)\nblock2 &lt;- strtoi(c(\"000010000\",\"000111000\",\"000010000\"            ), base = 2)\nblock3 &lt;- strtoi(c(\"000111000\",\"000001000\",\"000001000\"            ), base = 2)\nblock4 &lt;- strtoi(c(\"000100000\",\"000100000\",\"000100000\",\"000100000\"), base = 2)\nblock5 &lt;- strtoi(c(\"000110000\",\"000110000\"                        ), base = 2)\n\nwalls  &lt;- strtoi(\"100000001\", base = 2)\nfloor  &lt;- strtoi(\"111111111\", base = 2)\n\nblocks &lt;- list(block1, block2, block3, block4, block5)\n\nDefine functions that give properties of the tower:\n\n# Print tower to terminal (for debugging)\nprint_tower &lt;- function(tower) {\n  tower |&gt;\n  imap_chr(\\(row, name) {\n    row |&gt; \n      intToBits() |&gt; \n      rev() |&gt; \n      tail(9) |&gt; \n      as.integer() |&gt; \n      case_match(0 ~ \"·\", 1 ~ \"#\") |&gt; \n      modify_at(.at = c(1L, 9L), .f = ~ \"|\") |&gt; \n      str_c(collapse = \"\") |&gt; \n      str_c(name, sep = \" \")\n  }) |&gt; \n  modify_at(.at = 1L, .f = ~ if_else(.x == \"|#######| 0\", \"+-------+ 0\", .x)) |&gt; \n  rev() |&gt; \n  cat(sep = \"\\n\")\n}\n\ntower_height &lt;- function(tower) {\n  idx &lt;- max(which(tower != walls))\n  tower[idx] |&gt;\n    names() |&gt; \n    as.double()\n}\n\ntower_base &lt;- function(tower) {\n  idx &lt;- max(which(accumulate(tower, bitwOr, .dir = \"backward\") == floor))\n  tower[idx] |&gt;\n    names() |&gt; \n    as.double()\n}\n\ntrim_tower &lt;- function(tower) {\n  base &lt;- tower_base(tower)\n  top  &lt;- tower_height(tower)\n  tower[as.character(base:top)]\n}\n\nDefine functions that move blocks and check if the move is valid:\n\nshift_block &lt;- function(block, dir) {\n  f &lt;- switch(dir, \n    \"&lt;\" = bitwShiftL, \n    \"&gt;\" = bitwShiftR\n  )\n  f(block, 1)\n}\n\nis_collision &lt;- function(block, tower_slice) {\n  any(bitwAnd(block, tower_slice) &gt; 0)\n}\n\n# Try to move the block L/R if the move is valid, or return the old one if not\ntry_shift_block &lt;- function(block, dir, tower_slice) {\n  new &lt;- shift_block(block, dir)\n  if (is_collision(new, tower_slice))\n    block\n  else\n    new\n}\n\nDefine a function to drop blocks onto a tower:\n\ndrop_blocks &lt;- function(jets, n_blocks) {\n  \n  tower        &lt;- floor\n  names(tower) &lt;- 1:length(tower) - 1\n  \n  n_jets &lt;- length(jets)\n  time   &lt;- 0\n  \n  # Cycle through the list of blocks and drop them in order\n  for (i in 1:n_blocks) {\n    \n    block_idx &lt;- (i - 1) %% length(blocks) + 1\n    block     &lt;- blocks[[block_idx]]\n    \n    # Initialize the vertical location of the block\n    block_loc &lt;- 1:length(block) + 3 + tower_height(tower)\n    \n    # Add empty wall space to the top of the tower\n    add_walls &lt;- rep(walls, length(block) + 3) |&gt; \n      set_names(c(min(block_loc) - 3:1, block_loc))\n    tower &lt;- c(tower, add_walls)\n    \n    # Drop block until it comes to rest\n    repeat {\n      jet_idx &lt;- time %% n_jets + 1\n      \n      # Apply jet blast & increment time\n      block &lt;- try_shift_block(block, jets[jet_idx], tower[as.character(block_loc)])\n      time &lt;- time + 1\n      \n      # Check if block has come to rest; if so, add block to tower\n      if (is_collision(block, tower[as.character(block_loc - 1)])) {\n        tower[as.character(block_loc)] &lt;- bitwOr(tower[as.character(block_loc)], block)\n        tower &lt;- trim_tower(tower)\n        break\n        \n      } \n      # Otherwise drop block one unit and repeat the block jet seq\n      else {\n        block_loc &lt;- block_loc - 1\n      }\n    }\n  }\n  \n  tower\n}\n\nRun on puzzle input:\n\ninput |&gt; \n  drop_blocks(2022) |&gt; \n  tower_height()\n\n[1] 3133",
+    "crumbs": [
+      "2022",
+      "Day 17"
+    ]
+  },
+  {
+    "objectID": "2022/R/day17.html#part-2",
+    "href": "2022/R/day17.html#part-2",
+    "title": "Day 17",
+    "section": "Part 2",
+    "text": "Part 2\nModify the drop_blocks function to loop until a cycle is found and return cycle info:\n\nfind_cycle &lt;- function(jets) {\n  \n  tower        &lt;- floor\n  names(tower) &lt;- 1:length(tower) - 1\n  \n  n_jets &lt;- length(jets)\n  time   &lt;- 0\n  states &lt;- tibble(\n    n_blocks  = numeric(0),\n    tower_idx = list(),\n    tower_val = list(), \n    block_idx = numeric(0), \n    jet_idx   = numeric(0)\n  )\n  \n  i &lt;- 1\n  # Cycle through the list of blocks and drop them in order\n  repeat {\n    \n    block_idx &lt;- (i - 1) %% length(blocks) + 1\n    block     &lt;- blocks[[block_idx]]\n    \n    # Initialize the vertical location of the block\n    block_loc &lt;- 1:length(block) + 3 + tower_height(tower)\n    \n    # Add empty wall space to the top of the tower\n    add_walls &lt;- rep(walls, length(block) + 3) |&gt; \n      set_names(c(min(block_loc) - 3:1, block_loc))\n    tower &lt;- c(tower, add_walls)\n    \n    # Drop block until it comes to rest\n    repeat {\n      jet_idx &lt;- time %% n_jets + 1\n      \n      # Apply jet blast & increment time\n      block &lt;- try_shift_block(block, jets[jet_idx], tower[as.character(block_loc)])\n      time &lt;- time + 1\n      \n      # Check if block has come to rest; if so, add block to tower\n      if (is_collision(block, tower[as.character(block_loc - 1)])) {\n        tower[as.character(block_loc)] &lt;- bitwOr(tower[as.character(block_loc)], block)\n        tower &lt;- trim_tower(tower)\n        \n        # Add block and jet index to the states list\n        states &lt;- states |&gt; \n          add_row(\n            n_blocks  = i,\n            tower_idx = list(names(tower)),\n            tower_val = list(unname(tower)),\n            block_idx = block_idx,\n            jet_idx   = jet_idx\n          )\n        # print(tower)\n        break\n        \n      } \n      # Otherwise drop block one unit and repeat the block jet seq\n      else {\n        block_loc &lt;- block_loc - 1\n      }\n    }\n    \n    i &lt;- i + 1\n    \n    # After each block is dropped, check if a cycle has been found and return it\n    dupes &lt;- states |&gt; \n      filter(n_distinct(tower_val) != n(), .by = c(block_idx, jet_idx))\n    \n    if (nrow(dupes) &gt; 0) {\n      \n      cycle_length &lt;- dupes |&gt;\n        pull(n_blocks) |&gt;\n        reduce(`-`) |&gt;\n        abs()\n\n      cycle_start &lt;- dupes |&gt;\n        pull(n_blocks) |&gt;\n        min()\n      \n      cycle_height &lt;- dupes |&gt;\n        pull(tower_idx) |&gt; \n        map(as.numeric) |&gt; \n        reduce(`-`) |&gt; \n        unique() |&gt; \n        abs()\n\n      return(list(length = cycle_length, start = cycle_start, height = cycle_height))\n      return(dupes)\n    }\n  }\n}\n\nGet the cycle of the puzzle input:\n\ncycle &lt;- find_cycle(input)\n\nUsing the cycle info from the output, compute the majority of the height using the cycle, then and add the height of the remaineder:\n\nn_cycles &lt;- floor((1000000000000 - cycle$start) / cycle$length)\nn_blocks &lt;- (1000000000000 - cycle$start) %% cycle$length + cycle$start\n\n((n_cycles * cycle$height) + tower_height(drop_blocks(input, n_blocks))) |&gt; \n  format(scientific = FALSE)\n\n[1] \"1547953216393\"",
+    "crumbs": [
+      "2022",
+      "Day 17"
+    ]
+  },
+  {
+    "objectID": "2022/R/day02.html",
+    "href": "2022/R/day02.html",
+    "title": "Day 2",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_fwf(\"../input/day02.txt\", col_types = \"c\")",
+    "crumbs": [
+      "2022",
+      "Day 2"
+    ]
+  },
+  {
+    "objectID": "2022/R/day02.html#setup",
+    "href": "2022/R/day02.html#setup",
+    "title": "Day 2",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_fwf(\"../input/day02.txt\", col_types = \"c\")",
+    "crumbs": [
+      "2022",
+      "Day 2"
+    ]
+  },
+  {
+    "objectID": "2022/R/day02.html#part-1",
+    "href": "2022/R/day02.html#part-1",
+    "title": "Day 2",
+    "section": "Part 1",
+    "text": "Part 1\n\n# Format shapes/strategies as numbers 1-3 for modular arithmetic\ndf &lt;- tibble(\n  opponent = as.numeric(factor(input$X1, levels = c(\"A\", \"B\", \"C\"))),\n  strategy = as.numeric(factor(input$X2, levels = c(\"X\", \"Y\", \"Z\")))\n)\n\nscore_shape &lt;- function(df) {\n  df |&gt; \n    mutate(\n      self = strategy,\n      outcome = (self - opponent + 1) %% 3 * 3,\n      score = self + outcome\n    ) |&gt;\n    pull(score) |&gt;\n    sum()\n}\n\nRun puzzle input:\n\nscore_shape(df)\n\n[1] 15422",
+    "crumbs": [
+      "2022",
+      "Day 2"
+    ]
+  },
+  {
+    "objectID": "2022/R/day02.html#part-2",
+    "href": "2022/R/day02.html#part-2",
+    "title": "Day 2",
+    "section": "Part 2",
+    "text": "Part 2\n\nscore_outcome &lt;- function(df) {\n  df |&gt; \n    mutate(\n      self = (opponent + strategy) %% 3 + 1,\n      outcome = (strategy - 1) * 3,\n      score = self + outcome\n    ) |&gt;\n    pull(score) |&gt;\n    sum()\n}\n\n\nscore_outcome(df)\n\n[1] 15442",
+    "crumbs": [
+      "2022",
+      "Day 2"
+    ]
+  },
+  {
+    "objectID": "2022/R/day12.html",
+    "href": "2022/R/day12.html",
+    "title": "Day 12",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day12.txt\", skip_empty_rows = TRUE)",
+    "crumbs": [
+      "2022",
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2022/R/day12.html#setup",
+    "href": "2022/R/day12.html#setup",
+    "title": "Day 12",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day12.txt\", skip_empty_rows = TRUE)",
+    "crumbs": [
+      "2022",
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2022/R/day12.html#part-1",
+    "href": "2022/R/day12.html#part-1",
+    "title": "Day 12",
+    "section": "Part 1",
+    "text": "Part 1\nReformat input as a data frame of coordinates and elevations:\n\ndf &lt;- input |&gt;\n  str_split(\"\") |&gt;\n  unlist() |&gt;\n  as_tibble() |&gt;\n  transmute(\n    id = row_number(),\n    letter = value,\n    elevation = case_when(\n      letter == \"S\" ~  Inf,\n      letter == \"E\" ~ -Inf,\n      .default = match(letter, letters)\n    ),\n    row = floor((id - 1) / str_length(input[1]) + 1),\n    col = (id - 1) %% str_length(input[1]) + 1\n  )\n\n\ndf_to_graph &lt;- function(df) {\n\n  # Flag whether each neighbor of each vertex is walkable\n  neighbors &lt;- df |&gt;\n    mutate(up   = lag(id), down  = lead(id), .by = col) |&gt;\n    mutate(left = lag(id), right = lead(id), .by = row) |&gt;\n    mutate(\n      across(\n        c(up, down, left, right),\n        ~ elevation[.x],\n        .names = \"{.col}_elev\"\n      ),\n      across(\n        ends_with(\"_elev\"),\n        ~ (.x - elevation) &lt;= 1,\n        .names = \"{str_remove(.col, '_elev')}_walkable\"\n      )\n    ) |&gt;\n    rename_with(.cols = c(up, down, left, right), ~ str_c(.x, \"_idx\")) |&gt;\n    select(source_idx = id, ends_with(c(\"idx\", \"walkable\")))\n\n  # Construct a list of edges\n  edge_list &lt;- neighbors |&gt;\n    pivot_longer(\n      !source_idx,\n      names_to = c(\"target_dir\", \".value\"),\n      names_sep = \"_\"\n    ) |&gt;\n    rename(\n      target_idx = idx,\n      target_walkable = walkable\n    ) |&gt;\n    filter(target_walkable == TRUE) |&gt;\n    pmap(function(source_idx, target_idx, ...) { c(source_idx, target_idx) }) |&gt;\n    unlist()\n\n  # Convert to a directed graph\n  g &lt;- make_empty_graph() |&gt;\n    add_vertices(length(df$id)) |&gt;\n    add_edges(edge_list)\n\n}\n\nshortest_path_length &lt;- function(g, source_idx, target_idx) {\n  shortest_paths(g, from = source_idx, to = target_idx)$vpath[[1]] |&gt;\n    length() - 1\n}\n\n\ng &lt;- df_to_graph(df)\n\n\n# Get the indices of the start and end vertices\nidx_start &lt;- match(\"S\", df$letter)\nidx_end   &lt;- match(\"E\", df$letter)\n\n# Compute shortest path from start to end\nshortest_path_length(g, idx_start, idx_end)\n\n[1] 462",
+    "crumbs": [
+      "2022",
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2022/R/day12.html#part-2",
+    "href": "2022/R/day12.html#part-2",
+    "title": "Day 12",
+    "section": "Part 2",
+    "text": "Part 2\n\n# Loop over all starting locations and find the shortest path to the end\nmin_dist &lt;- Inf\nfor (i in c(idx_start, which(df$letter == \"a\"))) {\n  cur &lt;- shortest_path_length(g, i, idx_end)\n  if (cur &gt;= 0 & cur &lt; min_dist) {\n    min_dist &lt;- cur\n  }\n}\nmin_dist\n\n[1] 451",
+    "crumbs": [
+      "2022",
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2022/R/day07.html",
+    "href": "2022/R/day07.html",
+    "title": "Day 7",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day07.txt\") |&gt; \n  enframe(name = NULL)",
+    "crumbs": [
+      "2022",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2022/R/day07.html#setup",
+    "href": "2022/R/day07.html#setup",
+    "title": "Day 7",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day07.txt\") |&gt; \n  enframe(name = NULL)",
+    "crumbs": [
+      "2022",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2022/R/day07.html#part-1",
+    "href": "2022/R/day07.html#part-1",
+    "title": "Day 7",
+    "section": "Part 1",
+    "text": "Part 1\n\ndir_sizes &lt;- input |&gt; \n  mutate(\n\n    # Determine path of each file by accumulating preceding cd terms\n    path = value |&gt;\n      str_extract(\"(?&lt;=^\\\\$ cd ).*\") |&gt;\n      str_c(\"/\") |&gt;\n      replace_na(\"\") |&gt;\n      accumulate(\n        ~ if (.y == \"../\") {\n          str_remove(.x, \"(?&lt;=/)[a-z]+/$\")\n        } else {\n          str_c(.x, .y)\n        }\n      ) |&gt;\n      str_remove_all(\"^/|/$\"),\n\n    # Convert paths to lists of all containing directories\n    dirs = path |&gt;\n      str_split(\"/\") |&gt;\n      map(~accumulate(.x, str_c, sep = \"/\"))\n  ) |&gt;\n\n  # Remove commands & directories from output and format file info as cols\n  filter(!str_detect(value, \"^\\\\$|dir \")) |&gt;\n  separate(value, into = c(\"size\", \"file\"), sep = \" \") |&gt;\n  mutate(size = as.integer(size)) |&gt;\n\n  # Convert nested lists of directories to long-format\n  unnest_wider(dirs, names_sep = \"_\") |&gt;\n  mutate(dirs_1 = \"/\") |&gt;\n  pivot_longer(\n    cols = matches(\"dirs_\\\\d+\"),\n    names_to = NULL,\n    values_to = \"dir\",\n    values_drop_na = TRUE\n  ) |&gt;\n\n  # Compute size of each directory\n  group_by(dir) |&gt;\n  summarize(size = sum(size)) |&gt;\n  ungroup()\n\nSum sizes of all directories with maximum size 100000:\n\ndir_sizes |&gt;\n  filter(size &lt;= 100000) |&gt;\n  pull(size) |&gt;\n  sum()\n\n[1] 1243729",
+    "crumbs": [
+      "2022",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2022/R/day07.html#part-2",
+    "href": "2022/R/day07.html#part-2",
+    "title": "Day 7",
+    "section": "Part 2",
+    "text": "Part 2\nFind size of the smallest necessary directory to delete:\n\ncurr_system_size &lt;- dir_sizes |&gt;\n  filter(dir == \"/\") |&gt;\n  pull(size)\n\ndir_sizes |&gt;\n  filter(size &gt;= (30000000 - (70000000 - curr_system_size))) |&gt;\n  slice_min(size) |&gt;\n  pull(size)\n\n[1] 4443914",
+    "crumbs": [
+      "2022",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2022/R/day05.html",
+    "href": "2022/R/day05.html",
+    "title": "Day 5",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\npath &lt;- \"../input/day05.txt\"\ninput &lt;- read_lines(path)",
+    "crumbs": [
+      "2022",
+      "Day 5"
+    ]
+  },
+  {
+    "objectID": "2022/R/day05.html#setup",
+    "href": "2022/R/day05.html#setup",
+    "title": "Day 5",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\npath &lt;- \"../input/day05.txt\"\ninput &lt;- read_lines(path)",
+    "crumbs": [
+      "2022",
+      "Day 5"
+    ]
+  },
+  {
+    "objectID": "2022/R/day05.html#part-1",
+    "href": "2022/R/day05.html#part-1",
+    "title": "Day 5",
+    "section": "Part 1",
+    "text": "Part 1\n\n# Format raw input\nmoves &lt;- input |&gt;\n  tail_while(~ .x != \"\") |&gt;\n  str_extract_all(\"\\\\d+\") |&gt;\n  map(as.integer)\n\nstacks &lt;- read_fwf(\n  path,\n  n_max = length(input) - length(moves) - 2,\n  col_types = \"c\"\n) |&gt;\n  mutate(across(everything(), ~ str_extract(.x, \"[A-Z]\"))) |&gt;\n  as.list() |&gt;\n  map(discard, is.na) |&gt;\n  map(rev)\n\nmove_crates &lt;- function(moves, stacks, func) {\n  \n  # Execute moves\n  for (curr_move in moves) {\n    count &lt;- curr_move[1]\n    from  &lt;- curr_move[2]\n    to    &lt;- curr_move[3]\n    \n    crates &lt;- func(tail(stacks[[from]], count))\n\n    stacks[[to]]   &lt;- append(stacks[[to]], crates)\n    stacks[[from]] &lt;- head(stacks[[from]], -1 * count)\n  }\n\n  # Examine final top row of crates\n  stacks |&gt;\n    map(~ tail(.x, 1)) |&gt;\n    str_c(collapse = \"\")\n}\n\n\nmove_crates(moves, stacks, rev)\n\n[1] \"RLFNRTNFB\"",
+    "crumbs": [
+      "2022",
+      "Day 5"
+    ]
+  },
+  {
+    "objectID": "2022/R/day05.html#part-2",
+    "href": "2022/R/day05.html#part-2",
+    "title": "Day 5",
+    "section": "Part 2",
+    "text": "Part 2\n\nmove_crates(moves, stacks, identity)\n\n[1] \"MHQTLJRLB\"",
+    "crumbs": [
+      "2022",
+      "Day 5"
+    ]
+  },
+  {
+    "objectID": "2022/R/day10.html",
+    "href": "2022/R/day10.html",
+    "title": "Day 10",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day10.txt\") |&gt;\n  enframe(name = \"cmd_num\")",
+    "crumbs": [
+      "2022",
+      "Day 10"
+    ]
+  },
+  {
+    "objectID": "2022/R/day10.html#setup",
+    "href": "2022/R/day10.html#setup",
+    "title": "Day 10",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day10.txt\") |&gt;\n  enframe(name = \"cmd_num\")",
+    "crumbs": [
+      "2022",
+      "Day 10"
+    ]
+  },
+  {
+    "objectID": "2022/R/day10.html#part-1",
+    "href": "2022/R/day10.html#part-1",
+    "title": "Day 10",
+    "section": "Part 1",
+    "text": "Part 1\n\nsignal &lt;- input |&gt;\n\n  # Convert multi-cycle commands into list of changes to X at each cycle\n  separate(value, into = c(\"cmd\", \"V\"), sep = \" \", convert = TRUE) |&gt;\n  transmute(cmd_num, v1 = 0, v2 = V) |&gt;\n  pivot_longer(\n    c(v1, v2),\n    names_to = \"cycle_count\",\n    values_to = \"x_change\",\n    values_drop_na = TRUE\n  ) |&gt;\n  pull(x_change) |&gt;\n\n  # Iterate through changes to X to get value of X during each cycle\n  accumulate(`+`, .init = 1) |&gt;\n  enframe(name = \"cycle\", value = \"X\") |&gt;\n  slice_head(n = -1)\n\n\n# Sum the signal strength at 20th cycle & every 40 cycles after that\nsignal |&gt;\n  filter(cycle %% 40 == 20) |&gt;\n  mutate(signal_strength = cycle * X) |&gt;\n  pull(signal_strength) |&gt;\n  sum()\n\n[1] 16020",
+    "crumbs": [
+      "2022",
+      "Day 10"
+    ]
+  },
+  {
+    "objectID": "2022/R/day10.html#part-2",
+    "href": "2022/R/day10.html#part-2",
+    "title": "Day 10",
+    "section": "Part 2",
+    "text": "Part 2\n\n# Draw pixel when position of 3px-wide sprite overlaps w/ CRT position\nsignal |&gt;\n  mutate(\n    row = floor((cycle - 1) / 40),\n    col = (cycle - 1) %% 40\n  ) |&gt;\n  mutate(pixel = if_else(X &lt;= col + 1 & X &gt;= col - 1, \"#\", \".\")) |&gt;\n  group_by(row) |&gt;\n  summarize(val = str_c(pixel, collapse = \"\")) |&gt;\n  pull(val) |&gt;\n  cat(sep = \"\\n\")\n\n####..##..####.#..#.####..##..#....###..\n#....#..#....#.#..#....#.#..#.#....#..#.\n###..#......#..#..#...#..#..#.#....#..#.\n#....#.....#...#..#..#...####.#....###..\n#....#..#.#....#..#.#....#..#.#....#.#..\n####..##..####..##..####.#..#.####.#..#.",
+    "crumbs": [
+      "2022",
+      "Day 10"
+    ]
+  },
+  {
+    "objectID": "2022/R/day04.html",
+    "href": "2022/R/day04.html",
+    "title": "Day 4",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_csv(\"../input/day04.txt\", col_names = FALSE)",
+    "crumbs": [
+      "2022",
+      "Day 4"
+    ]
+  },
+  {
+    "objectID": "2022/R/day04.html#setup",
+    "href": "2022/R/day04.html#setup",
+    "title": "Day 4",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_csv(\"../input/day04.txt\", col_names = FALSE)",
+    "crumbs": [
+      "2022",
+      "Day 4"
+    ]
+  },
+  {
+    "objectID": "2022/R/day04.html#parts-1-2",
+    "href": "2022/R/day04.html#parts-1-2",
+    "title": "Day 4",
+    "section": "Parts 1 & 2",
+    "text": "Parts 1 & 2\n\ninput |&gt;  \n  separate(X1, into = c(\"start1\", \"end1\"), sep = \"-\", convert = TRUE) |&gt;\n  separate(X2, into = c(\"start2\", \"end2\"), sep = \"-\", convert = TRUE) |&gt;\n  mutate(\n    range1 = map2(start1, end1, ~ .x:.y),\n    range2 = map2(start2, end2, ~ .x:.y),\n    contained = map2_lgl(range1, range2, ~ all(.x %in% .y) | all(.y %in% .x)),\n    overlap   = map2_lgl(range1, range2, ~ length(intersect(.x, .y)) &gt; 0)\n  ) |&gt;\n  summarize(num_contained = sum(contained), num_overlap = sum(overlap))\n\n# A tibble: 1 × 2\n  num_contained num_overlap\n          &lt;int&gt;       &lt;int&gt;\n1           550         931",
+    "crumbs": [
+      "2022",
+      "Day 4"
+    ]
+  },
+  {
+    "objectID": "2022/R/day11.html",
+    "href": "2022/R/day11.html",
+    "title": "Day 11",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day11.txt\") |&gt;\n  trimws() |&gt;\n  discard(~ .x == \"\")",
+    "crumbs": [
+      "2022",
+      "Day 11"
+    ]
+  },
+  {
+    "objectID": "2022/R/day11.html#setup",
+    "href": "2022/R/day11.html#setup",
+    "title": "Day 11",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day11.txt\") |&gt;\n  trimws() |&gt;\n  discard(~ .x == \"\")",
+    "crumbs": [
+      "2022",
+      "Day 11"
+    ]
+  },
+  {
+    "objectID": "2022/R/day11.html#part-1",
+    "href": "2022/R/day11.html#part-1",
+    "title": "Day 11",
+    "section": "Part 1",
+    "text": "Part 1\n\n# Reformat input\nitems &lt;- str_match(input, \"Starting items:(.*)\")[,2] |&gt;\n  discard(is.na) |&gt;\n  str_split(\",\") |&gt;\n  map(parse_number)\n\noperations &lt;- input |&gt;\n  keep(~ str_detect(.x, \"Operation:\")) |&gt;\n  str_replace(\"Operation: new = \", \"~ \") |&gt;\n  str_replace_all(\"old\", \".x\") |&gt;\n  map(~ rlang::as_function(as.formula(.x)))\n\ndiv  &lt;- parse_number(keep(input, ~ str_detect(.x, \"Test:\")))\ndivt &lt;- parse_number(keep(input, ~ str_detect(.x, \"If true:\")))\ndivf &lt;- parse_number(keep(input, ~ str_detect(.x, \"If false:\")))\n\ntest &lt;- pmap(\n  list(div, divt, divf),\n  ~ function(x) if_else(x %% ..1 == 0, ..2 + 1, ..3 + 1)\n)\n\nnum_monkeys &lt;- length(input) / 6\n\n\ncompute_monkey_business &lt;- function(num_rounds, worry_func) {\n  # Initialize\n  activity &lt;- rep(0, num_monkeys)\n\n  # Perform the tosses\n  for (round in 1:num_rounds) {\n    for (monkey in 1:num_monkeys) {\n      for (item in items[[monkey]]) {\n        worry &lt;- worry_func(operations[[monkey]](item))\n        toss  &lt;- test[[monkey]](worry)\n        items[[toss]] &lt;- c(items[[toss]], worry)\n      }\n      activity[[monkey]] &lt;- activity[[monkey]] + length(items[[monkey]])\n      items[[monkey]] &lt;- numeric(0)\n    }\n  }\n\n  # Compute monkey business score\n  activity |&gt;\n    sort() |&gt;\n    tail(2) |&gt;\n    reduce(`*`)\n}\n\n\ncompute_monkey_business(num_rounds = 20, worry_func = \\(x) floor(x / 3))\n\n[1] 78678",
+    "crumbs": [
+      "2022",
+      "Day 11"
+    ]
+  },
+  {
+    "objectID": "2022/R/day11.html#part-2",
+    "href": "2022/R/day11.html#part-2",
+    "title": "Day 11",
+    "section": "Part 2",
+    "text": "Part 2\n\nlcm &lt;- DescTools::LCM(div)\ncompute_monkey_business(num_rounds = 10000, worry_func = \\(x) x %% lcm)\n\n[1] 15333249714",
+    "crumbs": [
+      "2022",
+      "Day 11"
+    ]
+  },
+  {
+    "objectID": "2022/R/day13.html",
+    "href": "2022/R/day13.html",
+    "title": "Day 13",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input into a data frame and convert to indexed nested lists\ndf &lt;- read_table(\"../input/day13.txt\", col_names = \"txt\") |&gt; \n  mutate(\n    row_id   = row_number(),\n    group_id = floor((row_id - 1) / 2) + 1,\n    item_id  = (row_id - 1) %% 2 + 1,\n    lst      = map(txt, jsonlite::fromJSON, simplifyVector = FALSE)\n  )",
+    "crumbs": [
+      "2022",
+      "Day 13"
+    ]
+  },
+  {
+    "objectID": "2022/R/day13.html#setup",
+    "href": "2022/R/day13.html#setup",
+    "title": "Day 13",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input into a data frame and convert to indexed nested lists\ndf &lt;- read_table(\"../input/day13.txt\", col_names = \"txt\") |&gt; \n  mutate(\n    row_id   = row_number(),\n    group_id = floor((row_id - 1) / 2) + 1,\n    item_id  = (row_id - 1) %% 2 + 1,\n    lst      = map(txt, jsonlite::fromJSON, simplifyVector = FALSE)\n  )",
+    "crumbs": [
+      "2022",
+      "Day 13"
+    ]
+  },
+  {
+    "objectID": "2022/R/day13.html#part-1",
+    "href": "2022/R/day13.html#part-1",
+    "title": "Day 13",
+    "section": "Part 1",
+    "text": "Part 1\nDefine a function to compare nested lists:\n\ncompare_nested &lt;- function(a, b) {\n\n  # Compare if both inputs are numeric\n  if (is.numeric(a) & is.numeric(b)) {\n    if (a &lt; b)  return(-1)\n    if (a &gt; b)  return(1)\n    if (a == b) return(0)\n  }\n\n  # Compare if only one input is numeric\n  if (is.numeric(a) != is.numeric(b)) {\n    if (is.numeric(a))\n      return(compare_nested(list(a), b))\n    if (is.numeric(b))\n      return(compare_nested(a, list(b)))\n  }\n\n  # Compare if both inputs are lists\n  i &lt;- 1\n  while (i &lt;= min(length(a), length(b))) {\n    result &lt;- compare_nested(a[[i]], b[[i]])\n    if (result %in% c(1, -1))\n      return(result)\n    i &lt;- i + 1\n  }\n  # When all comparable values are equal, compare lengths\n  return(compare_nested(length(a), length(b)))\n}\n\nSum the indices of packet pairs that are in order:\n\ndf |&gt;\n  select(group_id, item_id, lst) |&gt;\n  pivot_wider(\n    names_from = item_id,\n    names_prefix = \"item_\",\n    values_from = lst\n  ) |&gt;\n  mutate(comparison = map2_int(item_1, item_2, compare_nested)) |&gt;\n  filter(comparison == -1) |&gt;\n  pull(group_id) |&gt; \n  sum()\n\n[1] 5684",
+    "crumbs": [
+      "2022",
+      "Day 13"
+    ]
+  },
+  {
+    "objectID": "2022/R/day13.html#part-2",
+    "href": "2022/R/day13.html#part-2",
+    "title": "Day 13",
+    "section": "Part 2",
+    "text": "Part 2\nDefine a function to determine the pairwise order of nested lists:\n\nsort_nested &lt;- function(lst) {\n  n &lt;- length(lst)\n  indices &lt;- 1:n\n\n  if (n == 0) return()\n  if (n == 1) return(indices)\n\n  # Bubble sort: loop through list and swap elements until sorted\n  repeat {\n    swap_occurred &lt;- FALSE\n    for (i in 1:(n - 1)) {\n      j1 &lt;- which(indices == i)\n      j2 &lt;- which(indices == i + 1)\n      if (compare_nested(lst[[j1]], lst[[j2]]) == 1) {\n        indices[j1] &lt;- i + 1\n        indices[j2] &lt;- i\n        swap_occurred &lt;- TRUE\n      }\n    }\n    if (!swap_occurred) break\n  }\n  return(indices)\n}\n\nAdd new flagged packets, sort all, and multiply flagged indices:\n\nnew_packets &lt;- list(\"[[2]]\", \"[[6]]\") |&gt;\n  map(jsonlite::fromJSON, simplifyVector = FALSE) |&gt;\n  as_tibble_col(column_name = \"lst\")\n\ndf |&gt;\n  transmute(lst, flag = FALSE) |&gt;\n  add_row(new_packets, flag = TRUE) |&gt;\n  mutate(ord = sort_nested(lst)) |&gt;\n  filter(flag) |&gt;\n  pull(ord) |&gt; \n  prod()\n\n[1] 22932",
+    "crumbs": [
+      "2022",
+      "Day 13"
+    ]
+  },
+  {
+    "objectID": "2022/R/day06.html",
+    "href": "2022/R/day06.html",
+    "title": "Day 6",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day06.txt\") |&gt;\n  str_split_1(\"\") |&gt;\n  enframe(name = \"idx\", value = \"char\")",
+    "crumbs": [
+      "2022",
+      "Day 6"
+    ]
+  },
+  {
+    "objectID": "2022/R/day06.html#setup",
+    "href": "2022/R/day06.html#setup",
+    "title": "Day 6",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day06.txt\") |&gt;\n  str_split_1(\"\") |&gt;\n  enframe(name = \"idx\", value = \"char\")",
+    "crumbs": [
+      "2022",
+      "Day 6"
+    ]
+  },
+  {
+    "objectID": "2022/R/day06.html#part-1",
+    "href": "2022/R/day06.html#part-1",
+    "title": "Day 6",
+    "section": "Part 1",
+    "text": "Part 1\n\nfind_marker &lt;- function(df, marker_length) {\n  df |&gt; \n    # Construct sequences of next n chars and count # of unique chars in each\n    transmute(\n      marker_idx = idx + marker_length - 1,\n      char_seq = reduce(\n        .x = map(0:(marker_length - 1), ~ lead(char, n = .x)),\n        .f = str_c\n      ),\n      n_unique = map_int(\n        char_seq,\n        ~ .x |&gt;\n          str_split(\"\") |&gt;\n          unlist() |&gt;\n          unique() |&gt;\n          length()\n      )\n    ) |&gt;\n\n    # Extract first instance where all n chars are unique\n    filter(n_unique == marker_length) |&gt;\n    pull(marker_idx) |&gt;\n    min()\n}\n\n\nfind_marker(input, marker_length = 4)\n\n[1] 1802",
+    "crumbs": [
+      "2022",
+      "Day 6"
+    ]
+  },
+  {
+    "objectID": "2022/R/day06.html#part-2",
+    "href": "2022/R/day06.html#part-2",
+    "title": "Day 6",
+    "section": "Part 2",
+    "text": "Part 2\n\nfind_marker(input, marker_length = 14)\n\n[1] 3551",
+    "crumbs": [
+      "2022",
+      "Day 6"
+    ]
+  },
+  {
+    "objectID": "2022/R/day16.html",
+    "href": "2022/R/day16.html",
+    "title": "Day 16",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day16.txt\", skip_empty_rows = TRUE) |&gt; \n  unglue::unglue_data(\n    c(\n      \"Valve {source} has flow rate={rate}; tunnels lead to valves {target}\",\n      \"Valve {source} has flow rate={rate}; tunnel leads to valve {target}\"\n    ),\n    convert = TRUE\n  ) |&gt; \n  mutate(target = map(target, \\(x) str_split_1(x, \", \")))",
+    "crumbs": [
+      "2022",
+      "Day 16"
+    ]
+  },
+  {
+    "objectID": "2022/R/day16.html#setup",
+    "href": "2022/R/day16.html#setup",
+    "title": "Day 16",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day16.txt\", skip_empty_rows = TRUE) |&gt; \n  unglue::unglue_data(\n    c(\n      \"Valve {source} has flow rate={rate}; tunnels lead to valves {target}\",\n      \"Valve {source} has flow rate={rate}; tunnel leads to valve {target}\"\n    ),\n    convert = TRUE\n  ) |&gt; \n  mutate(target = map(target, \\(x) str_split_1(x, \", \")))",
+    "crumbs": [
+      "2022",
+      "Day 16"
+    ]
+  },
+  {
+    "objectID": "2022/R/day16.html#part-1",
+    "href": "2022/R/day16.html#part-1",
+    "title": "Day 16",
+    "section": "Part 1",
+    "text": "Part 1\nRepresent tunnels and valves as a graph:\n\ng &lt;- input |&gt;\n  unnest(target) |&gt; \n  pmap(function(source, target, ...) c(source, target)) |&gt; \n  unique() |&gt; \n  unlist() |&gt; \n  make_graph(directed = TRUE) |&gt; \n  as_undirected()\n\nGet the list of valves with nonzero flow:\n\nflows &lt;- input |&gt; \n  filter(rate &gt; 0 | source == \"AA\") |&gt; \n  select(source, rate) |&gt; \n  deframe()\n\nnon_init_flows &lt;- flows |&gt; \n  discard_at(\"AA\")\n\nvalves &lt;- names(flows)\n\ndists &lt;- distances(g, valves, valves)\n\nList all permutations of possible valves to visit with a total distance less than 30:\n\nget_path &lt;- function(choices, last, cur_length, max_length) {\n  if (cur_length &gt;= max_length)\n    return(head(last, -1))\n  if (length(choices) == 0)\n    return(last)\n  \n  ls &lt;- list()\n  for (valve in choices) {\n    ls &lt;- append(\n      ls, \n      list(get_path(\n        choices[choices != valve], \n        c(last, valve), \n        cur_length + dists[tail(last, 1), valve] + 1,\n        max_length\n      ))\n    )\n  }\n  ls |&gt; \n    discard(is_null) |&gt; \n    list_flatten() |&gt; \n    unique()\n}\n\ncombos &lt;- get_path(names(non_init_flows), names(flows[\"AA\"]), 0, 30)\n\nCompute total pressure released for each permutation:\n\nget_pressures &lt;- function(paths, max_time) {\n  map_dbl(paths, \\(path) {\n    valve      &lt;- tail(path, -1)\n    valve_lag  &lt;- head(path, -1)\n    flow       &lt;- tail(flows[path], -1)\n    \n    dist       &lt;- map2_int(valve_lag, valve, \\(src, target) dists[src, target])\n    time_start &lt;- cumsum(dist) + 1:length(dist) + 1\n    pressure   &lt;- (max_time - time_start + 1) * flow\n    \n    sum(pressure[time_start &lt;= max_time])\n  })\n}\n\npressures &lt;- get_pressures(combos, 30)\n\nFind the permutation that gives the maximum pressure:\n\nmax_idx &lt;- which.max(pressures)\npressures[max_idx]\n\n[1] 1947",
+    "crumbs": [
+      "2022",
+      "Day 16"
+    ]
+  },
+  {
+    "objectID": "2022/R/day16.html#part-2",
+    "href": "2022/R/day16.html#part-2",
+    "title": "Day 16",
+    "section": "Part 2",
+    "text": "Part 2\nList all permutations of possible valves to visit with a total distance less than 26:\n\nel_combos    &lt;- get_path(names(non_init_flows), names(flows[\"AA\"]), 0, 26)\nel_pressures &lt;- get_pressures(el_combos, 26)\n\nFor each set of permutations, get the best pressure.\n\nel_best &lt;- tibble(valves = map(el_combos, sort), pressure = el_pressures) |&gt; \n  slice_max(pressure, by = valves, with_ties = FALSE)\n\nGet best combinations of permutations between yourself and the elephant:\n\nel_best |&gt; \n  rename(el_valves = valves, el_pressure = pressure) |&gt; \n  pmap_dbl(\\(el_valves, el_pressure) {\n    el_valves &lt;- el_valves[el_valves != \"AA\"]\n    el_pressure + el_best |&gt;\n      filter(map_lgl(valves, ~ length(intersect(.x, el_valves)) == 0)) |&gt; \n      pull(pressure) |&gt; \n      max()\n  }) |&gt; \n  max()\n\n[1] 2556",
+    "crumbs": [
+      "2022",
+      "Day 16"
+    ]
+  },
+  {
+    "objectID": "2022/R/day03.html",
+    "href": "2022/R/day03.html",
+    "title": "Day 3",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_table(\"../input/day03.txt\", col_names = \"str\")",
+    "crumbs": [
+      "2022",
+      "Day 3"
+    ]
+  },
+  {
+    "objectID": "2022/R/day03.html#setup",
+    "href": "2022/R/day03.html#setup",
+    "title": "Day 3",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_table(\"../input/day03.txt\", col_names = \"str\")",
+    "crumbs": [
+      "2022",
+      "Day 3"
+    ]
+  },
+  {
+    "objectID": "2022/R/day03.html#part-1",
+    "href": "2022/R/day03.html#part-1",
+    "title": "Day 3",
+    "section": "Part 1",
+    "text": "Part 1\n\ninput |&gt;\n  mutate(\n    # Separate each line into two compartments\n    str_length = str_length(str) / 2,\n    str_1 = str_sub(str, start = 1L, end = str_length),\n    str_2 = str_sub(str, start = str_length + 1, end = -1L),\n\n    # Find the letter in common between each pair of compartments\n    across(c(str_1, str_2), ~ str_split(.x, \"\")),\n    dup = map2_chr(str_1, str_2, ~ intersect(.x, .y)),\n\n    # Convert to priority value\n    priority = match(dup, c(letters, LETTERS))\n  ) |&gt;\n\n  # Compute total sum\n  pull(priority) |&gt;\n  sum()\n\n[1] 8252",
+    "crumbs": [
+      "2022",
+      "Day 3"
+    ]
+  },
+  {
+    "objectID": "2022/R/day03.html#part-2",
+    "href": "2022/R/day03.html#part-2",
+    "title": "Day 3",
+    "section": "Part 2",
+    "text": "Part 2\n\ninput |&gt;\n\n  # Reshape to one row per group, one column per elf\n  mutate(\n    str = str_split(str, \"\"),\n    group_num = floor((row_number() - 1) / 3),\n    elf_num = as.character(row_number() %% 3)\n  ) |&gt;\n  pivot_wider(names_from = elf_num, values_from = str, names_prefix = \"elf_\") |&gt;\n\n  # Find the character in common between all 3 elves & convert to priority val\n  mutate(\n    dup = pmap_chr(\n      list(elf_0, elf_1, elf_2),\n      ~ reduce(list(..1, ..2, ..3), intersect)\n    ),\n    priority = match(dup, c(letters, LETTERS))\n  ) |&gt;\n\n  # Compute total sum\n  pull(priority) |&gt;\n  sum()\n\n[1] 2828",
+    "crumbs": [
+      "2022",
+      "Day 3"
+    ]
+  },
+  {
+    "objectID": "2022/R/day01.html",
+    "href": "2022/R/day01.html",
+    "title": "Day 1",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; \n  as.integer()",
+    "crumbs": [
+      "2022",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2022/R/day01.html#setup",
+    "href": "2022/R/day01.html#setup",
+    "title": "Day 1",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; \n  as.integer()",
+    "crumbs": [
+      "2022",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2022/R/day01.html#part-1",
+    "href": "2022/R/day01.html#part-1",
+    "title": "Day 1",
+    "section": "Part 1",
+    "text": "Part 1\n\n# Format input as a data frame and number the elves\ndf &lt;- tibble(\n  cal = input,\n  elf_id = cumsum(is.na(cal)) + 1\n) |&gt;\n  filter(!is.na(cal))\n\n# Compute calorie sum for each elf, get the top n elves, and combine totals\ncount_max &lt;- function(df, num_top_elves) {\n  df |&gt; \n    group_by(elf_id) |&gt;\n    summarize(total_cal = sum(cal)) |&gt;\n    slice_max(total_cal, n = num_top_elves) |&gt;\n    pull(total_cal) |&gt;\n    sum()\n}\n\nRun puzzle input:\n\ncount_max(df, 1)\n\n[1] 68787",
+    "crumbs": [
+      "2022",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2022/R/day01.html#part-2",
+    "href": "2022/R/day01.html#part-2",
+    "title": "Day 1",
+    "section": "Part 2",
+    "text": "Part 2\n\ncount_max(df, 3)\n\n[1] 198041",
+    "crumbs": [
+      "2022",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2022/R/day19.html",
+    "href": "2022/R/day19.html",
+    "title": "Day 19",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day19.txt\", skip_empty_rows = TRUE)",
+    "crumbs": [
+      "2022",
+      "Day 19"
+    ]
+  },
+  {
+    "objectID": "2022/R/day19.html#setup",
+    "href": "2022/R/day19.html#setup",
+    "title": "Day 19",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day19.txt\", skip_empty_rows = TRUE)",
+    "crumbs": [
+      "2022",
+      "Day 19"
+    ]
+  },
+  {
+    "objectID": "2022/R/day19.html#part-1",
+    "href": "2022/R/day19.html#part-1",
+    "title": "Day 19",
+    "section": "Part 1",
+    "text": "Part 1\nReformat the input as lists of robots with inputs and outputs for each blueprint:\n\nore      &lt;- c(\"ore\" = 1, \"clay\" = 0, \"obsidian\" = 0, \"geode\" = 0)\nclay     &lt;- c(\"ore\" = 0, \"clay\" = 1, \"obsidian\" = 0, \"geode\" = 0)\nobsidian &lt;- c(\"ore\" = 0, \"clay\" = 0, \"obsidian\" = 1, \"geode\" = 0)\ngeode    &lt;- c(\"ore\" = 0, \"clay\" = 0, \"obsidian\" = 0, \"geode\" = 1)\nempty    &lt;- c(\"ore\" = 0, \"clay\" = 0, \"obsidian\" = 0, \"geode\" = 0)\n\nunglue_pattern &lt;- str_c(\n  \"Blueprint {blueprint}:\",\n  \"Each ore robot costs {ore_ore} ore.\",\n  \"Each clay robot costs {clay_ore} ore.\",\n  \"Each obsidian robot costs {obsidian_ore} ore and {obsidian_clay} clay.\",\n  \"Each geode robot costs {geode_ore} ore and {geode_obsidian} obsidian.\",\n  sep = \" \"\n)\n\nblueprints &lt;- input |&gt; \n  unglue::unglue_data(unglue_pattern, convert = TRUE) |&gt; \n  pivot_longer(\n    -blueprint, \n    names_to = c(\"robot\", \"cost_type\"), \n    values_to = \"cost_value\",\n    names_sep = \"_\"\n  ) |&gt; \n  pivot_wider(names_from = cost_type, values_from = cost_value, values_fill = 0) |&gt; \n  mutate(geode = 0) |&gt; \n  nest(cost = c(ore, clay, obsidian, geode)) |&gt; \n  mutate(\n    cost = map(cost, unlist),\n    output = map(robot, get)\n  ) |&gt; \n  group_split(blueprint)\n\nDefine a set of functions to find the maximum number of geodes for each blueprint.\nOptimizations to improve runtime were sourced from Reddit (1, 2).\n\nmax_geodes &lt;- function(blueprint, inventory, production, time_left, max_cost, cur_best = 0) {\n  \n  # If the best possible set of geode robots in this branch can't outdo the current\n  # best, then don't traverse this branch.\n  theoretical_best &lt;- inventory[\"geode\"] + \n    production[\"geode\"] * time_left +\n    sum(1:time_left - 1)\n  \n  if (time_left == 0 | theoretical_best &lt;= cur_best)\n    return(inventory[\"geode\"])\n    \n  # Determine the amount of time required to build each robot next\n  time_to_build &lt;- map_dbl(blueprint$cost, \n    ~ ceiling((.x - inventory) / production) |&gt; \n      keep(.x &gt; 0) |&gt; \n      map_dbl(~ max(.x, 0) + 1) |&gt; \n      max()\n  )\n  \n  # Determine which robots are buildable within the remaining time\n  idx &lt;- which(\n    is.finite(time_to_build) & \n      time_to_build &lt; time_left & \n      production &lt; max_cost\n  )\n  \n  # Quit if there are no remaining options\n  if (length(idx) == 0)\n    return((inventory + time_left * production)[\"geode\"])\n  \n  # Loop through each branch of options\n  for (i in rev(idx)) {\n    branch_best &lt;- max_geodes(\n        blueprint  = blueprint,\n        inventory  = inventory + \n          production * time_to_build[[i]] - \n          blueprint$cost[[i]],\n        production = production + blueprint$output[[i]],\n        time_left  = time_left - time_to_build[[i]],\n        max_cost   = max_cost,\n        cur_best   = cur_best\n      )\n    if (branch_best &gt; cur_best)\n      cur_best &lt;- branch_best\n  }\n  \n  return(cur_best)\n}\n\nblueprint_geodes &lt;- function(blueprints, total_time) {\n  \n  best &lt;- c()\n  \n  for (blueprint in blueprints) {\n    max_cost &lt;- blueprint |&gt; \n      pull(cost) |&gt; \n      do.call(what = pmax) |&gt; \n      modify_at(.at = \"geode\", ~ Inf)\n    best &lt;- c(\n      best,\n      max_geodes(\n        blueprint  = blueprint,\n        inventory  = empty,\n        production = ore,\n        time_left  = total_time, \n        max_cost   = max_cost,\n        cur_best   = 0\n      )\n    )\n  }\n  \n  unname(best)\n}\n\nCompute total quality score by multiplying the max geodes for each blueprint by its index:\n\nblueprint_geodes(blueprints, total_time = 24) |&gt; \n  imap_dbl(\\(geodes, i) i * geodes) |&gt; \n  sum()\n\n[1] 2160",
+    "crumbs": [
+      "2022",
+      "Day 19"
+    ]
+  },
+  {
+    "objectID": "2022/R/day19.html#part-2",
+    "href": "2022/R/day19.html#part-2",
+    "title": "Day 19",
+    "section": "Part 2",
+    "text": "Part 2\nFilter to the first 3 blueprints, increase the total time to 32 seconds, and take the product of the max geodes:\n\nblueprints |&gt; \n  keep_at(1:3) |&gt; \n  blueprint_geodes(total_time = 32) |&gt; \n  prod()\n\n[1] 13340",
+    "crumbs": [
+      "2022",
+      "Day 19"
+    ]
+  },
+  {
+    "objectID": "2022/R/day23.html",
+    "href": "2022/R/day23.html",
+    "title": "Day 23",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day23.txt\", skip_empty_rows = TRUE) |&gt; \n  enframe(name = \"row\") |&gt; \n  mutate(value = map(value, ~ enframe(str_split_1(.x, \"\"), name = \"col\"))) |&gt; \n  unnest(value)",
+    "crumbs": [
+      "2022",
+      "Day 23"
+    ]
+  },
+  {
+    "objectID": "2022/R/day23.html#setup",
+    "href": "2022/R/day23.html#setup",
+    "title": "Day 23",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day23.txt\", skip_empty_rows = TRUE) |&gt; \n  enframe(name = \"row\") |&gt; \n  mutate(value = map(value, ~ enframe(str_split_1(.x, \"\"), name = \"col\"))) |&gt; \n  unnest(value)",
+    "crumbs": [
+      "2022",
+      "Day 23"
+    ]
+  },
+  {
+    "objectID": "2022/R/day23.html#part-1",
+    "href": "2022/R/day23.html#part-1",
+    "title": "Day 23",
+    "section": "Part 1",
+    "text": "Part 1\nConvert map to a list of positions for each elf, using complex numbers to store 2D coords:\n\nelves &lt;- input |&gt; \n  filter(value == \"#\") |&gt; \n  mutate(z = complex(real = col, imaginary = row)) |&gt; \n  pull(z)\n\nDefine function to move elves in each round:\n\ncardinal_dirs &lt;- c(\n  n  =  0 - 1i,\n  s  =  0 + 1i,\n  w  = -1 + 0i,\n  e  =  1 + 0i,\n  nw = -1 - 1i,\n  ne =  1 - 1i,\n  sw = -1 + 1i,\n  se =  1 + 1i\n)\n\nadjacent_dirs &lt;- list(\n  n = c(\"n\", \"nw\", \"ne\"),\n  s = c(\"s\", \"sw\", \"se\"),\n  w = c(\"w\", \"nw\", \"sw\"),\n  e = c(\"e\", \"ne\", \"se\")\n)\n\nmove_elves &lt;- function(elves, round_num) {\n\n  # Determine which neighboring cells are occupied\n  neighbors &lt;- map(cardinal_dirs, \\(dir) elves + dir)\n  occupied  &lt;- map(neighbors, ~ .x %in% elves)\n  \n  # Determine which n/s/w/e moves are valid\n  valid &lt;- map(adjacent_dirs, \\(dir_set) {\n    dir_set |&gt; \n      map(~!occupied[[.x]]) |&gt; \n      reduce(`&`)\n  })\n  \n  # Re-order the n/s/w/e priority according to the current round number\n  valid &lt;- valid[(1:4 + round_num - 2) %% 4 + 1]\n  \n  # For all elves not surrounded by empty cells, determine their proposed move\n  all_borders_empty &lt;- reduce(valid, `&`)\n  proposals &lt;- valid |&gt; \n    imap(\\(vec, dir) case_when(vec ~ neighbors[[dir]])) |&gt;\n    pmap(\n      ~ c(discard(c(..1, ..2, ..3, ..4), is.na), NA) |&gt; \n        head(1)\n    ) |&gt; \n    unlist() |&gt; \n    modify_if(all_borders_empty, ~ NA)\n  \n  # Nullify any colliding proposed moves\n  collisions &lt;- na.omit(proposals)[duplicated(na.omit(proposals))]\n  movements &lt;- if_else(proposals %in% collisions, NA, proposals)\n  \n  # Return the new elf coordinates\n  coalesce(movements, elves)\n}\n\nDefine a function to compute the area of the bounding box then subtract away the number of elves:\n\nn_empty_tiles &lt;- function(elves) {\n  height &lt;- 1 + diff(range(Im(elves)))\n  width  &lt;- 1 + diff(range(Re(elves)))\n  \n  height * width - length(elves)\n}\n\nRun 10 rounds on puzzle input:\n\nreduce(1:10, move_elves, .init = elves) |&gt; \n  n_empty_tiles()\n\n[1] 3996",
+    "crumbs": [
+      "2022",
+      "Day 23"
+    ]
+  },
+  {
+    "objectID": "2022/R/day23.html#part-2",
+    "href": "2022/R/day23.html#part-2",
+    "title": "Day 23",
+    "section": "Part 2",
+    "text": "Part 2\nRun until no further movements occur:\n\ni &lt;- 1\ncur_elves &lt;- elves\n\nrepeat {\n  new_elves &lt;- move_elves(cur_elves, i)\n  \n  if (all(new_elves == cur_elves)) break\n  \n  cur_elves &lt;- new_elves\n  i &lt;- i + 1\n}\n\ni\n\n[1] 908",
+    "crumbs": [
+      "2022",
+      "Day 23"
     ]
   },
   {
