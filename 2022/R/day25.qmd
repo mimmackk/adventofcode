@@ -1,0 +1,68 @@
+---
+title: "Day 25"
+date: 2022-12-25
+author:
+  name: https://adventofcode.com/2022/day/25
+  url: https://adventofcode.com/2022/day/25
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day25.txt", skip_empty_rows = TRUE)
+
+```
+
+## Part 1
+
+Convert "snafu" strings to decimal numbers:
+
+```{r}
+
+snafu_to_dbl <- function(snafu) {
+  snafu |> 
+    str_split("") |> 
+    map(~ case_match(rev(.x), "2" ~ 2, "1" ~ 1, "0" ~ 0, "-" ~ -1, "=" ~ -2)) |> 
+    map(~ .x * 5^(0:(length(.x) - 1))) |> 
+    map_dbl(sum)
+}
+
+```
+
+Convert decimal numbers to "snafu" strings:
+
+```{r}
+
+dbl_to_snafu <- function(x) {
+  output <- c()
+
+  repeat {
+    output <- c((x + 2) %% 5 - 2, output)
+    x <- floor((x + 2) / 5)
+    
+    if (x == 0) break
+  }
+  
+  output |> 
+    case_match(2 ~ '2', 1 ~ '1', 0 ~ '0', -1 ~ '-', -2 ~ '=') |> 
+    str_c(collapse = "")
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+input |> 
+  snafu_to_dbl() |> 
+  sum() |> 
+  dbl_to_snafu()
+
+```
+

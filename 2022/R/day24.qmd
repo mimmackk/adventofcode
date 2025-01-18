@@ -1,0 +1,126 @@
+---
+title: "Day 24"
+date: 2022-12-24
+author:
+  name: https://adventofcode.com/2022/day/24
+  url: https://adventofcode.com/2022/day/24
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day24.txt", skip_empty_rows = TRUE)
+
+```
+
+## Part 1
+
+Convert input string to a matrix of characters:
+
+```{r}
+
+w <- str_length(input[[1]])
+h <- length(input)
+
+mtx <- input |> 
+  str_split("") |> 
+  unlist() |> 
+  matrix(nrow = h, byrow = TRUE)
+
+```
+
+Define helper functions to determine whether a map space is occupied at a given time. Hint from reddit user [u/jaccomoc](https://www.reddit.com/r/adventofcode/comments/zu28ij/comment/jjeh95l/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button) to scan rows/columns for blizzards at a certain time, rather than simulating the entire map at every time point:
+
+```{r}
+
+# Define the constant start/end locations
+init   <- c(row = 1, col = 2)
+target <- c(row = h, col = w - 1)
+
+# Wrap blizzards aroound the map edges
+wrap_w <- function(idx) (idx - 2) %% (w - 2) + 2
+wrap_h <- function(idx) (idx - 2) %% (h - 2) + 2
+
+# Check whether a given cell is open at a given time
+is_open <- function(idx, time) {
+  row <- idx[[1]]
+  col <- idx[[2]]
+  mtx[row, wrap_w(col - time)] != '>' & mtx[wrap_h(row - time), col] != 'v' &
+  mtx[row, wrap_w(col + time)] != '<' & mtx[wrap_h(row + time), col] != '^'
+}
+
+# Check whether a given cell is in the bounds of the map
+in_bounds <- function(idx) {
+  row <- idx[[1]]
+  col <- idx[[2]]
+  
+  (between(row, 2, h - 1) & between(col, 2, w - 1)) | 
+  all(idx == init) | all(idx == target)
+}
+
+```
+
+Define a function that loops through time points and stops when the first elf reaches the target. Hint on use of "quantum elves" that die if standing on a blizzard spot from Reddit user [u/SLiV9](https://www.reddit.com/r/adventofcode/comments/zu28ij/comment/j1i8usb/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button).
+
+```{r}
+
+moves <- list(
+  c(row =  1, col =  0),  # down
+  c(row =  0, col =  1),  # right
+  c(row = -1, col =  0),  # up
+  c(row =  0, col = -1),  # left
+  c(row =  0, col =  0)   # still
+)
+
+time_cross <- function(time_start, init, target) {
+  
+  cur_locations <- list(init)
+  t <- time_start
+  
+  repeat {
+    t <- t + 1
+
+    cur_locations <- cur_locations |> 
+      map(\(start) map(moves, \(move) start + move)) |> 
+      flatten() |> 
+      keep(in_bounds) |> 
+      keep(partial(is_open, time = t)) |> 
+      unique()
+    
+    if (list(target) %in% cur_locations) break
+  }
+  
+  t
+}
+
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+t1 <- time_cross(0, init, target)
+
+t1
+
+```
+
+## Part 2
+
+Run the simulation again two more times, swapping the target and source locations, and starting where the last left off.
+
+```{r}
+
+t2 <- time_cross(t1, target, init)
+t3 <- time_cross(t2, init, target)
+
+t3
+
+```
+

@@ -656,47 +656,91 @@
     ]
   },
   {
-    "objectID": "2022/R/day18.html",
-    "href": "2022/R/day18.html",
-    "title": "Day 18",
+    "objectID": "2022/R/day24.html",
+    "href": "2022/R/day24.html",
+    "title": "Day 24",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day18.txt\", skip_empty_rows = TRUE) |&gt; \n  unglue::unglue_data(\"{x},{y},{z}\", convert = TRUE) |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day24.txt\", skip_empty_rows = TRUE)",
     "crumbs": [
       "2022",
-      "Day 18"
+      "Day 24"
     ]
   },
   {
-    "objectID": "2022/R/day18.html#setup",
-    "href": "2022/R/day18.html#setup",
-    "title": "Day 18",
+    "objectID": "2022/R/day24.html#setup",
+    "href": "2022/R/day24.html#setup",
+    "title": "Day 24",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day18.txt\", skip_empty_rows = TRUE) |&gt; \n  unglue::unglue_data(\"{x},{y},{z}\", convert = TRUE) |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day24.txt\", skip_empty_rows = TRUE)",
     "crumbs": [
       "2022",
-      "Day 18"
+      "Day 24"
     ]
   },
   {
-    "objectID": "2022/R/day18.html#part-1",
-    "href": "2022/R/day18.html#part-1",
-    "title": "Day 18",
+    "objectID": "2022/R/day24.html#part-1",
+    "href": "2022/R/day24.html#part-1",
+    "title": "Day 24",
     "section": "Part 1",
-    "text": "Part 1\nCreate a containing box for the set of cubes, padded by 1 voxel of air in each direction, and convert the full rectangular area into a graph:\n\nxrange &lt;- (min(input$x) - 1):(max(input$x) + 1)\nyrange &lt;- (min(input$y) - 1):(max(input$y) + 1)\nzrange &lt;- (min(input$z) - 1):(max(input$z) + 1)\n\n# Fill out each coordinate of the containing box with air\ncontainer &lt;- input |&gt; \n  mutate(type = \"cube\") |&gt; \n  complete(x = xrange, y = yrange, z = zrange, fill = list(type = \"air\")) |&gt; \n  mutate(id = row_number())\n\n# For each coordinate, create edges between adjacent coords of the same type\nedges &lt;- container |&gt;\n  arrange(x, y, z) |&gt; \n  mutate(\n    edge_x1 = case_when(type == lag(type)  ~ lag(id)),\n    edge_x2 = case_when(type == lead(type) ~ lead(id)),\n    .by = c(y, z)\n  ) |&gt; \n  mutate(\n    edge_y1 = case_when(type == lag(type)  ~ lag(id)),\n    edge_y2 = case_when(type == lead(type) ~ lead(id)),\n    .by = c(x, z)\n  ) |&gt; \n  mutate(\n    edge_z1 = case_when(type == lag(type)  ~ lag(id)),\n    edge_z2 = case_when(type == lead(type) ~ lead(id)),\n    .by = c(x, y)\n  ) |&gt; \n  mutate(across(starts_with(\"edge\"), \\(col) {\n    case_when(!is.na(col) ~ map2(id, col, ~ c(.x, .y)))\n  })) |&gt; \n  select(starts_with(\"edge\")) |&gt; \n  pivot_longer(everything()) |&gt; \n  pull(value) |&gt; \n  unlist()\n\n\n# Convert to a graph\ng &lt;- make_graph(edges = edges, n = max(container$id), directed = TRUE) |&gt; \n  as_undirected()\n\nCompute the surface area of the cubes. Start by giving every cube a surface area of 6, then subtract the cube’s vertex degree (which is the number of adjacent cubes):\n\n# Get the vertex IDs of all cubes\ncube_ids &lt;- container |&gt; \n  filter(type == \"cube\") |&gt; \n  pull(id)\n\n# Compute the surface area of all cubes\ng |&gt; \n  degree() |&gt; \n  keep_at(cube_ids) |&gt; \n  map_dbl(~ 6 - .x) |&gt; \n  sum()\n\n[1] 3470",
+    "text": "Part 1\nConvert input string to a matrix of characters:\n\nw &lt;- str_length(input[[1]])\nh &lt;- length(input)\n\nmtx &lt;- input |&gt; \n  str_split(\"\") |&gt; \n  unlist() |&gt; \n  matrix(nrow = h, byrow = TRUE)\n\nDefine helper functions to determine whether a map space is occupied at a given time. Hint from reddit user u/jaccomoc to scan rows/columns for blizzards at a certain time, rather than simulating the entire map at every time point:\n\n# Define the constant start/end locations\ninit   &lt;- c(row = 1, col = 2)\ntarget &lt;- c(row = h, col = w - 1)\n\n# Wrap blizzards aroound the map edges\nwrap_w &lt;- function(idx) (idx - 2) %% (w - 2) + 2\nwrap_h &lt;- function(idx) (idx - 2) %% (h - 2) + 2\n\n# Check whether a given cell is open at a given time\nis_open &lt;- function(idx, time) {\n  row &lt;- idx[[1]]\n  col &lt;- idx[[2]]\n  mtx[row, wrap_w(col - time)] != '&gt;' & mtx[wrap_h(row - time), col] != 'v' &\n  mtx[row, wrap_w(col + time)] != '&lt;' & mtx[wrap_h(row + time), col] != '^'\n}\n\n# Check whether a given cell is in the bounds of the map\nin_bounds &lt;- function(idx) {\n  row &lt;- idx[[1]]\n  col &lt;- idx[[2]]\n  \n  (between(row, 2, h - 1) & between(col, 2, w - 1)) | \n  all(idx == init) | all(idx == target)\n}\n\nDefine a function that loops through time points and stops when the first elf reaches the target. Hint on use of “quantum elves” that die if standing on a blizzard spot from Reddit user u/SLiV9.\n\nmoves &lt;- list(\n  c(row =  1, col =  0),  # down\n  c(row =  0, col =  1),  # right\n  c(row = -1, col =  0),  # up\n  c(row =  0, col = -1),  # left\n  c(row =  0, col =  0)   # still\n)\n\ntime_cross &lt;- function(time_start, init, target) {\n  \n  cur_locations &lt;- list(init)\n  t &lt;- time_start\n  \n  repeat {\n    t &lt;- t + 1\n\n    cur_locations &lt;- cur_locations |&gt; \n      map(\\(start) map(moves, \\(move) start + move)) |&gt; \n      flatten() |&gt; \n      keep(in_bounds) |&gt; \n      keep(partial(is_open, time = t)) |&gt; \n      unique()\n    \n    if (list(target) %in% cur_locations) break\n  }\n  \n  t\n}\n\nRun on puzzle input:\n\nt1 &lt;- time_cross(0, init, target)\n\nt1\n\n[1] 299",
     "crumbs": [
       "2022",
-      "Day 18"
+      "Day 24"
     ]
   },
   {
-    "objectID": "2022/R/day18.html#part-2",
-    "href": "2022/R/day18.html#part-2",
-    "title": "Day 18",
+    "objectID": "2022/R/day24.html#part-2",
+    "href": "2022/R/day24.html#part-2",
+    "title": "Day 24",
     "section": "Part 2",
-    "text": "Part 2\nTo compute the external surface area, we compute the total surface area of the outermost containing box of air, then subtract away its known rectangular external surface area.\n\n# First vertex is external air padding, so we pull all vertices having its group\noutside_ids &lt;- which(components(g)$membership == components(g)$membership[1])\n\n# Compute the surface area of the external air voxels using their vertex degree\ntotal_sa &lt;- g |&gt; \n  degree() |&gt; \n  keep_at(outside_ids) |&gt; \n  map_dbl(~ 6 - .x) |&gt; \n  sum()\n\n# Compute the outer surface of the bounding box\nxlen &lt;- max(xrange) - min(xrange) + 1\nylen &lt;- max(yrange) - min(yrange) + 1\nzlen &lt;- max(zrange) - min(zrange) + 1\nbounding_sa &lt;- 2 * (xlen * ylen + xlen * zlen + ylen * zlen)\n\n# Subtract the outer surface area from the total surface area of the air padding\ntotal_sa - bounding_sa\n\n[1] 1986",
+    "text": "Part 2\nRun the simulation again two more times, swapping the target and source locations, and starting where the last left off.\n\nt2 &lt;- time_cross(t1, target, init)\nt3 &lt;- time_cross(t2, init, target)\n\nt3\n\n[1] 899",
     "crumbs": [
       "2022",
-      "Day 18"
+      "Day 24"
+    ]
+  },
+  {
+    "objectID": "2022/R/day19.html",
+    "href": "2022/R/day19.html",
+    "title": "Day 19",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day19.txt\", skip_empty_rows = TRUE)",
+    "crumbs": [
+      "2022",
+      "Day 19"
+    ]
+  },
+  {
+    "objectID": "2022/R/day19.html#setup",
+    "href": "2022/R/day19.html#setup",
+    "title": "Day 19",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day19.txt\", skip_empty_rows = TRUE)",
+    "crumbs": [
+      "2022",
+      "Day 19"
+    ]
+  },
+  {
+    "objectID": "2022/R/day19.html#part-1",
+    "href": "2022/R/day19.html#part-1",
+    "title": "Day 19",
+    "section": "Part 1",
+    "text": "Part 1\nReformat the input as lists of robots with inputs and outputs for each blueprint:\n\nore      &lt;- c(\"ore\" = 1, \"clay\" = 0, \"obsidian\" = 0, \"geode\" = 0)\nclay     &lt;- c(\"ore\" = 0, \"clay\" = 1, \"obsidian\" = 0, \"geode\" = 0)\nobsidian &lt;- c(\"ore\" = 0, \"clay\" = 0, \"obsidian\" = 1, \"geode\" = 0)\ngeode    &lt;- c(\"ore\" = 0, \"clay\" = 0, \"obsidian\" = 0, \"geode\" = 1)\nempty    &lt;- c(\"ore\" = 0, \"clay\" = 0, \"obsidian\" = 0, \"geode\" = 0)\n\nunglue_pattern &lt;- str_c(\n  \"Blueprint {blueprint}:\",\n  \"Each ore robot costs {ore_ore} ore.\",\n  \"Each clay robot costs {clay_ore} ore.\",\n  \"Each obsidian robot costs {obsidian_ore} ore and {obsidian_clay} clay.\",\n  \"Each geode robot costs {geode_ore} ore and {geode_obsidian} obsidian.\",\n  sep = \" \"\n)\n\nblueprints &lt;- input |&gt; \n  unglue::unglue_data(unglue_pattern, convert = TRUE) |&gt; \n  pivot_longer(\n    -blueprint, \n    names_to = c(\"robot\", \"cost_type\"), \n    values_to = \"cost_value\",\n    names_sep = \"_\"\n  ) |&gt; \n  pivot_wider(names_from = cost_type, values_from = cost_value, values_fill = 0) |&gt; \n  mutate(geode = 0) |&gt; \n  nest(cost = c(ore, clay, obsidian, geode)) |&gt; \n  mutate(\n    cost = map(cost, unlist),\n    output = map(robot, get)\n  ) |&gt; \n  group_split(blueprint)\n\nDefine a set of functions to find the maximum number of geodes for each blueprint.\nOptimizations to improve runtime were sourced from Reddit (1, 2).\n\nmax_geodes &lt;- function(blueprint, inventory, production, time_left, max_cost, cur_best = 0) {\n  \n  # If the best possible set of geode robots in this branch can't outdo the current\n  # best, then don't traverse this branch.\n  theoretical_best &lt;- inventory[\"geode\"] + \n    production[\"geode\"] * time_left +\n    sum(1:time_left - 1)\n  \n  if (time_left == 0 | theoretical_best &lt;= cur_best)\n    return(inventory[\"geode\"])\n    \n  # Determine the amount of time required to build each robot next\n  time_to_build &lt;- map_dbl(blueprint$cost, \n    ~ ceiling((.x - inventory) / production) |&gt; \n      keep(.x &gt; 0) |&gt; \n      map_dbl(~ max(.x, 0) + 1) |&gt; \n      max()\n  )\n  \n  # Determine which robots are buildable within the remaining time\n  idx &lt;- which(\n    is.finite(time_to_build) & \n      time_to_build &lt; time_left & \n      production &lt; max_cost\n  )\n  \n  # Quit if there are no remaining options\n  if (length(idx) == 0)\n    return((inventory + time_left * production)[\"geode\"])\n  \n  # Loop through each branch of options\n  for (i in rev(idx)) {\n    branch_best &lt;- max_geodes(\n        blueprint  = blueprint,\n        inventory  = inventory + \n          production * time_to_build[[i]] - \n          blueprint$cost[[i]],\n        production = production + blueprint$output[[i]],\n        time_left  = time_left - time_to_build[[i]],\n        max_cost   = max_cost,\n        cur_best   = cur_best\n      )\n    if (branch_best &gt; cur_best)\n      cur_best &lt;- branch_best\n  }\n  \n  return(cur_best)\n}\n\nblueprint_geodes &lt;- function(blueprints, total_time) {\n  \n  best &lt;- c()\n  \n  for (blueprint in blueprints) {\n    max_cost &lt;- blueprint |&gt; \n      pull(cost) |&gt; \n      do.call(what = pmax) |&gt; \n      modify_at(.at = \"geode\", ~ Inf)\n    best &lt;- c(\n      best,\n      max_geodes(\n        blueprint  = blueprint,\n        inventory  = empty,\n        production = ore,\n        time_left  = total_time, \n        max_cost   = max_cost,\n        cur_best   = 0\n      )\n    )\n  }\n  \n  unname(best)\n}\n\nCompute total quality score by multiplying the max geodes for each blueprint by its index:\n\nblueprint_geodes(blueprints, total_time = 24) |&gt; \n  imap_dbl(\\(geodes, i) i * geodes) |&gt; \n  sum()\n\n[1] 2160",
+    "crumbs": [
+      "2022",
+      "Day 19"
+    ]
+  },
+  {
+    "objectID": "2022/R/day19.html#part-2",
+    "href": "2022/R/day19.html#part-2",
+    "title": "Day 19",
+    "section": "Part 2",
+    "text": "Part 2\nFilter to the first 3 blueprints, increase the total time to 32 seconds, and take the product of the max geodes:\n\nblueprints |&gt; \n  keep_at(1:3) |&gt; \n  blueprint_geodes(total_time = 32) |&gt; \n  prod()\n\n[1] 13340",
+    "crumbs": [
+      "2022",
+      "Day 19"
     ]
   },
   {
@@ -1349,47 +1393,80 @@
     ]
   },
   {
-    "objectID": "2022/R/day19.html",
-    "href": "2022/R/day19.html",
-    "title": "Day 19",
+    "objectID": "2022/R/day25.html",
+    "href": "2022/R/day25.html",
+    "title": "Day 25",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day19.txt\", skip_empty_rows = TRUE)",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day25.txt\", skip_empty_rows = TRUE)",
     "crumbs": [
       "2022",
-      "Day 19"
+      "Day 25"
     ]
   },
   {
-    "objectID": "2022/R/day19.html#setup",
-    "href": "2022/R/day19.html#setup",
-    "title": "Day 19",
+    "objectID": "2022/R/day25.html#setup",
+    "href": "2022/R/day25.html#setup",
+    "title": "Day 25",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day19.txt\", skip_empty_rows = TRUE)",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day25.txt\", skip_empty_rows = TRUE)",
     "crumbs": [
       "2022",
-      "Day 19"
+      "Day 25"
     ]
   },
   {
-    "objectID": "2022/R/day19.html#part-1",
-    "href": "2022/R/day19.html#part-1",
-    "title": "Day 19",
+    "objectID": "2022/R/day25.html#part-1",
+    "href": "2022/R/day25.html#part-1",
+    "title": "Day 25",
     "section": "Part 1",
-    "text": "Part 1\nReformat the input as lists of robots with inputs and outputs for each blueprint:\n\nore      &lt;- c(\"ore\" = 1, \"clay\" = 0, \"obsidian\" = 0, \"geode\" = 0)\nclay     &lt;- c(\"ore\" = 0, \"clay\" = 1, \"obsidian\" = 0, \"geode\" = 0)\nobsidian &lt;- c(\"ore\" = 0, \"clay\" = 0, \"obsidian\" = 1, \"geode\" = 0)\ngeode    &lt;- c(\"ore\" = 0, \"clay\" = 0, \"obsidian\" = 0, \"geode\" = 1)\nempty    &lt;- c(\"ore\" = 0, \"clay\" = 0, \"obsidian\" = 0, \"geode\" = 0)\n\nunglue_pattern &lt;- str_c(\n  \"Blueprint {blueprint}:\",\n  \"Each ore robot costs {ore_ore} ore.\",\n  \"Each clay robot costs {clay_ore} ore.\",\n  \"Each obsidian robot costs {obsidian_ore} ore and {obsidian_clay} clay.\",\n  \"Each geode robot costs {geode_ore} ore and {geode_obsidian} obsidian.\",\n  sep = \" \"\n)\n\nblueprints &lt;- input |&gt; \n  unglue::unglue_data(unglue_pattern, convert = TRUE) |&gt; \n  pivot_longer(\n    -blueprint, \n    names_to = c(\"robot\", \"cost_type\"), \n    values_to = \"cost_value\",\n    names_sep = \"_\"\n  ) |&gt; \n  pivot_wider(names_from = cost_type, values_from = cost_value, values_fill = 0) |&gt; \n  mutate(geode = 0) |&gt; \n  nest(cost = c(ore, clay, obsidian, geode)) |&gt; \n  mutate(\n    cost = map(cost, unlist),\n    output = map(robot, get)\n  ) |&gt; \n  group_split(blueprint)\n\nDefine a set of functions to find the maximum number of geodes for each blueprint.\nOptimizations to improve runtime were sourced from Reddit (1, 2).\n\nmax_geodes &lt;- function(blueprint, inventory, production, time_left, max_cost, cur_best = 0) {\n  \n  # If the best possible set of geode robots in this branch can't outdo the current\n  # best, then don't traverse this branch.\n  theoretical_best &lt;- inventory[\"geode\"] + \n    production[\"geode\"] * time_left +\n    sum(1:time_left - 1)\n  \n  if (time_left == 0 | theoretical_best &lt;= cur_best)\n    return(inventory[\"geode\"])\n    \n  # Determine the amount of time required to build each robot next\n  time_to_build &lt;- map_dbl(blueprint$cost, \n    ~ ceiling((.x - inventory) / production) |&gt; \n      keep(.x &gt; 0) |&gt; \n      map_dbl(~ max(.x, 0) + 1) |&gt; \n      max()\n  )\n  \n  # Determine which robots are buildable within the remaining time\n  idx &lt;- which(\n    is.finite(time_to_build) & \n      time_to_build &lt; time_left & \n      production &lt; max_cost\n  )\n  \n  # Quit if there are no remaining options\n  if (length(idx) == 0)\n    return((inventory + time_left * production)[\"geode\"])\n  \n  # Loop through each branch of options\n  for (i in rev(idx)) {\n    branch_best &lt;- max_geodes(\n        blueprint  = blueprint,\n        inventory  = inventory + \n          production * time_to_build[[i]] - \n          blueprint$cost[[i]],\n        production = production + blueprint$output[[i]],\n        time_left  = time_left - time_to_build[[i]],\n        max_cost   = max_cost,\n        cur_best   = cur_best\n      )\n    if (branch_best &gt; cur_best)\n      cur_best &lt;- branch_best\n  }\n  \n  return(cur_best)\n}\n\nblueprint_geodes &lt;- function(blueprints, total_time) {\n  \n  best &lt;- c()\n  \n  for (blueprint in blueprints) {\n    max_cost &lt;- blueprint |&gt; \n      pull(cost) |&gt; \n      do.call(what = pmax) |&gt; \n      modify_at(.at = \"geode\", ~ Inf)\n    best &lt;- c(\n      best,\n      max_geodes(\n        blueprint  = blueprint,\n        inventory  = empty,\n        production = ore,\n        time_left  = total_time, \n        max_cost   = max_cost,\n        cur_best   = 0\n      )\n    )\n  }\n  \n  unname(best)\n}\n\nCompute total quality score by multiplying the max geodes for each blueprint by its index:\n\nblueprint_geodes(blueprints, total_time = 24) |&gt; \n  imap_dbl(\\(geodes, i) i * geodes) |&gt; \n  sum()\n\n[1] 2160",
+    "text": "Part 1\nConvert “snafu” strings to decimal numbers:\n\nsnafu_to_dbl &lt;- function(snafu) {\n  snafu |&gt; \n    str_split(\"\") |&gt; \n    map(~ case_match(rev(.x), \"2\" ~ 2, \"1\" ~ 1, \"0\" ~ 0, \"-\" ~ -1, \"=\" ~ -2)) |&gt; \n    map(~ .x * 5^(0:(length(.x) - 1))) |&gt; \n    map_dbl(sum)\n}\n\nConvert decimal numbers to “snafu” strings:\n\ndbl_to_snafu &lt;- function(x) {\n  output &lt;- c()\n\n  repeat {\n    output &lt;- c((x + 2) %% 5 - 2, output)\n    x &lt;- floor((x + 2) / 5)\n    \n    if (x == 0) break\n  }\n  \n  output |&gt; \n    case_match(2 ~ '2', 1 ~ '1', 0 ~ '0', -1 ~ '-', -2 ~ '=') |&gt; \n    str_c(collapse = \"\")\n}\n\nRun on puzzle input:\n\ninput |&gt; \n  snafu_to_dbl() |&gt; \n  sum() |&gt; \n  dbl_to_snafu()\n\n[1] \"122-12==0-01=00-0=02\"",
     "crumbs": [
       "2022",
-      "Day 19"
+      "Day 25"
     ]
   },
   {
-    "objectID": "2022/R/day19.html#part-2",
-    "href": "2022/R/day19.html#part-2",
-    "title": "Day 19",
-    "section": "Part 2",
-    "text": "Part 2\nFilter to the first 3 blueprints, increase the total time to 32 seconds, and take the product of the max geodes:\n\nblueprints |&gt; \n  keep_at(1:3) |&gt; \n  blueprint_geodes(total_time = 32) |&gt; \n  prod()\n\n[1] 13340",
+    "objectID": "2022/R/day18.html",
+    "href": "2022/R/day18.html",
+    "title": "Day 18",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day18.txt\", skip_empty_rows = TRUE) |&gt; \n  unglue::unglue_data(\"{x},{y},{z}\", convert = TRUE) |&gt; \n  mutate(id = row_number(), .before = everything())",
     "crumbs": [
       "2022",
-      "Day 19"
+      "Day 18"
+    ]
+  },
+  {
+    "objectID": "2022/R/day18.html#setup",
+    "href": "2022/R/day18.html#setup",
+    "title": "Day 18",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(igraph)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day18.txt\", skip_empty_rows = TRUE) |&gt; \n  unglue::unglue_data(\"{x},{y},{z}\", convert = TRUE) |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "crumbs": [
+      "2022",
+      "Day 18"
+    ]
+  },
+  {
+    "objectID": "2022/R/day18.html#part-1",
+    "href": "2022/R/day18.html#part-1",
+    "title": "Day 18",
+    "section": "Part 1",
+    "text": "Part 1\nCreate a containing box for the set of cubes, padded by 1 voxel of air in each direction, and convert the full rectangular area into a graph:\n\nxrange &lt;- (min(input$x) - 1):(max(input$x) + 1)\nyrange &lt;- (min(input$y) - 1):(max(input$y) + 1)\nzrange &lt;- (min(input$z) - 1):(max(input$z) + 1)\n\n# Fill out each coordinate of the containing box with air\ncontainer &lt;- input |&gt; \n  mutate(type = \"cube\") |&gt; \n  complete(x = xrange, y = yrange, z = zrange, fill = list(type = \"air\")) |&gt; \n  mutate(id = row_number())\n\n# For each coordinate, create edges between adjacent coords of the same type\nedges &lt;- container |&gt;\n  arrange(x, y, z) |&gt; \n  mutate(\n    edge_x1 = case_when(type == lag(type)  ~ lag(id)),\n    edge_x2 = case_when(type == lead(type) ~ lead(id)),\n    .by = c(y, z)\n  ) |&gt; \n  mutate(\n    edge_y1 = case_when(type == lag(type)  ~ lag(id)),\n    edge_y2 = case_when(type == lead(type) ~ lead(id)),\n    .by = c(x, z)\n  ) |&gt; \n  mutate(\n    edge_z1 = case_when(type == lag(type)  ~ lag(id)),\n    edge_z2 = case_when(type == lead(type) ~ lead(id)),\n    .by = c(x, y)\n  ) |&gt; \n  mutate(across(starts_with(\"edge\"), \\(col) {\n    case_when(!is.na(col) ~ map2(id, col, ~ c(.x, .y)))\n  })) |&gt; \n  select(starts_with(\"edge\")) |&gt; \n  pivot_longer(everything()) |&gt; \n  pull(value) |&gt; \n  unlist()\n\n\n# Convert to a graph\ng &lt;- make_graph(edges = edges, n = max(container$id), directed = TRUE) |&gt; \n  as_undirected()\n\nCompute the surface area of the cubes. Start by giving every cube a surface area of 6, then subtract the cube’s vertex degree (which is the number of adjacent cubes):\n\n# Get the vertex IDs of all cubes\ncube_ids &lt;- container |&gt; \n  filter(type == \"cube\") |&gt; \n  pull(id)\n\n# Compute the surface area of all cubes\ng |&gt; \n  degree() |&gt; \n  keep_at(cube_ids) |&gt; \n  map_dbl(~ 6 - .x) |&gt; \n  sum()\n\n[1] 3470",
+    "crumbs": [
+      "2022",
+      "Day 18"
+    ]
+  },
+  {
+    "objectID": "2022/R/day18.html#part-2",
+    "href": "2022/R/day18.html#part-2",
+    "title": "Day 18",
+    "section": "Part 2",
+    "text": "Part 2\nTo compute the external surface area, we compute the total surface area of the outermost containing box of air, then subtract away its known rectangular external surface area.\n\n# First vertex is external air padding, so we pull all vertices having its group\noutside_ids &lt;- which(components(g)$membership == components(g)$membership[1])\n\n# Compute the surface area of the external air voxels using their vertex degree\ntotal_sa &lt;- g |&gt; \n  degree() |&gt; \n  keep_at(outside_ids) |&gt; \n  map_dbl(~ 6 - .x) |&gt; \n  sum()\n\n# Compute the outer surface of the bounding box\nxlen &lt;- max(xrange) - min(xrange) + 1\nylen &lt;- max(yrange) - min(yrange) + 1\nzlen &lt;- max(zrange) - min(zrange) + 1\nbounding_sa &lt;- 2 * (xlen * ylen + xlen * zlen + ylen * zlen)\n\n# Subtract the outer surface area from the total surface area of the air padding\ntotal_sa - bounding_sa\n\n[1] 1986",
+    "crumbs": [
+      "2022",
+      "Day 18"
     ]
   },
   {

@@ -1,0 +1,15 @@
+{
+  "hash": "4991a9fb924f213f4278b614d401aa16",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 25\"\ndate: 2022-12-25\nauthor:\n  name: https://adventofcode.com/2022/day/25\n  url: https://adventofcode.com/2022/day/25\n---\n\n\n\n\n## Setup\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput <- read_lines(\"../input/day25.txt\", skip_empty_rows = TRUE)\n```\n:::\n\n\n\n\n## Part 1\n\nConvert \"snafu\" strings to decimal numbers:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nsnafu_to_dbl <- function(snafu) {\n  snafu |> \n    str_split(\"\") |> \n    map(~ case_match(rev(.x), \"2\" ~ 2, \"1\" ~ 1, \"0\" ~ 0, \"-\" ~ -1, \"=\" ~ -2)) |> \n    map(~ .x * 5^(0:(length(.x) - 1))) |> \n    map_dbl(sum)\n}\n```\n:::\n\n\n\n\nConvert decimal numbers to \"snafu\" strings:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndbl_to_snafu <- function(x) {\n  output <- c()\n\n  repeat {\n    output <- c((x + 2) %% 5 - 2, output)\n    x <- floor((x + 2) / 5)\n    \n    if (x == 0) break\n  }\n  \n  output |> \n    case_match(2 ~ '2', 1 ~ '1', 0 ~ '0', -1 ~ '-', -2 ~ '=') |> \n    str_c(collapse = \"\")\n}\n```\n:::\n\n\n\n\nRun on puzzle input:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput |> \n  snafu_to_dbl() |> \n  sum() |> \n  dbl_to_snafu()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] \"122-12==0-01=00-0=02\"\n```\n\n\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
