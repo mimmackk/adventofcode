@@ -51,6 +51,50 @@
     ]
   },
   {
+    "objectID": "2023/R/day05.html",
+    "href": "2023/R/day05.html",
+    "title": "Day 5",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(sets)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day05.txt\", skip_empty_rows = FALSE)",
+    "crumbs": [
+      "2023",
+      "Day 5"
+    ]
+  },
+  {
+    "objectID": "2023/R/day05.html#setup",
+    "href": "2023/R/day05.html#setup",
+    "title": "Day 5",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(sets)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day05.txt\", skip_empty_rows = FALSE)",
+    "crumbs": [
+      "2023",
+      "Day 5"
+    ]
+  },
+  {
+    "objectID": "2023/R/day05.html#part-1",
+    "href": "2023/R/day05.html#part-1",
+    "title": "Day 5",
+    "section": "Part 1",
+    "text": "Part 1\nParse input into sets of separate vector inputs and maps:\n\nseeds &lt;- head(input, 1) |&gt; \n  str_remove(\"seeds: \") |&gt; \n  str_split_1(\" \") |&gt; \n  as.numeric()\n\nmaps &lt;- tail(input, -2) |&gt; \n  enframe(name = NULL, value = \"txt\") |&gt; \n  mutate(\n    map_id = cumsum(txt == \"\"),\n    map_name = case_when(str_detect(txt, \":\") ~ txt)\n  ) |&gt; \n  fill(map_name, .direction = \"down\") |&gt; \n  unglue_unnest(map_name, \"{src_cat}-to-{dst_cat} map:\") |&gt; \n  filter(txt != \"\" & !str_detect(txt, \":\")) |&gt; \n  unglue_unnest(txt, \"{dst_start} {src_start} {range_len}\", convert = TRUE) |&gt; \n  mutate(\n    src_end = src_start + range_len - 1,\n    dst_end = dst_start + range_len - 1,\n    diff = dst_start - src_start\n  ) |&gt; \n  select(map_id, src_cat, dst_cat, src_start, src_end, dst_start, dst_end, diff) |&gt; \n  group_split(map_id, .keep = FALSE)\n\nConvert seed maps to interval notation:\n\n# Add rows for the interval complement (neg infinity to infinity) to each map\nmaps_interval &lt;- maps |&gt; \n  map(\\(df) {\n    complement &lt;- df |&gt; \n      pmap(\\(src_start, src_end, ...) {\n        interval(src_start, src_end, domain = 'Z')\n      }) |&gt; \n      interval_union() |&gt; \n      interval_complement() |&gt; \n      as.list() |&gt; \n      map_dfr(~ tibble(src_start = min(.x), src_end = max(.x))) |&gt; \n      mutate(\n        dst_start = src_start,\n        dst_end = src_end,\n        diff = 0\n      )\n    \n    df |&gt; \n      select(-ends_with(\"_cat\")) |&gt; \n      bind_rows(complement)\n  }) \n\n\n# Join each map to one another in sequence to create one overall src/dest map\nmain_map &lt;- maps_interval |&gt; \n  reduce(\n    ~ cross_join(.x, .y) |&gt; \n      mutate(\n        overlap_start = pmax(dst_start.x, src_start.y),\n        overlap_end   = pmin(dst_end.x,   src_end.y),\n        is_overlap    = overlap_start &lt;= overlap_end\n      ) |&gt; \n      filter(is_overlap) |&gt; \n      transmute(\n        src_start = overlap_start - diff.x,\n        src_end   = overlap_end   - diff.x,\n        dst_start = overlap_start + diff.y,\n        dst_end   = overlap_end   + diff.y,\n        diff      = diff.x + diff.y\n      )\n  )\n\nFind final location of all seeds, then take the minimum:\n\nmain_map |&gt; \n  cross_join(tibble(seed = seeds)) |&gt; \n  filter(seed &gt;= src_start & seed &lt;= src_end) |&gt; \n  mutate(loc = seed + diff) |&gt; \n  pull(loc) |&gt; \n  min()\n\n[1] 289863851",
+    "crumbs": [
+      "2023",
+      "Day 5"
+    ]
+  },
+  {
+    "objectID": "2023/R/day05.html#part-2",
+    "href": "2023/R/day05.html#part-2",
+    "title": "Day 5",
+    "section": "Part 2",
+    "text": "Part 2\nConvert seed inputs to intervals:\n\nseeds_interval &lt;- tibble(seed = seeds) |&gt; \n  mutate(\n    type = case_match(\n      row_number() %% 2, \n      1 ~ \"seed_start\", \n      0 ~ \"range_len\"\n    ),\n    pair_id = ceiling(row_number() / 2)\n  ) |&gt; \n  pivot_wider(names_from = type, values_from = seed) |&gt; \n  transmute(seed_start, seed_end = seed_start + range_len - 1)\n\nJoin the seed intervals onto the mapper, filter to the overlap, and take the min result:\n\nmain_map |&gt; \n  cross_join(seeds_interval) |&gt; \n  mutate(\n    overlap_start = pmax(seed_start, src_start),\n    overlap_end   = pmin(seed_end,   src_end),\n    is_overlap    = overlap_start &lt;= overlap_end\n  ) |&gt; \n  filter(is_overlap) |&gt; \n  mutate(loc_start = overlap_start + diff) |&gt; \n  pull(loc_start) |&gt; \n  min()\n\n[1] 60568880",
+    "crumbs": [
+      "2023",
+      "Day 5"
+    ]
+  },
+  {
     "objectID": "2024/R/day09.html",
     "href": "2024/R/day09.html",
     "title": "Day 9",
@@ -2204,6 +2248,50 @@
     "crumbs": [
       "2024",
       "Day 21"
+    ]
+  },
+  {
+    "objectID": "2023/R/day04.html",
+    "href": "2023/R/day04.html",
+    "title": "Day 4",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day04.txt\", skip_empty_rows = FALSE)",
+    "crumbs": [
+      "2023",
+      "Day 4"
+    ]
+  },
+  {
+    "objectID": "2023/R/day04.html#setup",
+    "href": "2023/R/day04.html#setup",
+    "title": "Day 4",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day04.txt\", skip_empty_rows = FALSE)",
+    "crumbs": [
+      "2023",
+      "Day 4"
+    ]
+  },
+  {
+    "objectID": "2023/R/day04.html#part-1",
+    "href": "2023/R/day04.html#part-1",
+    "title": "Day 4",
+    "section": "Part 1",
+    "text": "Part 1\nReformat input into lists of winning numbers vs chosen numbers for each card, then score each card:\n\ncards &lt;- input |&gt; \n  \n  # Reformat as a data frame of winning vs chosen numbers per card\n  str_remove(\"Card .*:\") |&gt; \n  enframe(name = \"card_id\", value = \"txt\") |&gt; \n  separate(txt, into = c(\"winning\", \"chosen\"), sep = \"\\\\|\") |&gt; \n  mutate(across(c(winning, chosen), \\(vec) {\n    vec |&gt; \n      trimws() |&gt; \n      str_split(\"\\\\s+\") |&gt; \n      map(parse_number)\n  })) |&gt; \n  \n  # Count the number of overlapping chosen & winning numbers per card:\n  mutate(\n    n_common = map2_int(winning, chosen, ~ length(intersect(.x, .y))),\n    score = if_else(n_common == 0, 0, 2^(n_common - 1))\n  )\n\nSum all cards’ scores:\n\nsum(cards$score)\n\n[1] 24542",
+    "crumbs": [
+      "2023",
+      "Day 4"
+    ]
+  },
+  {
+    "objectID": "2023/R/day04.html#part-2",
+    "href": "2023/R/day04.html#part-2",
+    "title": "Day 4",
+    "section": "Part 2",
+    "text": "Part 2\nCreate a reference table of the outputs received for each winning card:\n\nrewards &lt;- cards |&gt; \n  mutate(\n    reward_start = card_id + 1,\n    reward_end = pmin(card_id + n_common, max(card_id)),\n    reward = pmap(list(reward_start, reward_end, n_common), \\(start, end, n) {\n      if (n == 0) \n        rep(0, nrow(cards))\n      else \n        rep(0, nrow(cards)) |&gt; \n        modify_at(.at = seq(start, end), ~1)\n    })\n  ) |&gt; \n  pull(reward)\n\nLoop through each card in the inventory, accumulate rewards at each step, then sum the final total number of cards:\n\ncollect_reward &lt;- \\(inventory, i) inventory + inventory[[i]] * rewards[[i]]\n\nreduce(1:nrow(cards), collect_reward, .init = rep(1, nrow(cards))) |&gt; \n  sum()\n\n[1] 8736438",
+    "crumbs": [
+      "2023",
+      "Day 4"
     ]
   },
   {

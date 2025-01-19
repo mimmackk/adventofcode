@@ -1,0 +1,88 @@
+---
+title: "Day 4"
+date: 2023-12-04
+author:
+  name: https://adventofcode.com/2023/day/4
+  url: https://adventofcode.com/2023/day/4
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day04.txt", skip_empty_rows = FALSE)
+
+```
+
+## Part 1
+
+Reformat input into lists of winning numbers vs chosen numbers for each card, then score each card:
+
+```{r}
+
+cards <- input |> 
+  
+  # Reformat as a data frame of winning vs chosen numbers per card
+  str_remove("Card .*:") |> 
+  enframe(name = "card_id", value = "txt") |> 
+  separate(txt, into = c("winning", "chosen"), sep = "\\|") |> 
+  mutate(across(c(winning, chosen), \(vec) {
+    vec |> 
+      trimws() |> 
+      str_split("\\s+") |> 
+      map(parse_number)
+  })) |> 
+  
+  # Count the number of overlapping chosen & winning numbers per card:
+  mutate(
+    n_common = map2_int(winning, chosen, ~ length(intersect(.x, .y))),
+    score = if_else(n_common == 0, 0, 2^(n_common - 1))
+  )
+
+```
+
+Sum all cards' scores:
+
+```{r}
+
+sum(cards$score)
+
+```
+
+## Part 2
+
+Create a reference table of the outputs received for each winning card: 
+
+```{r}
+
+rewards <- cards |> 
+  mutate(
+    reward_start = card_id + 1,
+    reward_end = pmin(card_id + n_common, max(card_id)),
+    reward = pmap(list(reward_start, reward_end, n_common), \(start, end, n) {
+      if (n == 0) 
+        rep(0, nrow(cards))
+      else 
+        rep(0, nrow(cards)) |> 
+        modify_at(.at = seq(start, end), ~1)
+    })
+  ) |> 
+  pull(reward)
+
+```
+
+Loop through each card in the inventory, accumulate rewards at each step, then sum the final total number of cards:
+
+```{r}
+
+collect_reward <- \(inventory, i) inventory + inventory[[i]] * rewards[[i]]
+
+reduce(1:nrow(cards), collect_reward, .init = rep(1, nrow(cards))) |> 
+  sum()
+
+```
+

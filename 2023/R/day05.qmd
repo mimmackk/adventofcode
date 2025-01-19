@@ -1,0 +1,156 @@
+---
+title: "Day 5"
+date: 2023-12-05
+author:
+  name: https://adventofcode.com/2023/day/5
+  url: https://adventofcode.com/2023/day/5
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+library(unglue)
+library(sets)
+
+# Read input from file
+input <- read_lines("../input/day05.txt", skip_empty_rows = FALSE)
+
+```
+
+## Part 1
+
+Parse input into sets of separate vector inputs and maps:
+
+```{r}
+
+seeds <- head(input, 1) |> 
+  str_remove("seeds: ") |> 
+  str_split_1(" ") |> 
+  as.numeric()
+
+maps <- tail(input, -2) |> 
+  enframe(name = NULL, value = "txt") |> 
+  mutate(
+    map_id = cumsum(txt == ""),
+    map_name = case_when(str_detect(txt, ":") ~ txt)
+  ) |> 
+  fill(map_name, .direction = "down") |> 
+  unglue_unnest(map_name, "{src_cat}-to-{dst_cat} map:") |> 
+  filter(txt != "" & !str_detect(txt, ":")) |> 
+  unglue_unnest(txt, "{dst_start} {src_start} {range_len}", convert = TRUE) |> 
+  mutate(
+    src_end = src_start + range_len - 1,
+    dst_end = dst_start + range_len - 1,
+    diff = dst_start - src_start
+  ) |> 
+  select(map_id, src_cat, dst_cat, src_start, src_end, dst_start, dst_end, diff) |> 
+  group_split(map_id, .keep = FALSE)
+
+```
+
+Convert seed maps to interval notation:
+
+```{r}
+
+# Add rows for the interval complement (neg infinity to infinity) to each map
+maps_interval <- maps |> 
+  map(\(df) {
+    complement <- df |> 
+      pmap(\(src_start, src_end, ...) {
+        interval(src_start, src_end, domain = 'Z')
+      }) |> 
+      interval_union() |> 
+      interval_complement() |> 
+      as.list() |> 
+      map_dfr(~ tibble(src_start = min(.x), src_end = max(.x))) |> 
+      mutate(
+        dst_start = src_start,
+        dst_end = src_end,
+        diff = 0
+      )
+    
+    df |> 
+      select(-ends_with("_cat")) |> 
+      bind_rows(complement)
+  }) 
+
+
+# Join each map to one another in sequence to create one overall src/dest map
+main_map <- maps_interval |> 
+  reduce(
+    ~ cross_join(.x, .y) |> 
+      mutate(
+        overlap_start = pmax(dst_start.x, src_start.y),
+        overlap_end   = pmin(dst_end.x,   src_end.y),
+        is_overlap    = overlap_start <= overlap_end
+      ) |> 
+      filter(is_overlap) |> 
+      transmute(
+        src_start = overlap_start - diff.x,
+        src_end   = overlap_end   - diff.x,
+        dst_start = overlap_start + diff.y,
+        dst_end   = overlap_end   + diff.y,
+        diff      = diff.x + diff.y
+      )
+  )
+
+```
+
+Find final location of all seeds, then take the minimum:
+
+```{r}
+
+main_map |> 
+  cross_join(tibble(seed = seeds)) |> 
+  filter(seed >= src_start & seed <= src_end) |> 
+  mutate(loc = seed + diff) |> 
+  pull(loc) |> 
+  min()
+
+```
+
+
+
+## Part 2
+
+Convert seed inputs to intervals:
+
+```{r}
+
+seeds_interval <- tibble(seed = seeds) |> 
+  mutate(
+    type = case_match(
+      row_number() %% 2, 
+      1 ~ "seed_start", 
+      0 ~ "range_len"
+    ),
+    pair_id = ceiling(row_number() / 2)
+  ) |> 
+  pivot_wider(names_from = type, values_from = seed) |> 
+  transmute(seed_start, seed_end = seed_start + range_len - 1)
+  
+
+```
+
+Join the seed intervals onto the mapper, filter to the overlap, and take the min result:
+
+```{r}
+
+main_map |> 
+  cross_join(seeds_interval) |> 
+  mutate(
+    overlap_start = pmax(seed_start, src_start),
+    overlap_end   = pmin(seed_end,   src_end),
+    is_overlap    = overlap_start <= overlap_end
+  ) |> 
+  filter(is_overlap) |> 
+  mutate(loc_start = overlap_start + diff) |> 
+  pull(loc_start) |> 
+  min()
+
+```
+
+
