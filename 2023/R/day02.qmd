@@ -1,0 +1,80 @@
+---
+title: "Day 2"
+date: 2023-12-02
+author:
+  name: https://adventofcode.com/2023/day/2
+  url: https://adventofcode.com/2023/day/2
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+library(unglue)
+
+# Read input from file
+input <- read_lines("../input/day02.txt", skip_empty_rows = FALSE)
+
+```
+
+## Part 1
+
+Extract game IDs and red/green/blue counts from each line in the input:
+
+```{r}
+
+cubes <- input |> 
+  
+  # Extract cube colors, numbers, rounds, and games
+  unglue_data("Game {game}: {txt=.*}", convert = TRUE) |> 
+  mutate(txt = str_split(txt, "; ")) |> 
+  unnest_longer(txt, indices_to = "round", values_to = "txt") |> 
+  mutate(txt = str_split(txt, ", ")) |> 
+  unnest_longer(txt) |> 
+  separate(txt, into = c("num_cubes", "color"), convert = TRUE) |> 
+  
+  # Add implicit zero counts for each color of cube not listed in each round
+  complete(
+    color = c("red", "blue", "green"), 
+    nesting(game, round),
+    fill = list(num_cubes = 0)
+  )
+
+```
+
+Check which games are possible if the bag contains only 12 red cubes, 13 green cubes, and 14 blue cubes by flagging any games with any color count over the limit:
+
+```{r}
+
+limits <- c("red" = 12, "green" = 13, "blue" = 14)
+
+cubes |> 
+  
+  # Categorize each game as possible vs impossible
+  mutate(num_over_lim = num_cubes > limits[color]) |> 
+  summarize(impossible = any(num_over_lim), .by = game) |> 
+  
+  # Pull and sum the indices of the possible games
+  filter(!impossible) |> 
+  pull(game) |> 
+  sum()
+
+```
+
+## Part 2
+
+Within each game, compute the minimum number of cubes of each color by taking the maximum count of each color over all rounds in each game: 
+
+```{r}
+
+cubes |> 
+  summarize(min_cubes = max(num_cubes), .by = c(game, color)) |> 
+  pivot_wider(names_from = color, values_from = min_cubes) |> 
+  mutate(power = blue * green * red) |> 
+  pull(power) |> 
+  sum()
+
+```
+

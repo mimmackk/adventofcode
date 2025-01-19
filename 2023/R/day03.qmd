@@ -1,0 +1,132 @@
+---
+title: "Day 3"
+date: 2023-12-03
+author:
+  name: https://adventofcode.com/2023/day/3
+  url: https://adventofcode.com/2023/day/3
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day03.txt", skip_empty_rows = FALSE)
+
+```
+
+## Part 1
+
+Convert the input strings into a character matrix for ease of indexing:
+
+```{r}
+
+mtx <- input |> 
+  str_split("") |> 
+  unlist() |> 
+  matrix(nrow = length(input), byrow = TRUE)
+
+max_row <- nrow(mtx)
+max_col <- ncol(mtx)
+
+```
+
+Identify all candidates for part numbers and their coordinates in the matrix representation of the input:
+
+```{r}
+
+# Pull all candidates from the text input
+parts <- input |> 
+  str_extract_all("\\d+") |> 
+  map(unique)
+
+# Compute the indices of each candidate within each input string
+parts_locations <- map2(input, parts, \(chr_row, row_parts) {
+  chr_row |> 
+    str_locate_all(str_c("\\b", row_parts, "\\b")) |>
+    map(partial(asplit, MARGIN = 1))
+})
+
+```
+
+Identify all neighbors of each part number candidate:
+
+```{r}
+
+parts_df <- parts_locations |> 
+  
+  # Combine all candidates and their indices into a data frame of coordiantes
+  enframe(name = "row") |> 
+  unnest_longer(value, values_to = "locations", indices_to = "part_id") |> 
+  unnest_longer(locations, values_to = "col_seq", indices_to = "loc_id") |> 
+  mutate(col_seq = map(col_seq, partial(full_seq, period = 1))) |> 
+  left_join(
+    parts |> 
+      enframe(name = "row") |> 
+      unnest_longer(
+        value, 
+        values_to = "part_int", 
+        indices_to = "part_id", 
+        transform = as.integer
+      ),
+    join_by(row, part_id)
+  ) |> 
+  mutate(part_id = cur_group_id(), .by = c(row, part_id, loc_id)) |> 
+  
+  # Pull the neighboring characters for every part in the input
+  mutate(
+    search_rows = map(row, \(row) {
+      c(row - 1, row, row + 1) |> 
+        keep(partial(between, left = 1, right = max_row))
+    }),
+    search_cols = map(col_seq, \(col_seq) {
+      c(min(col_seq) - 1, col_seq, max(col_seq) + 1) |> 
+        keep(partial(between, left = 1, right = max_row))
+    }),
+    neighbor = map2(search_rows, search_cols, \(rows, cols) {
+      expand_grid(row = rows, col = cols) |> 
+        mutate(chr = map2_chr(row, col, \(row, col) mtx[row, col]))
+    })
+  ) |> 
+  unnest(neighbor, names_sep = "_") |> 
+  
+  # Simplify into a list of part IDs, integer values, and neighboring chars
+  select(row, part_id, part_int, starts_with("neighbor")) |> 
+  mutate(
+    neighbor_id = cur_group_id(), 
+    .by = c(neighbor_row, neighbor_col),
+    .before = neighbor_chr
+  )
+
+```
+
+Pull all candidates that are true part numbers (have a neighboring symbol) and sum their values:
+
+```{r}
+
+parts_df |> 
+  filter(!str_detect(neighbor_chr, "[0-9.]")) |> 
+  distinct(part_id, part_int) |> 
+  pull(part_int) |> 
+  sum()
+
+```
+
+## Part 2
+
+Pull symbols with exactly two adjacent parts, multiply the part integers to get each gear ratio, and sum the total of the gear ratios:
+
+```{r}
+
+parts_df |> 
+  filter(!str_detect(neighbor_chr, "[0-9.]")) |> 
+  filter(n() == 2, .by = neighbor_id) |> 
+  summarize(gear_ratio = prod(part_int), .by = neighbor_id) |> 
+  pull(gear_ratio) |> 
+  sum()
+
+```
+

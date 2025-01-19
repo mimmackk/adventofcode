@@ -1,0 +1,63 @@
+---
+title: "Day 1"
+date: 2023-12-01
+author:
+  name: https://adventofcode.com/2023/day/1
+  url: https://adventofcode.com/2023/day/1
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day01.txt", skip_empty_rows = FALSE)
+
+```
+
+## Part 1
+
+Extract numbers from the text strings using regex and sum:
+
+```{r}
+
+input |> 
+  str_extract_all("\\d") |> 
+  map(as.integer) |> 
+  map_int(~ head(.x, 1) * 10 + tail(.x, 1)) |> 
+  sum()
+
+```
+
+## Part 2
+
+Add patterns to the regex for spelled-out digits. Search from the front of the string as usual, but for the last digit, search from the end by reversing all strings. Otherwise, regex will only recognize the first match in case of an overlap: "eightwo" needs to be recognized as 82, not just 8.
+
+```{r}
+
+digits <- c("one", "two", "three", "four", "five", "six", "seven", "eight", "nine")
+pattern_fwd <- str_c(c("\\d", digits), collapse = "|")
+pattern_bwd <- str_c(c("\\d", stringi::stri_reverse(digits)), collapse = "|")
+
+# Match the first digit from the front of the string
+d1 <- input |> 
+  str_extract(pattern_fwd)
+
+# Match the second digit from the end of the string
+d2 <- input |> 
+  stringi::stri_reverse() |> 
+  str_extract(pattern_bwd) |> 
+  stringi::stri_reverse()
+
+# Convert to integer values and sum
+map2(d1, d2, c) |> 
+  map(~ coalesce(parse_number(.x, na = digits), match(.x, digits))) |> 
+  map_int(~ head(.x, 1) * 10 + tail(.x, 1)) |> 
+  sum()
+  
+
+```
+

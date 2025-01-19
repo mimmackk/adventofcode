@@ -1,0 +1,15 @@
+{
+  "hash": "033f3d61d2a7696bab50f01b2e0dd2b2",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 2\"\ndate: 2023-12-02\nauthor:\n  name: https://adventofcode.com/2023/day/2\n  url: https://adventofcode.com/2023/day/2\n---\n\n\n\n\n## Setup\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from file\ninput <- read_lines(\"../input/day02.txt\", skip_empty_rows = FALSE)\n```\n:::\n\n\n\n\n## Part 1\n\nExtract game IDs and red/green/blue counts from each line in the input:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncubes <- input |> \n  \n  # Extract cube colors, numbers, rounds, and games\n  unglue_data(\"Game {game}: {txt=.*}\", convert = TRUE) |> \n  mutate(txt = str_split(txt, \"; \")) |> \n  unnest_longer(txt, indices_to = \"round\", values_to = \"txt\") |> \n  mutate(txt = str_split(txt, \", \")) |> \n  unnest_longer(txt) |> \n  separate(txt, into = c(\"num_cubes\", \"color\"), convert = TRUE) |> \n  \n  # Add implicit zero counts for each color of cube not listed in each round\n  complete(\n    color = c(\"red\", \"blue\", \"green\"), \n    nesting(game, round),\n    fill = list(num_cubes = 0)\n  )\n```\n:::\n\n\n\n\nCheck which games are possible if the bag contains only 12 red cubes, 13 green cubes, and 14 blue cubes by flagging any games with any color count over the limit:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlimits <- c(\"red\" = 12, \"green\" = 13, \"blue\" = 14)\n\ncubes |> \n  \n  # Categorize each game as possible vs impossible\n  mutate(num_over_lim = num_cubes > limits[color]) |> \n  summarize(impossible = any(num_over_lim), .by = game) |> \n  \n  # Pull and sum the indices of the possible games\n  filter(!impossible) |> \n  pull(game) |> \n  sum()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 2369\n```\n\n\n:::\n:::\n\n\n\n\n## Part 2\n\nWithin each game, compute the minimum number of cubes of each color by taking the maximum count of each color over all rounds in each game: \n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncubes |> \n  summarize(min_cubes = max(num_cubes), .by = c(game, color)) |> \n  pivot_wider(names_from = color, values_from = min_cubes) |> \n  mutate(power = blue * green * red) |> \n  pull(power) |> \n  sum()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 66363\n```\n\n\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

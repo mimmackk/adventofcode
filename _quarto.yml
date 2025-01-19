@@ -16,6 +16,8 @@ website:
     contents:
     - section: "2024"
       contents: 2024/R/*
+    - section: "2023"
+      contents: 2023/R/*
     - section: "2022"
       contents: 2022/R/*
   page-navigation: true
