@@ -1,0 +1,100 @@
+---
+title: "Day 6"
+date: 2023-12-06
+author:
+  name: https://adventofcode.com/2023/day/6
+  url: https://adventofcode.com/2023/day/6
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+library(unglue)
+
+# Read input from file
+input <- read_lines("../input/day06.txt", skip_empty_rows = FALSE)
+
+```
+
+## Part 1
+
+Convert input text into a set of time/distance vectors for each race:
+
+```{r}
+
+races <- c("time" = 1, "distance" = 2) |> 
+  imap(\(i, name) {
+    input[[i]] |>
+      str_remove(regex(str_c(name, ":\\s+"), ignore_case = T)) |>
+      str_split_1("\\s+") |>
+      as.numeric()
+  }) |> 
+  pmap(\(time, distance) list(time = time, record = distance))
+
+```
+
+Define a function to compute your traveled distance in each race, given the amount of time you hold the button:
+
+```{r}
+
+race_dist <- function(time_race, time_hold) {
+  (time_race - time_hold) * time_hold
+}
+
+```
+
+For each race, count the number of record-beating ways to win:
+
+```{r}
+
+races |> 
+  map_int(\(race) sum(race_dist(race$time, 0:race$time) > race$record)) |> 
+  prod()
+
+```
+
+## Part 2
+
+Combine the individual race numbers into one single race:
+
+```{r}
+
+race <- races |> 
+  enframe(name = "pos") |> 
+  unnest_wider(value) |> 
+  summarize(across(c(time, record), ~ as.numeric(str_c(.x, collapse = "")))) |> 
+  pivot_longer(everything()) |> 
+  deframe() |> 
+  as.list()
+
+```
+
+Compute roots of the race distance function using the quadratic equation to determine the range of record-winning hold times:
+
+```{r}
+
+winning_methods <- function(time_race, record) {
+  root1 <- (time_race + sqrt(time_race^2 - 4 * record)) / 2
+  root2 <- (time_race - sqrt(time_race^2 - 4 * record)) / 2
+  
+  bnd_l <- ceiling(max(min(root1, root2), 0))
+  bnd_r <- floor(min(max(root1, root2), time_race))
+  
+  bnd_l <- if_else(race_dist(time_race, bnd_l) == record, bnd_l + 1, bnd_l)
+  bnd_r <- if_else(race_dist(time_race, bnd_r) == record, bnd_r - 1, bnd_r)
+  
+  bnd_r - bnd_l + 1
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+winning_methods(race$time, race$record)
+
+```

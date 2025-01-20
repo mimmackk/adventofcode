@@ -1,0 +1,15 @@
+{
+  "hash": "66fb0c01981be057d723f384d8f0bd8b",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 8\"\ndate: 2023-12-08\nauthor:\n  name: https://adventofcode.com/2023/day/8\n  url: https://adventofcode.com/2023/day/8\n---\n\n\n\n\n## Setup\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from file\ninput <- read_lines(\"../input/day08.txt\", skip_empty_rows = TRUE)\n```\n:::\n\n\n\n\n## Part 1\n\nParse input text into sets of left/right instructions and the maps of the node network:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninstructions <- input |> \n  head(1) |> \n  str_split_1(\"\")\n\nnetwork <- input |> \n  tail(-1) |> \n  unglue_data(\"{node} = ({L}, {R})\") |> \n  nest(LR = c(L, R)) |> \n  mutate(LR = map(LR, as.list)) |> \n  deframe()\n```\n:::\n\n\n\n\nStarting at the AAA node, advance through the list of instructions until the ZZZ node is reached:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Initialize\nn_rep    <- length(instructions)\ncur_node <- \"AAA\"\ni        <- 0\n\nrepeat {\n  if (cur_node == \"ZZZ\") break\n  \n  cur_dir  <- instructions[i %% n_rep + 1]\n  cur_node <- network[[cur_node]][[cur_dir]]\n  i <- i + 1\n}\n\ni\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 19631\n```\n\n\n:::\n:::\n\n\n\n\n## Part 2\n\nFor each node ending with 'A', compute the number of necessary steps until it reaches a node ending with 'Z' and loops.\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nsteps_to_z <- function(node_start) {\n\n  # Initialize\n  cur_node <- node_start\n  i        <- 0\n  \n  repeat {\n    if (str_ends(cur_node, \"Z\")) return(i)\n    \n    cur_dir  <- instructions[i %% n_rep + 1]\n    cur_node <- network[[cur_node]][[cur_dir]]\n    i <- i + 1\n  }\n}\n\ncycles <- names(network) |> \n  keep(~ str_ends(.x, \"A\")) |> \n  map_dbl(steps_to_z)\n```\n:::\n\n\n\n\nTake the least common multiple of the result:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nreduce(cycles, numbers::LCM) |> \n  format(scientific = FALSE)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] \"21003205388413\"\n```\n\n\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

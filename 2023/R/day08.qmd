@@ -1,0 +1,99 @@
+---
+title: "Day 8"
+date: 2023-12-08
+author:
+  name: https://adventofcode.com/2023/day/8
+  url: https://adventofcode.com/2023/day/8
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+library(unglue)
+
+# Read input from file
+input <- read_lines("../input/day08.txt", skip_empty_rows = TRUE)
+
+```
+
+## Part 1
+
+Parse input text into sets of left/right instructions and the maps of the node network:
+
+```{r}
+
+instructions <- input |> 
+  head(1) |> 
+  str_split_1("")
+
+network <- input |> 
+  tail(-1) |> 
+  unglue_data("{node} = ({L}, {R})") |> 
+  nest(LR = c(L, R)) |> 
+  mutate(LR = map(LR, as.list)) |> 
+  deframe()
+
+```
+
+Starting at the AAA node, advance through the list of instructions until the ZZZ node is reached:
+
+```{r}
+
+# Initialize
+n_rep    <- length(instructions)
+cur_node <- "AAA"
+i        <- 0
+
+repeat {
+  if (cur_node == "ZZZ") break
+  
+  cur_dir  <- instructions[i %% n_rep + 1]
+  cur_node <- network[[cur_node]][[cur_dir]]
+  i <- i + 1
+}
+
+i
+
+```
+
+## Part 2
+
+For each node ending with 'A', compute the number of necessary steps until it reaches a node ending with 'Z' and loops.
+
+```{r}
+
+steps_to_z <- function(node_start) {
+
+  # Initialize
+  cur_node <- node_start
+  i        <- 0
+  
+  repeat {
+    if (str_ends(cur_node, "Z")) return(i)
+    
+    cur_dir  <- instructions[i %% n_rep + 1]
+    cur_node <- network[[cur_node]][[cur_dir]]
+    i <- i + 1
+  }
+}
+
+cycles <- names(network) |> 
+  keep(~ str_ends(.x, "A")) |> 
+  map_dbl(steps_to_z)
+
+```
+
+Take the least common multiple of the result:
+
+```{r}
+
+reduce(cycles, numbers::LCM) |> 
+  format(scientific = FALSE)
+
+```
+
+
+

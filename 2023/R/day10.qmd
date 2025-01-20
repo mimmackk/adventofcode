@@ -1,0 +1,190 @@
+---
+title: "Day 10"
+date: 2023-12-10
+author:
+  name: https://adventofcode.com/2023/day/10
+  url: https://adventofcode.com/2023/day/10
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+library(igraph)
+
+# Read input from file
+input <- read_lines("../input/day10.txt", skip_empty_rows = TRUE)
+
+```
+
+## Part 1
+
+```{r}
+
+dirs <- list(
+  n = c(row = -1, col =  0),
+  s = c(row =  1, col =  0),
+  w = c(row =  0, col = -1),
+  e = c(row =  0, col =  1)
+)
+
+pipes <- list(
+  '|' = list(dirs$n, dirs$s),
+  '-' = list(dirs$w, dirs$e),
+  'L' = list(dirs$n, dirs$e),
+  'J' = list(dirs$n, dirs$w),
+  '7' = list(dirs$s, dirs$w),
+  'F' = list(dirs$s, dirs$e)
+)
+
+```
+
+Convert text input into a graph:
+
+```{r}
+
+# Compute row and column of every tile in the input text
+maze_src <- input |> 
+  enframe(name = "row") |> 
+  mutate(value = str_split(value, "")) |> 
+  unnest_longer(value, indices_to = "col") |> 
+  transmute(
+    id = row_number(),
+    chr = value, 
+    coords = map2(row, col, ~ c(row = .x, col = .y))
+  )
+
+# Save the index of the starting tile
+id_s <- maze_src |> 
+  filter(chr == 'S') |> 
+  pull(id)
+
+# Create a copy of the maze for each possible 'S' pipe and compute their conns
+mazes <- map(names(pipes), \(pipe) {
+  maze_src |> 
+    mutate(
+      chr = replace(chr, id_s, pipe),
+      conn = map(chr, ~ pipes[[.x]])
+    ) |> 
+    unnest_longer(conn, indices_to = "conn_num") |> 
+    mutate(conn = map2(coords, conn, ~ .x + .y)) |> 
+    unnest_wider(coords) |> 
+    unnest_wider(conn, names_sep = "_")
+})
+
+# Turn each maze into an undirected graph
+g <- mazes |> 
+  map(\(maze) {
+    edge_list <- maze |> 
+      left_join(
+        distinct(maze, conn_id = id, row, col), 
+        join_by(x$conn_row == y$row, x$conn_col == y$col)
+      ) |> 
+      distinct(id, conn = conn_id) |> 
+      drop_na(conn) |> 
+      pmap(~ c(..1, ..2))
+    
+    intersect(edge_list, map(edge_list, rev)) |> 
+      keep(~ .x[[1]] < .x[[2]]) |> 
+      unlist()
+  }) |> 
+  map(~ make_graph(as.integer(.x), directed = FALSE))
+
+
+# For each graph, check if there's a cycle containing the starting index
+has_cycle_s <- map_lgl(g, \(graph) {
+  subgraphs <- components(graph)$membership
+  sub_vtx <- which(subgraphs == subgraphs[[id_s]])
+  
+  if (length(sub_vtx) <= 2) 
+    FALSE
+  else
+    graph |> 
+      subgraph(sub_vtx) |> 
+      has_eulerian_cycle()
+})
+
+# Keep only the graph that contain a cycle from the starting index
+pipe_id_s <- which(has_cycle_s)
+maze_g <- g[[pipe_id_s]]
+
+```
+
+Compute the furthest distance on the loop from the starting point:
+
+```{r}
+
+membership   <- components(maze_g)$membership
+loop_members <- which(membership == membership[[id_s]])
+loop_g       <- subgraph(maze_g, loop_members)
+
+ceiling(girth(loop_g)$girth / 2)
+
+```
+
+## Part 2
+
+Hint from Reddit ([link](https://www.reddit.com/r/adventofcode/comments/18evyu9/comment/kcqtow6/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button)): To determine if a point is enclosed within a loop, check if a ray in any direction intersects the loop an even or odd number of times.
+
+Flag the tiles in the maze that make up the loop:
+
+```{r}
+
+maze <- maze_src |> 
+  mutate(chr = str_replace(chr, "S", names(pipes)[[pipe_id_s]])) |> 
+  unnest_wider(coords) |> 
+  mutate(in_loop = id %in% loop_members)
+
+```
+
+Separate the loop by rows and count the number of orthogonal loop tiles for each:
+
+```{r}
+
+maze_loop <- filter(maze, in_loop)
+
+loop_rows <- maze_loop |> 
+  select(row, col, chr) |> 
+  arrange(row, col) |> 
+  mutate(
+    segment_num = cumsum(replace_na(col - lag(col), 1) > 1) + 1,
+    .by = row
+  ) |> 
+  summarize(
+    col_min = min(col),
+    col_max = max(col),
+    chr = str_c(chr, collapse = ""),
+    .by = c(row, segment_num)
+  ) |> 
+  mutate(
+    num_crossings = chr |> 
+      str_replace_all("-", "") |> 
+      str_replace_all("F7|LJ", "") |> 
+      str_replace_all("FJ|L7", "|") |> 
+      str_count("\\|")
+  ) |> 
+  select(row, col_min, col_max, num_crossings)
+
+```
+
+For each non-loop member of the maze, count the number of times it intersects the loop.
+
+```{r}
+
+# Count all loop crossings to the left of each non-loop tile
+maze |> 
+  filter(!in_loop) |> 
+  left_join(loop_rows, join_by(row, col < col_min)) |> 
+  summarize(
+    num_crossings = sum(replace_na(num_crossings, 0)),
+    .by = c(id, row, col)
+  ) |> 
+  mutate(num_crossings = num_crossings %% 2) |> 
+  pull(num_crossings) |> 
+  sum()
+
+```
+
+

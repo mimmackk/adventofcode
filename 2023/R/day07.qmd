@@ -1,0 +1,134 @@
+---
+title: "Day 7"
+date: 2023-12-07
+author:
+  name: https://adventofcode.com/2023/day/7
+  url: https://adventofcode.com/2023/day/7
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+library(unglue)
+
+# Read input from file
+input <- read_lines("../input/day07.txt", skip_empty_rows = FALSE)
+
+```
+
+## Part 1
+
+Parse text input as a bid and set of cards for each hand:
+
+```{r}
+
+card_types <- c(2:9, 'T', 'J', 'Q', 'K', 'A')
+
+hands <- input |> 
+  unglue_data("{card1=.}{card2=.}{card3=.}{card4=.}{card5=.} {bid}") |> 
+  transmute(
+    hand_id = row_number(),
+    bid = as.numeric(bid),
+    across(starts_with("card"), partial(factor, levels = card_types)),
+    cards = pmap(list(card1, card2, card3, card4, card5), c)
+  )
+
+```
+
+Define a function to compute the type of each hand:
+
+```{r}
+
+hand_types <- c("HIGH", "PAIR", "2PAIR", "3KIND", "FULL", "4KIND", "5KIND")
+
+hand_type <- function(cards) {
+  card_counts <- sort(summary(cards), decreasing = TRUE)
+  case_when(
+    card_counts[1] == 3 & card_counts[2] == 2 ~ "FULL",
+    card_counts[1] == 2 & card_counts[2] == 2 ~ "2PAIR",
+    card_counts[1] == 5 ~ "5KIND",
+    card_counts[1] == 4 ~ "4KIND",
+    card_counts[1] == 3 ~ "3KIND",
+    card_counts[1] == 2 ~ "PAIR",
+    card_counts[1] == 1 ~ "HIGH"
+  )
+}
+
+```
+
+Define a function to determine the type of each hand, rank the results, and sum the total winnings:
+
+```{r}
+
+score <- function(df) {
+  df |> 
+    mutate(hand_type = factor(map_chr(cards, hand_type), levels = hand_types)) |> 
+    arrange(hand_type, card1, card2, card3, card4, card5) |> 
+    mutate(
+      rank = row_number(),
+      winnings = rank * bid
+    ) |> 
+    pull(winnings) |> 
+    sum()
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+score(hands)
+
+```
+
+
+## Part 2
+
+Redefine the hand-scoring function to allow jokers to act as any card:
+
+```{r}
+
+hand_type <- function(cards) {
+  
+  counts_joker <- sum(cards == "J")
+  counts_other <- cards |> 
+    discard(~ .x == "J") |> 
+    summary() |> 
+    sort(decreasing = TRUE)
+  
+  top_1 <- counts_other[1] + counts_joker
+  top_2 <- counts_other[2]
+  
+  case_when(
+    top_1 == 3 & top_2 == 2 ~ "FULL",
+    top_1 == 2 & top_2 == 2 ~ "2PAIR",
+    top_1 == 5 ~ "5KIND",
+    top_1 == 4 ~ "4KIND",
+    top_1 == 3 ~ "3KIND",
+    top_1 == 2 ~ "PAIR",
+    top_1 == 1 ~ "HIGH"
+  )
+}
+
+```
+
+
+Re-rank the jokers to the bottom of the card heirarcy and re-score:
+
+```{r}
+
+card_types <- c("J", discard(card_types, ~ .x == "J"))
+
+hands |> 
+  mutate(across(num_range("card", 1:5), partial(factor, levels = card_types))) |> 
+  score()
+
+```
+
+
+
+

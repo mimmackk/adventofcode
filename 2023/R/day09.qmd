@@ -1,0 +1,80 @@
+---
+title: "Day 9"
+date: 2023-12-09
+author:
+  name: https://adventofcode.com/2023/day/9
+  url: https://adventofcode.com/2023/day/9
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day09.txt", skip_empty_rows = TRUE)
+
+```
+
+## Part 1
+
+Convert text input into a series of numeric sequences:
+
+```{r}
+
+seqs <- input |> 
+  str_split("\\s+") |> 
+  map(as.numeric)
+
+```
+
+Define a function to get the next value in a sequence:
+
+```{r}
+
+extrapolate_next <- function(x) {
+  if (all(x == 0))
+    return(0)
+  else
+    return(tail(x, 1) + extrapolate_next(diff(x)))
+}
+
+```
+
+Compute next value of every sequence in the input, then sum the result:
+
+```{r}
+
+seqs |> 
+  map_dbl(extrapolate_next) |> 
+  sum()
+
+```
+
+
+## Part 2
+
+Modify the function to get the preceeding sequence value, rather than the next:
+
+```{r}
+
+extrapolate_prev <- function(x) {
+  if (all(x == 0))
+    return(0)
+  else
+    return(head(x, 1) - extrapolate_prev(diff(x)))
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+seqs |> 
+  map_dbl(extrapolate_prev) |> 
+  sum()
+
+```
