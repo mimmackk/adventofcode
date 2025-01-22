@@ -1,0 +1,153 @@
+---
+title: "Day 12"
+date: 2023-12-12
+author:
+  name: https://adventofcode.com/2023/day/12
+  url: https://adventofcode.com/2023/day/12
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+library(unglue)
+
+# Read input from file
+input <- read_lines("../input/day12.txt", skip_empty_rows = TRUE)
+
+```
+
+## Part 1
+
+Convert text input to a dataframe.  Identifiy the indices of each unknown value per row, and convert the numeric input into a regex pattern to test if a given spring arrangement is possible:
+
+```{r}
+
+df <- input |> 
+  unglue_data("{chr} {num}") |> 
+  mutate(
+    regex_pattern = str_c(
+      "^\\.*#{", 
+      str_replace_all(num, ",", "}\\.+#{"),
+      "}\\.*$"
+    ),
+    u_idx = map(chr, ~ which(str_split_1(.x, "") == "?")),
+    num = map(num, ~ as.integer(str_split_1(.x, ","))),
+    total_broken = map_int(num, sum),
+    cur_broken = str_count(chr, "#"),
+    num_b = total_broken - cur_broken
+  )
+
+```
+
+Define a function to compute the total number of possible arrangements of broken springs for a given row using regex:
+
+```{r}
+
+idx_permutations <- function(u_idx, num_b) {
+  
+  if (num_b == 0) {
+    list(list(B = numeric(0), O = u_idx))
+  } else {
+    permutations <- combn(length(u_idx), num_b)
+    map(
+      1:ncol(permutations),
+      ~ list(
+        B = u_idx[permutations[,.x]],
+        O = u_idx[-permutations[,.x]]
+      )
+    )
+  }
+  
+}
+
+num_arragements <- function(input, regex_pattern, u_idx, num_b) {
+  perms <- idx_permutations(u_idx, num_b)
+  vec   <- str_split_1(input, "")
+  
+  perms |> 
+    map_chr(\(perm) {
+      vec |> 
+        replace(perm$O, ".") |> 
+        replace(perm$B, "#") |> 
+        str_c(collapse = "")
+    }) |> 
+    str_detect(regex_pattern) |> 
+    sum()
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+df |> 
+  pmap_int(\(chr, regex_pattern, u_idx, num_b, ...) {
+    num_arragements(chr, regex_pattern, u_idx, num_b)
+  }) |> 
+  sum()
+
+```
+
+
+## Part 2
+
+With hints from [Reddit](https://www.reddit.com/r/adventofcode/comments/18ge41g/comment/kd0dw9e/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button), re-define the arrangement-counting function using memoization and recursion to examine at each character:
+
+```{r}
+
+count_arr <- memoise::memoise(function(str, grps, grp_count) {
+
+  # Check for contradictions and/or the end of the input
+  if (length(grps) == 0)
+    return(if_else(grp_count == 0 & str_detect(str, "^(\\.|\\?)*$"), 1, 0))
+  else if (str == "")
+    return(0)
+  else if (grp_count > grps[1]) 
+    return(0)
+
+  # Initialize the total number of arrangements to 0 and get the current char
+  total_arr <- 0
+  cur_chr   <- str_sub(str, 1, 1)
+  
+  # If the char is unknown, examine both of the two possible states
+  if (cur_chr == "?")
+    cur_chr <- c(".", "#")
+  
+  for (chr in cur_chr) {
+    
+    # If '#', recurse within the current group
+    if (chr == "#")
+      total_arr <- total_arr + count_arr(str_sub(str, 2), grps, grp_count + 1)
+    
+    # If '.', close the current group (if one is active) & recurse
+    else if (chr == ".") {
+      if (grp_count == 0)
+        total_arr <- total_arr + count_arr(str_sub(str, 2), grps, grp_count)
+      else if (grp_count == grps[1])
+        total_arr <- total_arr + count_arr(str_sub(str, 2), tail(grps, -1), 0)
+    }
+    
+  }
+  
+  total_arr
+})
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+df |> 
+  pmap_dbl(\(chr, num, ...) {
+    count_arr(str_c(str_c(rep(chr, 5), collapse = "?"), "."), rep(num, 5), 0)
+  }) |> 
+  sum() |> 
+  format(scientific = FALSE)
+
+```
+

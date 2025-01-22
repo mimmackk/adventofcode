@@ -1,0 +1,15 @@
+{
+  "hash": "e777422f2ae84369b0b702a1c5cfcbc3",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 11\"\ndate: 2023-12-11\nauthor:\n  name: https://adventofcode.com/2023/day/11\n  url: https://adventofcode.com/2023/day/11\n---\n\n\n\n## Setup\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput <- read_lines(\"../input/day11.txt\", skip_empty_rows = TRUE)\n```\n:::\n\n\n\n## Part 1\n\nConvert text input to a matrix:\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nmtx <- input |> \n  str_split(\"\") |> \n  map(partial(matrix, nrow = 1)) |> \n  reduce(rbind)\n```\n:::\n\n\n\nDetermine the initial indices of each galaxy:\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ngalaxies <- which(mtx == '#', arr.ind = TRUE) |> \n  as_tibble() |> \n  mutate(id = row_number(), .before = everything())\n```\n:::\n\n\n\nGet the indices of the rows and columns that contain only empty space:\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nempty_rows <- split(mtx, row(mtx))  |> \n  map_lgl(~ all(.x == '.')) |> \n  which() |> \n  unname()\n\nempty_cols <- split(mtx, col(mtx))  |> \n  map_lgl(~ all(.x == '.')) |> \n  which() |> \n  unname()\n```\n:::\n\n\n\nAdjust the coordinates of the galaxies by doubling the empty rows and columns:\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ngalaxies <- galaxies |> \n  mutate(\n    empty_pre_rows = map_int(row, ~ sum(empty_rows < .x)),\n    empty_pre_cols = map_int(col, ~ sum(empty_cols < .x))\n  )\n```\n:::\n\n\n\nDefine a function that adjusts the coordinates of each galaxy by expanding all empty rows and columns by n, computes the manhattan distance between each resulting pair of galaxies, and sums the result:\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nexpanded_galaxy_dist <- function(n) {\n  \n  new_galaxies <- galaxies |> \n    mutate(\n      new_row = row + empty_pre_rows * (n - 1),\n      new_col = col + empty_pre_cols * (n - 1)\n    )\n  \n  left_join(\n    select(new_galaxies, id, row = new_row, col = new_col),\n    select(new_galaxies, id, row = new_row, col = new_col),\n    join_by(x$id < y$id)\n  ) |> \n    mutate(dist = abs(row.x - row.y) + abs(col.x - col.y)) |> \n    pull(dist) |> \n    sum(na.rm = TRUE)\n  \n}\n```\n:::\n\n\n\nRun on puzzle input:\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nexpanded_galaxy_dist(2)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 9608724\n```\n\n\n:::\n:::\n\n\n\n## Part 2\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nexpanded_galaxy_dist(1000000)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 904633799472\n```\n\n\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

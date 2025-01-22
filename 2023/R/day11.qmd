@@ -1,0 +1,114 @@
+---
+title: "Day 11"
+date: 2023-12-11
+author:
+  name: https://adventofcode.com/2023/day/11
+  url: https://adventofcode.com/2023/day/11
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day11.txt", skip_empty_rows = TRUE)
+
+```
+
+## Part 1
+
+Convert text input to a matrix:
+
+```{r}
+
+mtx <- input |> 
+  str_split("") |> 
+  map(partial(matrix, nrow = 1)) |> 
+  reduce(rbind)
+
+```
+
+Determine the initial indices of each galaxy:
+
+```{r}
+
+galaxies <- which(mtx == '#', arr.ind = TRUE) |> 
+  as_tibble() |> 
+  mutate(id = row_number(), .before = everything())
+
+```
+
+Get the indices of the rows and columns that contain only empty space:
+
+```{r}
+
+empty_rows <- split(mtx, row(mtx))  |> 
+  map_lgl(~ all(.x == '.')) |> 
+  which() |> 
+  unname()
+
+empty_cols <- split(mtx, col(mtx))  |> 
+  map_lgl(~ all(.x == '.')) |> 
+  which() |> 
+  unname()
+
+```
+
+Adjust the coordinates of the galaxies by doubling the empty rows and columns:
+
+```{r}
+
+galaxies <- galaxies |> 
+  mutate(
+    empty_pre_rows = map_int(row, ~ sum(empty_rows < .x)),
+    empty_pre_cols = map_int(col, ~ sum(empty_cols < .x))
+  )
+
+```
+
+Define a function that adjusts the coordinates of each galaxy by expanding all empty rows and columns by n, computes the manhattan distance between each resulting pair of galaxies, and sums the result:
+
+```{r}
+
+expanded_galaxy_dist <- function(n) {
+  
+  new_galaxies <- galaxies |> 
+    mutate(
+      new_row = row + empty_pre_rows * (n - 1),
+      new_col = col + empty_pre_cols * (n - 1)
+    )
+  
+  left_join(
+    select(new_galaxies, id, row = new_row, col = new_col),
+    select(new_galaxies, id, row = new_row, col = new_col),
+    join_by(x$id < y$id)
+  ) |> 
+    mutate(dist = abs(row.x - row.y) + abs(col.x - col.y)) |> 
+    pull(dist) |> 
+    sum(na.rm = TRUE)
+  
+}
+
+
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+expanded_galaxy_dist(2)
+
+```
+
+## Part 2
+
+```{r}
+
+expanded_galaxy_dist(1000000)
+
+```
+
