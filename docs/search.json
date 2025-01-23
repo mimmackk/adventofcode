@@ -4,7 +4,7 @@
     "href": "index.html",
     "title": "Advent of Code: Worked Solutions",
     "section": "",
-    "text": "Worked solutions in R to the Advent of Code – a yearly advent calendar of programming puzzles.\n\nSOLUTION INDEX\n★★ = Parts 1 & 2; ★☆ = Part 1 Only\n\n\n\n2024\n2023\n2022\n\n\n\n\nDay 1\n★★\n★★\n★★\n\n\nDay 2\n★★\n★★\n★★\n\n\nDay 3\n★★\n★★\n★★\n\n\nDay 4\n★★\n★★\n★★\n\n\nDay 5\n★★\n★★\n★★\n\n\nDay 6\n★★\n★★\n★★\n\n\nDay 7\n★★\n★★\n★★\n\n\nDay 8\n★★\n★★\n★★\n\n\nDay 9\n★★\n★★\n★★\n\n\nDay 10\n★★\n★★\n★★\n\n\nDay 11\n★★\n★★\n★★\n\n\nDay 12\n★★\n★★\n★★\n\n\nDay 13\n★★\n\n★★\n\n\nDay 14\n★★\n\n★★\n\n\nDay 15\n★★\n\n★★\n\n\nDay 16\n★★\n\n★★\n\n\nDay 17\n★★\n\n★★\n\n\nDay 18\n★★\n\n★★\n\n\nDay 19\n★★\n\n★★\n\n\nDay 20\n★★\n\n★★\n\n\nDay 21\n★★\n\n★★\n\n\nDay 22\n★★\n\n★★\n\n\nDay 23\n★★\n\n★★\n\n\nDay 24\n★★\n\n★★\n\n\nDay 25\n★★\n\n★★"
+    "text": "Worked solutions in R to the Advent of Code – a yearly advent calendar of programming puzzles.\n\nSOLUTION INDEX\n★★ = Parts 1 & 2; ★☆ = Part 1 Only\n\n\n\n2024\n2023\n2022\n\n\n\n\nDay 1\n★★\n★★\n★★\n\n\nDay 2\n★★\n★★\n★★\n\n\nDay 3\n★★\n★★\n★★\n\n\nDay 4\n★★\n★★\n★★\n\n\nDay 5\n★★\n★★\n★★\n\n\nDay 6\n★★\n★★\n★★\n\n\nDay 7\n★★\n★★\n★★\n\n\nDay 8\n★★\n★★\n★★\n\n\nDay 9\n★★\n★★\n★★\n\n\nDay 10\n★★\n★★\n★★\n\n\nDay 11\n★★\n★★\n★★\n\n\nDay 12\n★★\n★★\n★★\n\n\nDay 13\n★★\n★★\n★★\n\n\nDay 14\n★★\n★★\n★★\n\n\nDay 15\n★★\n\n★★\n\n\nDay 16\n★★\n\n★★\n\n\nDay 17\n★★\n\n★★\n\n\nDay 18\n★★\n\n★★\n\n\nDay 19\n★★\n\n★★\n\n\nDay 20\n★★\n\n★★\n\n\nDay 21\n★★\n\n★★\n\n\nDay 22\n★★\n\n★★\n\n\nDay 23\n★★\n\n★★\n\n\nDay 24\n★★\n\n★★\n\n\nDay 25\n★★\n\n★★"
   },
   {
     "objectID": "2023/R/day08.html",
@@ -51,91 +51,135 @@
     ]
   },
   {
-    "objectID": "2023/R/day03.html",
-    "href": "2023/R/day03.html",
-    "title": "Day 3",
+    "objectID": "2023/R/day01.html",
+    "href": "2023/R/day01.html",
+    "title": "Day 1",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day03.txt\", skip_empty_rows = FALSE)",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day01.txt\", skip_empty_rows = FALSE)",
     "crumbs": [
       "2023",
-      "Day 3"
+      "Day 1"
     ]
   },
   {
-    "objectID": "2023/R/day03.html#setup",
-    "href": "2023/R/day03.html#setup",
-    "title": "Day 3",
+    "objectID": "2023/R/day01.html#setup",
+    "href": "2023/R/day01.html#setup",
+    "title": "Day 1",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day03.txt\", skip_empty_rows = FALSE)",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day01.txt\", skip_empty_rows = FALSE)",
     "crumbs": [
       "2023",
-      "Day 3"
+      "Day 1"
     ]
   },
   {
-    "objectID": "2023/R/day03.html#part-1",
-    "href": "2023/R/day03.html#part-1",
-    "title": "Day 3",
+    "objectID": "2023/R/day01.html#part-1",
+    "href": "2023/R/day01.html#part-1",
+    "title": "Day 1",
     "section": "Part 1",
-    "text": "Part 1\nConvert the input strings into a character matrix for ease of indexing:\n\nmtx &lt;- input |&gt; \n  str_split(\"\") |&gt; \n  unlist() |&gt; \n  matrix(nrow = length(input), byrow = TRUE)\n\nmax_row &lt;- nrow(mtx)\nmax_col &lt;- ncol(mtx)\n\nIdentify all candidates for part numbers and their coordinates in the matrix representation of the input:\n\n# Pull all candidates from the text input\nparts &lt;- input |&gt; \n  str_extract_all(\"\\\\d+\") |&gt; \n  map(unique)\n\n# Compute the indices of each candidate within each input string\nparts_locations &lt;- map2(input, parts, \\(chr_row, row_parts) {\n  chr_row |&gt; \n    str_locate_all(str_c(\"\\\\b\", row_parts, \"\\\\b\")) |&gt;\n    map(partial(asplit, MARGIN = 1))\n})\n\nIdentify all neighbors of each part number candidate:\n\nparts_df &lt;- parts_locations |&gt; \n  \n  # Combine all candidates and their indices into a data frame of coordiantes\n  enframe(name = \"row\") |&gt; \n  unnest_longer(value, values_to = \"locations\", indices_to = \"part_id\") |&gt; \n  unnest_longer(locations, values_to = \"col_seq\", indices_to = \"loc_id\") |&gt; \n  mutate(col_seq = map(col_seq, partial(full_seq, period = 1))) |&gt; \n  left_join(\n    parts |&gt; \n      enframe(name = \"row\") |&gt; \n      unnest_longer(\n        value, \n        values_to = \"part_int\", \n        indices_to = \"part_id\", \n        transform = as.integer\n      ),\n    join_by(row, part_id)\n  ) |&gt; \n  mutate(part_id = cur_group_id(), .by = c(row, part_id, loc_id)) |&gt; \n  \n  # Pull the neighboring characters for every part in the input\n  mutate(\n    search_rows = map(row, \\(row) {\n      c(row - 1, row, row + 1) |&gt; \n        keep(partial(between, left = 1, right = max_row))\n    }),\n    search_cols = map(col_seq, \\(col_seq) {\n      c(min(col_seq) - 1, col_seq, max(col_seq) + 1) |&gt; \n        keep(partial(between, left = 1, right = max_row))\n    }),\n    neighbor = map2(search_rows, search_cols, \\(rows, cols) {\n      expand_grid(row = rows, col = cols) |&gt; \n        mutate(chr = map2_chr(row, col, \\(row, col) mtx[row, col]))\n    })\n  ) |&gt; \n  unnest(neighbor, names_sep = \"_\") |&gt; \n  \n  # Simplify into a list of part IDs, integer values, and neighboring chars\n  select(row, part_id, part_int, starts_with(\"neighbor\")) |&gt; \n  mutate(\n    neighbor_id = cur_group_id(), \n    .by = c(neighbor_row, neighbor_col),\n    .before = neighbor_chr\n  )\n\nPull all candidates that are true part numbers (have a neighboring symbol) and sum their values:\n\nparts_df |&gt; \n  filter(!str_detect(neighbor_chr, \"[0-9.]\")) |&gt; \n  distinct(part_id, part_int) |&gt; \n  pull(part_int) |&gt; \n  sum()\n\n[1] 522726",
+    "text": "Part 1\nExtract numbers from the text strings using regex and sum:\n\ninput |&gt; \n  str_extract_all(\"\\\\d\") |&gt; \n  map(as.integer) |&gt; \n  map_int(~ head(.x, 1) * 10 + tail(.x, 1)) |&gt; \n  sum()\n\n[1] 54390",
     "crumbs": [
       "2023",
-      "Day 3"
+      "Day 1"
     ]
   },
   {
-    "objectID": "2023/R/day03.html#part-2",
-    "href": "2023/R/day03.html#part-2",
-    "title": "Day 3",
+    "objectID": "2023/R/day01.html#part-2",
+    "href": "2023/R/day01.html#part-2",
+    "title": "Day 1",
     "section": "Part 2",
-    "text": "Part 2\nPull symbols with exactly two adjacent parts, multiply the part integers to get each gear ratio, and sum the total of the gear ratios:\n\nparts_df |&gt; \n  filter(!str_detect(neighbor_chr, \"[0-9.]\")) |&gt; \n  filter(n() == 2, .by = neighbor_id) |&gt; \n  summarize(gear_ratio = prod(part_int), .by = neighbor_id) |&gt; \n  pull(gear_ratio) |&gt; \n  sum()\n\n[1] 81721933",
+    "text": "Part 2\nAdd patterns to the regex for spelled-out digits. Search from the front of the string as usual, but for the last digit, search from the end by reversing all strings. Otherwise, regex will only recognize the first match in case of an overlap: “eightwo” needs to be recognized as 82, not just 8.\n\ndigits &lt;- c(\"one\", \"two\", \"three\", \"four\", \"five\", \"six\", \"seven\", \"eight\", \"nine\")\npattern_fwd &lt;- str_c(c(\"\\\\d\", digits), collapse = \"|\")\npattern_bwd &lt;- str_c(c(\"\\\\d\", stringi::stri_reverse(digits)), collapse = \"|\")\n\n# Match the first digit from the front of the string\nd1 &lt;- input |&gt; \n  str_extract(pattern_fwd)\n\n# Match the second digit from the end of the string\nd2 &lt;- input |&gt; \n  stringi::stri_reverse() |&gt; \n  str_extract(pattern_bwd) |&gt; \n  stringi::stri_reverse()\n\n# Convert to integer values and sum\nmap2(d1, d2, c) |&gt; \n  map(~ coalesce(parse_number(.x, na = digits), match(.x, digits))) |&gt; \n  map_int(~ head(.x, 1) * 10 + tail(.x, 1)) |&gt; \n  sum()\n\n[1] 54277",
     "crumbs": [
       "2023",
-      "Day 3"
+      "Day 1"
     ]
   },
   {
-    "objectID": "2023/R/day06.html",
-    "href": "2023/R/day06.html",
-    "title": "Day 6",
+    "objectID": "2023/R/day02.html",
+    "href": "2023/R/day02.html",
+    "title": "Day 2",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day06.txt\", skip_empty_rows = FALSE)",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day02.txt\", skip_empty_rows = FALSE)",
     "crumbs": [
       "2023",
-      "Day 6"
+      "Day 2"
     ]
   },
   {
-    "objectID": "2023/R/day06.html#setup",
-    "href": "2023/R/day06.html#setup",
-    "title": "Day 6",
+    "objectID": "2023/R/day02.html#setup",
+    "href": "2023/R/day02.html#setup",
+    "title": "Day 2",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day06.txt\", skip_empty_rows = FALSE)",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day02.txt\", skip_empty_rows = FALSE)",
     "crumbs": [
       "2023",
-      "Day 6"
+      "Day 2"
     ]
   },
   {
-    "objectID": "2023/R/day06.html#part-1",
-    "href": "2023/R/day06.html#part-1",
-    "title": "Day 6",
+    "objectID": "2023/R/day02.html#part-1",
+    "href": "2023/R/day02.html#part-1",
+    "title": "Day 2",
     "section": "Part 1",
-    "text": "Part 1\nConvert input text into a set of time/distance vectors for each race:\n\nraces &lt;- c(\"time\" = 1, \"distance\" = 2) |&gt; \n  imap(\\(i, name) {\n    input[[i]] |&gt;\n      str_remove(regex(str_c(name, \":\\\\s+\"), ignore_case = T)) |&gt;\n      str_split_1(\"\\\\s+\") |&gt;\n      as.numeric()\n  }) |&gt; \n  pmap(\\(time, distance) list(time = time, record = distance))\n\nDefine a function to compute your traveled distance in each race, given the amount of time you hold the button:\n\nrace_dist &lt;- function(time_race, time_hold) {\n  (time_race - time_hold) * time_hold\n}\n\nFor each race, count the number of record-beating ways to win:\n\nraces |&gt; \n  map_int(\\(race) sum(race_dist(race$time, 0:race$time) &gt; race$record)) |&gt; \n  prod()\n\n[1] 32076",
+    "text": "Part 1\nExtract game IDs and red/green/blue counts from each line in the input:\n\ncubes &lt;- input |&gt; \n  \n  # Extract cube colors, numbers, rounds, and games\n  unglue_data(\"Game {game}: {txt=.*}\", convert = TRUE) |&gt; \n  mutate(txt = str_split(txt, \"; \")) |&gt; \n  unnest_longer(txt, indices_to = \"round\", values_to = \"txt\") |&gt; \n  mutate(txt = str_split(txt, \", \")) |&gt; \n  unnest_longer(txt) |&gt; \n  separate(txt, into = c(\"num_cubes\", \"color\"), convert = TRUE) |&gt; \n  \n  # Add implicit zero counts for each color of cube not listed in each round\n  complete(\n    color = c(\"red\", \"blue\", \"green\"), \n    nesting(game, round),\n    fill = list(num_cubes = 0)\n  )\n\nCheck which games are possible if the bag contains only 12 red cubes, 13 green cubes, and 14 blue cubes by flagging any games with any color count over the limit:\n\nlimits &lt;- c(\"red\" = 12, \"green\" = 13, \"blue\" = 14)\n\ncubes |&gt; \n  \n  # Categorize each game as possible vs impossible\n  mutate(num_over_lim = num_cubes &gt; limits[color]) |&gt; \n  summarize(impossible = any(num_over_lim), .by = game) |&gt; \n  \n  # Pull and sum the indices of the possible games\n  filter(!impossible) |&gt; \n  pull(game) |&gt; \n  sum()\n\n[1] 2369",
     "crumbs": [
       "2023",
-      "Day 6"
+      "Day 2"
     ]
   },
   {
-    "objectID": "2023/R/day06.html#part-2",
-    "href": "2023/R/day06.html#part-2",
-    "title": "Day 6",
+    "objectID": "2023/R/day02.html#part-2",
+    "href": "2023/R/day02.html#part-2",
+    "title": "Day 2",
     "section": "Part 2",
-    "text": "Part 2\nCombine the individual race numbers into one single race:\n\nrace &lt;- races |&gt; \n  enframe(name = \"pos\") |&gt; \n  unnest_wider(value) |&gt; \n  summarize(across(c(time, record), ~ as.numeric(str_c(.x, collapse = \"\")))) |&gt; \n  pivot_longer(everything()) |&gt; \n  deframe() |&gt; \n  as.list()\n\nCompute roots of the race distance function using the quadratic equation to determine the range of record-winning hold times:\n\nwinning_methods &lt;- function(time_race, record) {\n  root1 &lt;- (time_race + sqrt(time_race^2 - 4 * record)) / 2\n  root2 &lt;- (time_race - sqrt(time_race^2 - 4 * record)) / 2\n  \n  bnd_l &lt;- ceiling(max(min(root1, root2), 0))\n  bnd_r &lt;- floor(min(max(root1, root2), time_race))\n  \n  bnd_l &lt;- if_else(race_dist(time_race, bnd_l) == record, bnd_l + 1, bnd_l)\n  bnd_r &lt;- if_else(race_dist(time_race, bnd_r) == record, bnd_r - 1, bnd_r)\n  \n  bnd_r - bnd_l + 1\n}\n\nRun on puzzle input:\n\nwinning_methods(race$time, race$record)\n\n[1] 34278221",
+    "text": "Part 2\nWithin each game, compute the minimum number of cubes of each color by taking the maximum count of each color over all rounds in each game:\n\ncubes |&gt; \n  summarize(min_cubes = max(num_cubes), .by = c(game, color)) |&gt; \n  pivot_wider(names_from = color, values_from = min_cubes) |&gt; \n  mutate(power = blue * green * red) |&gt; \n  pull(power) |&gt; \n  sum()\n\n[1] 66363",
     "crumbs": [
       "2023",
-      "Day 6"
+      "Day 2"
+    ]
+  },
+  {
+    "objectID": "2023/R/day12.html",
+    "href": "2023/R/day12.html",
+    "title": "Day 12",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day12.txt\", skip_empty_rows = TRUE)",
+    "crumbs": [
+      "2023",
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2023/R/day12.html#setup",
+    "href": "2023/R/day12.html#setup",
+    "title": "Day 12",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day12.txt\", skip_empty_rows = TRUE)",
+    "crumbs": [
+      "2023",
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2023/R/day12.html#part-1",
+    "href": "2023/R/day12.html#part-1",
+    "title": "Day 12",
+    "section": "Part 1",
+    "text": "Part 1\nConvert text input to a dataframe. Identifiy the indices of each unknown value per row, and convert the numeric input into a regex pattern to test if a given spring arrangement is possible:\n\ndf &lt;- input |&gt; \n  unglue_data(\"{chr} {num}\") |&gt; \n  mutate(\n    regex_pattern = str_c(\n      \"^\\\\.*#{\", \n      str_replace_all(num, \",\", \"}\\\\.+#{\"),\n      \"}\\\\.*$\"\n    ),\n    u_idx = map(chr, ~ which(str_split_1(.x, \"\") == \"?\")),\n    num = map(num, ~ as.integer(str_split_1(.x, \",\"))),\n    total_broken = map_int(num, sum),\n    cur_broken = str_count(chr, \"#\"),\n    num_b = total_broken - cur_broken\n  )\n\nDefine a function to compute the total number of possible arrangements of broken springs for a given row using regex:\n\nidx_permutations &lt;- function(u_idx, num_b) {\n  \n  if (num_b == 0) {\n    list(list(B = numeric(0), O = u_idx))\n  } else {\n    permutations &lt;- combn(length(u_idx), num_b)\n    map(\n      1:ncol(permutations),\n      ~ list(\n        B = u_idx[permutations[,.x]],\n        O = u_idx[-permutations[,.x]]\n      )\n    )\n  }\n  \n}\n\nnum_arragements &lt;- function(input, regex_pattern, u_idx, num_b) {\n  perms &lt;- idx_permutations(u_idx, num_b)\n  vec   &lt;- str_split_1(input, \"\")\n  \n  perms |&gt; \n    map_chr(\\(perm) {\n      vec |&gt; \n        replace(perm$O, \".\") |&gt; \n        replace(perm$B, \"#\") |&gt; \n        str_c(collapse = \"\")\n    }) |&gt; \n    str_detect(regex_pattern) |&gt; \n    sum()\n}\n\nRun on puzzle input:\n\ndf |&gt; \n  pmap_int(\\(chr, regex_pattern, u_idx, num_b, ...) {\n    num_arragements(chr, regex_pattern, u_idx, num_b)\n  }) |&gt; \n  sum()\n\n[1] 7674",
+    "crumbs": [
+      "2023",
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2023/R/day12.html#part-2",
+    "href": "2023/R/day12.html#part-2",
+    "title": "Day 12",
+    "section": "Part 2",
+    "text": "Part 2\nWith hints from Reddit, re-define the arrangement-counting function using memoization and recursion to examine at each character:\n\ncount_arr &lt;- memoise::memoise(function(str, grps, grp_count) {\n\n  # Check for contradictions and/or the end of the input\n  if (length(grps) == 0)\n    return(if_else(grp_count == 0 & str_detect(str, \"^(\\\\.|\\\\?)*$\"), 1, 0))\n  else if (str == \"\")\n    return(0)\n  else if (grp_count &gt; grps[1]) \n    return(0)\n\n  # Initialize the total number of arrangements to 0 and get the current char\n  total_arr &lt;- 0\n  cur_chr   &lt;- str_sub(str, 1, 1)\n  \n  # If the char is unknown, examine both of the two possible states\n  if (cur_chr == \"?\")\n    cur_chr &lt;- c(\".\", \"#\")\n  \n  for (chr in cur_chr) {\n    \n    # If '#', recurse within the current group\n    if (chr == \"#\")\n      total_arr &lt;- total_arr + count_arr(str_sub(str, 2), grps, grp_count + 1)\n    \n    # If '.', close the current group (if one is active) & recurse\n    else if (chr == \".\") {\n      if (grp_count == 0)\n        total_arr &lt;- total_arr + count_arr(str_sub(str, 2), grps, grp_count)\n      else if (grp_count == grps[1])\n        total_arr &lt;- total_arr + count_arr(str_sub(str, 2), tail(grps, -1), 0)\n    }\n    \n  }\n  \n  total_arr\n})\n\nRun on puzzle input:\n\ndf |&gt; \n  pmap_dbl(\\(chr, num, ...) {\n    count_arr(str_c(str_c(rep(chr, 5), collapse = \"?\"), \".\"), rep(num, 5), 0)\n  }) |&gt; \n  sum() |&gt; \n  format(scientific = FALSE)\n\n[1] \"4443895258186\"",
+    "crumbs": [
+      "2023",
+      "Day 12"
     ]
   },
   {
@@ -2515,135 +2559,179 @@
     ]
   },
   {
-    "objectID": "2023/R/day12.html",
-    "href": "2023/R/day12.html",
-    "title": "Day 12",
+    "objectID": "2023/R/day13.html",
+    "href": "2023/R/day13.html",
+    "title": "Day 13",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day12.txt\", skip_empty_rows = TRUE)",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day13.txt\", skip_empty_rows = FALSE)",
     "crumbs": [
       "2023",
-      "Day 12"
+      "Day 13"
     ]
   },
   {
-    "objectID": "2023/R/day12.html#setup",
-    "href": "2023/R/day12.html#setup",
-    "title": "Day 12",
+    "objectID": "2023/R/day13.html#setup",
+    "href": "2023/R/day13.html#setup",
+    "title": "Day 13",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day12.txt\", skip_empty_rows = TRUE)",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day13.txt\", skip_empty_rows = FALSE)",
     "crumbs": [
       "2023",
-      "Day 12"
+      "Day 13"
     ]
   },
   {
-    "objectID": "2023/R/day12.html#part-1",
-    "href": "2023/R/day12.html#part-1",
-    "title": "Day 12",
+    "objectID": "2023/R/day13.html#part-1",
+    "href": "2023/R/day13.html#part-1",
+    "title": "Day 13",
     "section": "Part 1",
-    "text": "Part 1\nConvert text input to a dataframe. Identifiy the indices of each unknown value per row, and convert the numeric input into a regex pattern to test if a given spring arrangement is possible:\n\ndf &lt;- input |&gt; \n  unglue_data(\"{chr} {num}\") |&gt; \n  mutate(\n    regex_pattern = str_c(\n      \"^\\\\.*#{\", \n      str_replace_all(num, \",\", \"}\\\\.+#{\"),\n      \"}\\\\.*$\"\n    ),\n    u_idx = map(chr, ~ which(str_split_1(.x, \"\") == \"?\")),\n    num = map(num, ~ as.integer(str_split_1(.x, \",\"))),\n    total_broken = map_int(num, sum),\n    cur_broken = str_count(chr, \"#\"),\n    num_b = total_broken - cur_broken\n  )\n\nDefine a function to compute the total number of possible arrangements of broken springs for a given row using regex:\n\nidx_permutations &lt;- function(u_idx, num_b) {\n  \n  if (num_b == 0) {\n    list(list(B = numeric(0), O = u_idx))\n  } else {\n    permutations &lt;- combn(length(u_idx), num_b)\n    map(\n      1:ncol(permutations),\n      ~ list(\n        B = u_idx[permutations[,.x]],\n        O = u_idx[-permutations[,.x]]\n      )\n    )\n  }\n  \n}\n\nnum_arragements &lt;- function(input, regex_pattern, u_idx, num_b) {\n  perms &lt;- idx_permutations(u_idx, num_b)\n  vec   &lt;- str_split_1(input, \"\")\n  \n  perms |&gt; \n    map_chr(\\(perm) {\n      vec |&gt; \n        replace(perm$O, \".\") |&gt; \n        replace(perm$B, \"#\") |&gt; \n        str_c(collapse = \"\")\n    }) |&gt; \n    str_detect(regex_pattern) |&gt; \n    sum()\n}\n\nRun on puzzle input:\n\ndf |&gt; \n  pmap_int(\\(chr, regex_pattern, u_idx, num_b, ...) {\n    num_arragements(chr, regex_pattern, u_idx, num_b)\n  }) |&gt; \n  sum()\n\n[1] 7674",
+    "text": "Part 1\nConvert each set of input strings into its own matrix:\n\nmtx &lt;- tibble(chr = input) |&gt; \n  group_split(cumsum(chr == \"\")) |&gt; \n  map(~ pull(.x, chr)) |&gt; \n  map(\n    ~ str_split(.x, \"\") |&gt; \n      unlist() |&gt; \n      matrix(nrow = sum(.x != \"\"), byrow = TRUE)\n  )\n\nDefine a function that checks for a mirror along the given dimension (rows vs columns) of a given matrix:\n\nmirror_idx &lt;- function(mtx, dim = c(\"row\", \"col\")) {\n  vecs &lt;- split(mtx, get(case_match(dim, \"row\" ~ \"col\", \"col\" ~ \"row\"))(mtx))\n  len  &lt;- get(str_c(\"n\", dim))(mtx)\n  \n  refl_idx &lt;- c(0)\n  \n  for (idx in 1:(len - 1)) {\n    n_trim &lt;- min(idx, len - idx)\n    \n    is_mirror &lt;- vecs |&gt; \n      map_lgl(\\(vec) {\n        h1 &lt;- rev(vec[1:idx])[1:n_trim]\n        h2 &lt;- vec[(idx + 1):(idx + n_trim)]\n        all(h1 == h2)\n      }) |&gt; \n      all()\n    \n    if (is_mirror) \n      refl_idx &lt;- c(refl_idx, idx)\n  }\n  \n  refl_idx\n}\n\nFor each matrix in the list, add the column indices of each vertical reflection line with 100 times the row indices of each horizontal reflection line:\n\nscore_matrices &lt;- function(mtx_list) {\n  mtx_list |&gt; \n    map_dbl(~ sum(mirror_idx(.x, \"col\")) + sum(mirror_idx(.x, \"row\") * 100)) |&gt; \n    sum()\n}\n\nscore_matrices(mtx)\n\n[1] 30575",
     "crumbs": [
       "2023",
-      "Day 12"
+      "Day 13"
     ]
   },
   {
-    "objectID": "2023/R/day12.html#part-2",
-    "href": "2023/R/day12.html#part-2",
-    "title": "Day 12",
+    "objectID": "2023/R/day13.html#part-2",
+    "href": "2023/R/day13.html#part-2",
+    "title": "Day 13",
     "section": "Part 2",
-    "text": "Part 2\nWith hints from Reddit, re-define the arrangement-counting function using memoization and recursion to examine at each character:\n\ncount_arr &lt;- memoise::memoise(function(str, grps, grp_count) {\n\n  # Check for contradictions and/or the end of the input\n  if (length(grps) == 0)\n    return(if_else(grp_count == 0 & str_detect(str, \"^(\\\\.|\\\\?)*$\"), 1, 0))\n  else if (str == \"\")\n    return(0)\n  else if (grp_count &gt; grps[1]) \n    return(0)\n\n  # Initialize the total number of arrangements to 0 and get the current char\n  total_arr &lt;- 0\n  cur_chr   &lt;- str_sub(str, 1, 1)\n  \n  # If the char is unknown, examine both of the two possible states\n  if (cur_chr == \"?\")\n    cur_chr &lt;- c(\".\", \"#\")\n  \n  for (chr in cur_chr) {\n    \n    # If '#', recurse within the current group\n    if (chr == \"#\")\n      total_arr &lt;- total_arr + count_arr(str_sub(str, 2), grps, grp_count + 1)\n    \n    # If '.', close the current group (if one is active) & recurse\n    else if (chr == \".\") {\n      if (grp_count == 0)\n        total_arr &lt;- total_arr + count_arr(str_sub(str, 2), grps, grp_count)\n      else if (grp_count == grps[1])\n        total_arr &lt;- total_arr + count_arr(str_sub(str, 2), tail(grps, -1), 0)\n    }\n    \n  }\n  \n  total_arr\n})\n\nRun on puzzle input:\n\ndf |&gt; \n  pmap_dbl(\\(chr, num, ...) {\n    count_arr(str_c(str_c(rep(chr, 5), collapse = \"?\"), \".\"), rep(num, 5), 0)\n  }) |&gt; \n  sum() |&gt; \n  format(scientific = FALSE)\n\n[1] \"4443895258186\"",
+    "text": "Part 2\nDefine a function that finds the row or column index of the single smudge for a given matrix:\n\nsmudge_idx &lt;- function(mtx, dim = c(\"row\", \"col\")) {\n  \n  vecs &lt;- split(mtx, get(case_match(dim, \"row\" ~ \"col\", \"col\" ~ \"row\"))(mtx))\n  len  &lt;- get(str_c(\"n\", dim))(mtx)\n  \n  for (idx in 1:(len - 1)) {\n    n_trim &lt;- min(idx, len - idx)\n    \n    noteq &lt;- vecs |&gt; \n      map(\\(vec) {\n        h1 &lt;- rev(vec[1:idx])[1:n_trim]\n        h2 &lt;- vec[(idx + 1):(idx + n_trim)]\n        which(h1 != h2)\n      })\n    \n    if (length(unlist(noteq)) == 1) return(idx)\n  }\n  return(0)\n}\n\nRe-score the input:\n\nscore_unsmudged &lt;- function(mtx_list) {\n  mtx_list |&gt; \n    map_dbl(~ sum(smudge_idx(.x, \"col\")) + sum(smudge_idx(.x, \"row\") * 100)) |&gt; \n    sum()\n}\n\nscore_unsmudged(mtx)\n\n[1] 37478",
     "crumbs": [
       "2023",
-      "Day 12"
+      "Day 13"
     ]
   },
   {
-    "objectID": "2023/R/day02.html",
-    "href": "2023/R/day02.html",
-    "title": "Day 2",
+    "objectID": "2023/R/day06.html",
+    "href": "2023/R/day06.html",
+    "title": "Day 6",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day02.txt\", skip_empty_rows = FALSE)",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day06.txt\", skip_empty_rows = FALSE)",
     "crumbs": [
       "2023",
-      "Day 2"
+      "Day 6"
     ]
   },
   {
-    "objectID": "2023/R/day02.html#setup",
-    "href": "2023/R/day02.html#setup",
-    "title": "Day 2",
+    "objectID": "2023/R/day06.html#setup",
+    "href": "2023/R/day06.html#setup",
+    "title": "Day 6",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day02.txt\", skip_empty_rows = FALSE)",
+    "text": "# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day06.txt\", skip_empty_rows = FALSE)",
     "crumbs": [
       "2023",
-      "Day 2"
+      "Day 6"
     ]
   },
   {
-    "objectID": "2023/R/day02.html#part-1",
-    "href": "2023/R/day02.html#part-1",
-    "title": "Day 2",
+    "objectID": "2023/R/day06.html#part-1",
+    "href": "2023/R/day06.html#part-1",
+    "title": "Day 6",
     "section": "Part 1",
-    "text": "Part 1\nExtract game IDs and red/green/blue counts from each line in the input:\n\ncubes &lt;- input |&gt; \n  \n  # Extract cube colors, numbers, rounds, and games\n  unglue_data(\"Game {game}: {txt=.*}\", convert = TRUE) |&gt; \n  mutate(txt = str_split(txt, \"; \")) |&gt; \n  unnest_longer(txt, indices_to = \"round\", values_to = \"txt\") |&gt; \n  mutate(txt = str_split(txt, \", \")) |&gt; \n  unnest_longer(txt) |&gt; \n  separate(txt, into = c(\"num_cubes\", \"color\"), convert = TRUE) |&gt; \n  \n  # Add implicit zero counts for each color of cube not listed in each round\n  complete(\n    color = c(\"red\", \"blue\", \"green\"), \n    nesting(game, round),\n    fill = list(num_cubes = 0)\n  )\n\nCheck which games are possible if the bag contains only 12 red cubes, 13 green cubes, and 14 blue cubes by flagging any games with any color count over the limit:\n\nlimits &lt;- c(\"red\" = 12, \"green\" = 13, \"blue\" = 14)\n\ncubes |&gt; \n  \n  # Categorize each game as possible vs impossible\n  mutate(num_over_lim = num_cubes &gt; limits[color]) |&gt; \n  summarize(impossible = any(num_over_lim), .by = game) |&gt; \n  \n  # Pull and sum the indices of the possible games\n  filter(!impossible) |&gt; \n  pull(game) |&gt; \n  sum()\n\n[1] 2369",
+    "text": "Part 1\nConvert input text into a set of time/distance vectors for each race:\n\nraces &lt;- c(\"time\" = 1, \"distance\" = 2) |&gt; \n  imap(\\(i, name) {\n    input[[i]] |&gt;\n      str_remove(regex(str_c(name, \":\\\\s+\"), ignore_case = T)) |&gt;\n      str_split_1(\"\\\\s+\") |&gt;\n      as.numeric()\n  }) |&gt; \n  pmap(\\(time, distance) list(time = time, record = distance))\n\nDefine a function to compute your traveled distance in each race, given the amount of time you hold the button:\n\nrace_dist &lt;- function(time_race, time_hold) {\n  (time_race - time_hold) * time_hold\n}\n\nFor each race, count the number of record-beating ways to win:\n\nraces |&gt; \n  map_int(\\(race) sum(race_dist(race$time, 0:race$time) &gt; race$record)) |&gt; \n  prod()\n\n[1] 32076",
     "crumbs": [
       "2023",
-      "Day 2"
+      "Day 6"
     ]
   },
   {
-    "objectID": "2023/R/day02.html#part-2",
-    "href": "2023/R/day02.html#part-2",
-    "title": "Day 2",
+    "objectID": "2023/R/day06.html#part-2",
+    "href": "2023/R/day06.html#part-2",
+    "title": "Day 6",
     "section": "Part 2",
-    "text": "Part 2\nWithin each game, compute the minimum number of cubes of each color by taking the maximum count of each color over all rounds in each game:\n\ncubes |&gt; \n  summarize(min_cubes = max(num_cubes), .by = c(game, color)) |&gt; \n  pivot_wider(names_from = color, values_from = min_cubes) |&gt; \n  mutate(power = blue * green * red) |&gt; \n  pull(power) |&gt; \n  sum()\n\n[1] 66363",
+    "text": "Part 2\nCombine the individual race numbers into one single race:\n\nrace &lt;- races |&gt; \n  enframe(name = \"pos\") |&gt; \n  unnest_wider(value) |&gt; \n  summarize(across(c(time, record), ~ as.numeric(str_c(.x, collapse = \"\")))) |&gt; \n  pivot_longer(everything()) |&gt; \n  deframe() |&gt; \n  as.list()\n\nCompute roots of the race distance function using the quadratic equation to determine the range of record-winning hold times:\n\nwinning_methods &lt;- function(time_race, record) {\n  root1 &lt;- (time_race + sqrt(time_race^2 - 4 * record)) / 2\n  root2 &lt;- (time_race - sqrt(time_race^2 - 4 * record)) / 2\n  \n  bnd_l &lt;- ceiling(max(min(root1, root2), 0))\n  bnd_r &lt;- floor(min(max(root1, root2), time_race))\n  \n  bnd_l &lt;- if_else(race_dist(time_race, bnd_l) == record, bnd_l + 1, bnd_l)\n  bnd_r &lt;- if_else(race_dist(time_race, bnd_r) == record, bnd_r - 1, bnd_r)\n  \n  bnd_r - bnd_l + 1\n}\n\nRun on puzzle input:\n\nwinning_methods(race$time, race$record)\n\n[1] 34278221",
     "crumbs": [
       "2023",
-      "Day 2"
+      "Day 6"
     ]
   },
   {
-    "objectID": "2023/R/day01.html",
-    "href": "2023/R/day01.html",
-    "title": "Day 1",
+    "objectID": "2023/R/day03.html",
+    "href": "2023/R/day03.html",
+    "title": "Day 3",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day01.txt\", skip_empty_rows = FALSE)",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day03.txt\", skip_empty_rows = FALSE)",
     "crumbs": [
       "2023",
-      "Day 1"
+      "Day 3"
     ]
   },
   {
-    "objectID": "2023/R/day01.html#setup",
-    "href": "2023/R/day01.html#setup",
-    "title": "Day 1",
+    "objectID": "2023/R/day03.html#setup",
+    "href": "2023/R/day03.html#setup",
+    "title": "Day 3",
     "section": "",
-    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day01.txt\", skip_empty_rows = FALSE)",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day03.txt\", skip_empty_rows = FALSE)",
     "crumbs": [
       "2023",
-      "Day 1"
+      "Day 3"
     ]
   },
   {
-    "objectID": "2023/R/day01.html#part-1",
-    "href": "2023/R/day01.html#part-1",
-    "title": "Day 1",
+    "objectID": "2023/R/day03.html#part-1",
+    "href": "2023/R/day03.html#part-1",
+    "title": "Day 3",
     "section": "Part 1",
-    "text": "Part 1\nExtract numbers from the text strings using regex and sum:\n\ninput |&gt; \n  str_extract_all(\"\\\\d\") |&gt; \n  map(as.integer) |&gt; \n  map_int(~ head(.x, 1) * 10 + tail(.x, 1)) |&gt; \n  sum()\n\n[1] 54390",
+    "text": "Part 1\nConvert the input strings into a character matrix for ease of indexing:\n\nmtx &lt;- input |&gt; \n  str_split(\"\") |&gt; \n  unlist() |&gt; \n  matrix(nrow = length(input), byrow = TRUE)\n\nmax_row &lt;- nrow(mtx)\nmax_col &lt;- ncol(mtx)\n\nIdentify all candidates for part numbers and their coordinates in the matrix representation of the input:\n\n# Pull all candidates from the text input\nparts &lt;- input |&gt; \n  str_extract_all(\"\\\\d+\") |&gt; \n  map(unique)\n\n# Compute the indices of each candidate within each input string\nparts_locations &lt;- map2(input, parts, \\(chr_row, row_parts) {\n  chr_row |&gt; \n    str_locate_all(str_c(\"\\\\b\", row_parts, \"\\\\b\")) |&gt;\n    map(partial(asplit, MARGIN = 1))\n})\n\nIdentify all neighbors of each part number candidate:\n\nparts_df &lt;- parts_locations |&gt; \n  \n  # Combine all candidates and their indices into a data frame of coordiantes\n  enframe(name = \"row\") |&gt; \n  unnest_longer(value, values_to = \"locations\", indices_to = \"part_id\") |&gt; \n  unnest_longer(locations, values_to = \"col_seq\", indices_to = \"loc_id\") |&gt; \n  mutate(col_seq = map(col_seq, partial(full_seq, period = 1))) |&gt; \n  left_join(\n    parts |&gt; \n      enframe(name = \"row\") |&gt; \n      unnest_longer(\n        value, \n        values_to = \"part_int\", \n        indices_to = \"part_id\", \n        transform = as.integer\n      ),\n    join_by(row, part_id)\n  ) |&gt; \n  mutate(part_id = cur_group_id(), .by = c(row, part_id, loc_id)) |&gt; \n  \n  # Pull the neighboring characters for every part in the input\n  mutate(\n    search_rows = map(row, \\(row) {\n      c(row - 1, row, row + 1) |&gt; \n        keep(partial(between, left = 1, right = max_row))\n    }),\n    search_cols = map(col_seq, \\(col_seq) {\n      c(min(col_seq) - 1, col_seq, max(col_seq) + 1) |&gt; \n        keep(partial(between, left = 1, right = max_row))\n    }),\n    neighbor = map2(search_rows, search_cols, \\(rows, cols) {\n      expand_grid(row = rows, col = cols) |&gt; \n        mutate(chr = map2_chr(row, col, \\(row, col) mtx[row, col]))\n    })\n  ) |&gt; \n  unnest(neighbor, names_sep = \"_\") |&gt; \n  \n  # Simplify into a list of part IDs, integer values, and neighboring chars\n  select(row, part_id, part_int, starts_with(\"neighbor\")) |&gt; \n  mutate(\n    neighbor_id = cur_group_id(), \n    .by = c(neighbor_row, neighbor_col),\n    .before = neighbor_chr\n  )\n\nPull all candidates that are true part numbers (have a neighboring symbol) and sum their values:\n\nparts_df |&gt; \n  filter(!str_detect(neighbor_chr, \"[0-9.]\")) |&gt; \n  distinct(part_id, part_int) |&gt; \n  pull(part_int) |&gt; \n  sum()\n\n[1] 522726",
     "crumbs": [
       "2023",
-      "Day 1"
+      "Day 3"
     ]
   },
   {
-    "objectID": "2023/R/day01.html#part-2",
-    "href": "2023/R/day01.html#part-2",
-    "title": "Day 1",
+    "objectID": "2023/R/day03.html#part-2",
+    "href": "2023/R/day03.html#part-2",
+    "title": "Day 3",
     "section": "Part 2",
-    "text": "Part 2\nAdd patterns to the regex for spelled-out digits. Search from the front of the string as usual, but for the last digit, search from the end by reversing all strings. Otherwise, regex will only recognize the first match in case of an overlap: “eightwo” needs to be recognized as 82, not just 8.\n\ndigits &lt;- c(\"one\", \"two\", \"three\", \"four\", \"five\", \"six\", \"seven\", \"eight\", \"nine\")\npattern_fwd &lt;- str_c(c(\"\\\\d\", digits), collapse = \"|\")\npattern_bwd &lt;- str_c(c(\"\\\\d\", stringi::stri_reverse(digits)), collapse = \"|\")\n\n# Match the first digit from the front of the string\nd1 &lt;- input |&gt; \n  str_extract(pattern_fwd)\n\n# Match the second digit from the end of the string\nd2 &lt;- input |&gt; \n  stringi::stri_reverse() |&gt; \n  str_extract(pattern_bwd) |&gt; \n  stringi::stri_reverse()\n\n# Convert to integer values and sum\nmap2(d1, d2, c) |&gt; \n  map(~ coalesce(parse_number(.x, na = digits), match(.x, digits))) |&gt; \n  map_int(~ head(.x, 1) * 10 + tail(.x, 1)) |&gt; \n  sum()\n\n[1] 54277",
+    "text": "Part 2\nPull symbols with exactly two adjacent parts, multiply the part integers to get each gear ratio, and sum the total of the gear ratios:\n\nparts_df |&gt; \n  filter(!str_detect(neighbor_chr, \"[0-9.]\")) |&gt; \n  filter(n() == 2, .by = neighbor_id) |&gt; \n  summarize(gear_ratio = prod(part_int), .by = neighbor_id) |&gt; \n  pull(gear_ratio) |&gt; \n  sum()\n\n[1] 81721933",
     "crumbs": [
       "2023",
-      "Day 1"
+      "Day 3"
+    ]
+  },
+  {
+    "objectID": "2023/R/day14.html",
+    "href": "2023/R/day14.html",
+    "title": "Day 14",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day14.txt\", skip_empty_rows = FALSE)",
+    "crumbs": [
+      "2023",
+      "Day 14"
+    ]
+  },
+  {
+    "objectID": "2023/R/day14.html#setup",
+    "href": "2023/R/day14.html#setup",
+    "title": "Day 14",
+    "section": "",
+    "text": "# Libraries\nlibrary(tidyverse)\n\n# Read input from file\ninput &lt;- read_lines(\"../input/day14.txt\", skip_empty_rows = FALSE)",
+    "crumbs": [
+      "2023",
+      "Day 14"
+    ]
+  },
+  {
+    "objectID": "2023/R/day14.html#part-1",
+    "href": "2023/R/day14.html#part-1",
+    "title": "Day 14",
+    "section": "Part 1",
+    "text": "Part 1\nConvert the input text into a matrix:\n\nmtx &lt;- input |&gt; \n  str_split(\"\") |&gt; \n  unlist() |&gt; \n  matrix(nrow = length(input), byrow = TRUE)\n\nFrom Reddit hints: can use matrix transforms and regex to make the tilting computations more efficient.\n\n# For a set of string vectors, shift all rocks in them to the left. \nshift &lt;- function(str) {\n  repeat {\n    new &lt;- str_replace_all(str, \"\\\\.O\", \"O\\\\.\")\n\n    if (all(str == new))\n      return(str)\n    else\n      str &lt;- new\n  }\n}\n\n# Tilt the entire matrix in a given direction (N/S/W/E)\ntilt &lt;- function(mtx, dir = 'N') {\n  \n  if (dir %in% c('W', 'E'))\n    mtx &lt;- t(mtx)\n  if (dir %in% c('S', 'E'))\n    mtx &lt;- apply(mtx, 2, rev)\n  \n  # Split the matrix into columns, shift the rocks, and recombine\n  mtx &lt;- split(mtx, col(mtx)) |&gt; \n    map(str_flatten) |&gt; \n    shift() |&gt; \n    str_split(\"\") |&gt; \n    do.call(args = _, what = cbind)\n  \n  if (dir %in% c('S', 'E'))\n    mtx &lt;- apply(mtx, 2, rev)\n  if (dir %in% c('W', 'E'))\n    mtx &lt;- t(mtx)\n  \n  mtx\n}\n\nTilt the matrix and sum up the load:\n\ncompute_load &lt;- function(mtx) {\n  split(mtx, col(mtx)) |&gt; \n    map(~ which(rev(.x) == \"O\")) |&gt; \n    unlist() |&gt; \n    sum()\n}\n\nmtx |&gt; \n  tilt() |&gt; \n  compute_load()\n\n[1] 109661",
+    "crumbs": [
+      "2023",
+      "Day 14"
+    ]
+  },
+  {
+    "objectID": "2023/R/day14.html#part-2",
+    "href": "2023/R/day14.html#part-2",
+    "title": "Day 14",
+    "section": "Part 2",
+    "text": "Part 2\nLook for a cycle, then jump ahead to the 1000000000th state\n\ncycle &lt;- \\(mtx) reduce(c('N', 'W', 'S', 'E'), tilt, .init = mtx)\n\n# Initialize\ncur  &lt;- mtx\nloop &lt;- list()\ni &lt;- 0\n\n# Loop through cycles until a repeating loop is found\nrepeat {\n  i &lt;- i + 1\n  cur &lt;- cycle(cur)\n  loop[[i]] &lt;- cur\n  \n  if (any(duplicated(loop)))\n    break\n}\n\n# Compute the length of the cycle and its starting point\ncycle_rep   &lt;- which(duplicated(loop) | duplicated(loop, fromLast = TRUE))\ncycle_len   &lt;- max(cycle_rep) - min(cycle_rep)\ncycle_start &lt;- min(cycle_rep)\n\n# Compute an equivalent index to find the state at the 1000000000th cycle\nidx &lt;- (1000000000 - cycle_start) %% cycle_len + cycle_start\n\nloop[[idx]] |&gt; \n  compute_load()\n\n[1] 90176",
+    "crumbs": [
+      "2023",
+      "Day 14"
     ]
   },
   {

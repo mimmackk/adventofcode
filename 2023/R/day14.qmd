@@ -1,0 +1,126 @@
+---
+title: "Day 14"
+date: 2023-12-14
+author:
+  name: https://adventofcode.com/2023/day/14
+  url: https://adventofcode.com/2023/day/14
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day14.txt", skip_empty_rows = FALSE)
+
+```
+
+## Part 1
+
+Convert the input text into a matrix:
+
+```{r}
+
+mtx <- input |> 
+  str_split("") |> 
+  unlist() |> 
+  matrix(nrow = length(input), byrow = TRUE)
+
+```
+
+From Reddit hints: can use [matrix transforms](https://www.reddit.com/r/adventofcode/comments/18i0xtn/comment/kdabenl/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button) and [regex](https://www.reddit.com/r/adventofcode/comments/18i0xtn/comment/kdact5r/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button) to make the tilting computations more efficient.
+
+```{r}
+
+# For a set of string vectors, shift all rocks in them to the left. 
+shift <- function(str) {
+  repeat {
+    new <- str_replace_all(str, "\\.O", "O\\.")
+
+    if (all(str == new))
+      return(str)
+    else
+      str <- new
+  }
+}
+
+# Tilt the entire matrix in a given direction (N/S/W/E)
+tilt <- function(mtx, dir = 'N') {
+  
+  if (dir %in% c('W', 'E'))
+    mtx <- t(mtx)
+  if (dir %in% c('S', 'E'))
+    mtx <- apply(mtx, 2, rev)
+  
+  # Split the matrix into columns, shift the rocks, and recombine
+  mtx <- split(mtx, col(mtx)) |> 
+    map(str_flatten) |> 
+    shift() |> 
+    str_split("") |> 
+    do.call(args = _, what = cbind)
+  
+  if (dir %in% c('S', 'E'))
+    mtx <- apply(mtx, 2, rev)
+  if (dir %in% c('W', 'E'))
+    mtx <- t(mtx)
+  
+  mtx
+}
+
+```
+
+Tilt the matrix and sum up the load:
+
+```{r}
+
+compute_load <- function(mtx) {
+  split(mtx, col(mtx)) |> 
+    map(~ which(rev(.x) == "O")) |> 
+    unlist() |> 
+    sum()
+}
+
+mtx |> 
+  tilt() |> 
+  compute_load()
+
+```
+
+## Part 2
+
+Look for a cycle, then jump ahead to the 1000000000th state
+
+```{r}
+
+cycle <- \(mtx) reduce(c('N', 'W', 'S', 'E'), tilt, .init = mtx)
+
+# Initialize
+cur  <- mtx
+loop <- list()
+i <- 0
+
+# Loop through cycles until a repeating loop is found
+repeat {
+  i <- i + 1
+  cur <- cycle(cur)
+  loop[[i]] <- cur
+  
+  if (any(duplicated(loop)))
+    break
+}
+
+# Compute the length of the cycle and its starting point
+cycle_rep   <- which(duplicated(loop) | duplicated(loop, fromLast = TRUE))
+cycle_len   <- max(cycle_rep) - min(cycle_rep)
+cycle_start <- min(cycle_rep)
+
+# Compute an equivalent index to find the state at the 1000000000th cycle
+idx <- (1000000000 - cycle_start) %% cycle_len + cycle_start
+
+loop[[idx]] |> 
+  compute_load()
+
+```

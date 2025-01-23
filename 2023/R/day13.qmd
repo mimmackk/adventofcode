@@ -1,0 +1,124 @@
+---
+title: "Day 13"
+date: 2023-12-13
+author:
+  name: https://adventofcode.com/2023/day/13
+  url: https://adventofcode.com/2023/day/13
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day13.txt", skip_empty_rows = FALSE)
+
+```
+
+## Part 1
+
+Convert each set of input strings into its own matrix:
+
+```{r}
+
+mtx <- tibble(chr = input) |> 
+  group_split(cumsum(chr == "")) |> 
+  map(~ pull(.x, chr)) |> 
+  map(
+    ~ str_split(.x, "") |> 
+      unlist() |> 
+      matrix(nrow = sum(.x != ""), byrow = TRUE)
+  )
+
+```
+
+Define a function that checks for a mirror along the given dimension (rows vs columns) of a given matrix:
+
+```{r}
+
+mirror_idx <- function(mtx, dim = c("row", "col")) {
+  vecs <- split(mtx, get(case_match(dim, "row" ~ "col", "col" ~ "row"))(mtx))
+  len  <- get(str_c("n", dim))(mtx)
+  
+  refl_idx <- c(0)
+  
+  for (idx in 1:(len - 1)) {
+    n_trim <- min(idx, len - idx)
+    
+    is_mirror <- vecs |> 
+      map_lgl(\(vec) {
+        h1 <- rev(vec[1:idx])[1:n_trim]
+        h2 <- vec[(idx + 1):(idx + n_trim)]
+        all(h1 == h2)
+      }) |> 
+      all()
+    
+    if (is_mirror) 
+      refl_idx <- c(refl_idx, idx)
+  }
+  
+  refl_idx
+}
+
+```
+
+For each matrix in the list, add the column indices of each vertical reflection line with 100 times the row indices of each horizontal reflection line:
+
+```{r}
+
+score_matrices <- function(mtx_list) {
+  mtx_list |> 
+    map_dbl(~ sum(mirror_idx(.x, "col")) + sum(mirror_idx(.x, "row") * 100)) |> 
+    sum()
+}
+
+score_matrices(mtx)
+
+```
+
+## Part 2
+
+Define a function that finds the row or column index of the single smudge for a given matrix:
+
+```{r}
+
+smudge_idx <- function(mtx, dim = c("row", "col")) {
+  
+  vecs <- split(mtx, get(case_match(dim, "row" ~ "col", "col" ~ "row"))(mtx))
+  len  <- get(str_c("n", dim))(mtx)
+  
+  for (idx in 1:(len - 1)) {
+    n_trim <- min(idx, len - idx)
+    
+    noteq <- vecs |> 
+      map(\(vec) {
+        h1 <- rev(vec[1:idx])[1:n_trim]
+        h2 <- vec[(idx + 1):(idx + n_trim)]
+        which(h1 != h2)
+      })
+    
+    if (length(unlist(noteq)) == 1) return(idx)
+  }
+  return(0)
+}
+
+```
+
+Re-score the input:
+
+```{r}
+
+score_unsmudged <- function(mtx_list) {
+  mtx_list |> 
+    map_dbl(~ sum(smudge_idx(.x, "col")) + sum(smudge_idx(.x, "row") * 100)) |> 
+    sum()
+}
+
+score_unsmudged(mtx)
+
+```
+
+

@@ -24,8 +24,8 @@ Worked solutions in R to the Advent of Code – a yearly advent calendar of prog
 | Day 10 | [★★](/2024/R/day10.html) | [★★](/2023/R/day10.html) | [★★](/2022/R/day10.html) |
 | Day 11 | [★★](/2024/R/day11.html) | [★★](/2023/R/day11.html) | [★★](/2022/R/day11.html) |
 | Day 12 | [★★](/2024/R/day12.html) | [★★](/2023/R/day12.html) | [★★](/2022/R/day12.html) |
-| Day 13 | [★★](/2024/R/day13.html) |  | [★★](/2022/R/day13.html) |
-| Day 14 | [★★](/2024/R/day14.html) |  | [★★](/2022/R/day14.html) |
+| Day 13 | [★★](/2024/R/day13.html) | [★★](/2023/R/day13.html) | [★★](/2022/R/day13.html) |
+| Day 14 | [★★](/2024/R/day14.html) | [★★](/2023/R/day14.html) | [★★](/2022/R/day14.html) |
 | Day 15 | [★★](/2024/R/day15.html) |  | [★★](/2022/R/day15.html) |
 | Day 16 | [★★](/2024/R/day16.html) |  | [★★](/2022/R/day16.html) |
 | Day 17 | [★★](/2024/R/day17.html) |  | [★★](/2022/R/day17.html) |
