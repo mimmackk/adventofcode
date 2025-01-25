@@ -1,0 +1,98 @@
+---
+title: "Day 15"
+date: 2023-12-15
+author:
+  name: https://adventofcode.com/2023/day/15
+  url: https://adventofcode.com/2023/day/15
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+library(unglue)
+
+# Read input from file
+input <- read_lines("../input/day15.txt", skip_empty_rows = TRUE) |> 
+  str_split_1(",")
+
+```
+
+## Part 1
+
+Define a function that converts a character string into a hash value as defined by the specs:
+
+```{r}
+
+ascii_hash <- function(str) {
+  reduce(
+    .x = utf8ToInt(str),
+    .f = ~ ((.x + .y) * 17) %% 256, 
+    .init = 0
+  )
+}
+
+```
+
+Separate the input at the commas, run the ASCII hash on each item, and sum the result:
+
+```{r}
+
+input |> 
+  map_int(ascii_hash) |> 
+  sum()
+
+```
+
+
+## Part 2
+
+Define a function to place lenses in the appropriate boxes as defined by the input sequence:
+
+```{r}
+
+hashmap <- function(boxes, str) {
+  label     <- str_extract(str, "[a-z]+")
+  box_num   <- ascii_hash(label) + 1
+  operation <- str_extract(str, "-|=")
+
+  if (operation == "=") 
+    boxes[[box_num]][[label]] <- parse_number(str)
+  if (operation == "-")
+    boxes[[box_num]] <- discard_at(boxes[[box_num]], label)
+
+  boxes
+}
+
+```
+
+Define a function to compute the focusing power of the lenses in the final box arrangement:
+
+```{r}
+
+focusing_power <- function(boxes) {
+  boxes |> 
+    imap(\(box, box_num) {
+      imap(unname(box), \(lens, lens_num) {
+        (as.integer(box_num) + 1) * lens_num * lens
+      })
+    }) |> 
+    unlist() |> 
+    sum()
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+init_boxes <- map(set_names(0:255), ~ list())
+
+input |> 
+  reduce(hashmap, .init = init_boxes) |> 
+  focusing_power()
+
+```
