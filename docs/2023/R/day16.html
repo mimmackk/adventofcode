@@ -6,10 +6,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="https://adventofcode.com/2022/day/6">
-<meta name="dcterms.date" content="2022-12-06">
+<meta name="author" content="https://adventofcode.com/2023/day/16">
+<meta name="dcterms.date" content="2023-12-16">
 
-<title>Day 6 – Advent of Code: Worked Solutions</title>
+<title>Day 16 – Advent of Code: Worked Solutions</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -66,8 +66,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../../">
-<link href="../../2022/R/day07.html" rel="next">
-<link href="../../2022/R/day05.html" rel="prev">
+<link href="../../2022/R/day01.html" rel="next">
+<link href="../../2023/R/day15.html" rel="prev">
 <script src="../../site_libs/quarto-html/quarto.js"></script>
 <script src="../../site_libs/quarto-html/popper.min.js"></script>
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -119,7 +119,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
         <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
-          <h1 class="quarto-secondary-nav-title">Day 6</h1>
+          <h1 class="quarto-secondary-nav-title">Day 16</h1>
         </a>     
     </div>
   </nav>
@@ -298,13 +298,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
  <span class="menu-text">2023</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 ">  
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../2023/R/day01.html" class="sidebar-item-text sidebar-link">
@@ -397,7 +397,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../2023/R/day16.html" class="sidebar-item-text sidebar-link">
+  <a href="../../2023/R/day16.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Day 16</span></a>
   </div>
 </li>
@@ -405,13 +405,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false">
  <span class="menu-text">2022</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../2022/R/day01.html" class="sidebar-item-text sidebar-link">
@@ -444,7 +444,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../2022/R/day06.html" class="sidebar-item-text sidebar-link active">
+  <a href="../../2022/R/day06.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Day 6</span></a>
   </div>
 </li>
@@ -578,14 +578,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#part-1" id="toc-part-1" class="nav-link" data-scroll-target="#part-1">Part 1</a></li>
   <li><a href="#part-2" id="toc-part-2" class="nav-link" data-scroll-target="#part-2">Part 2</a></li>
   </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/mimmackk/adventofcode/blob/main/2022/R/day06.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li></ul></div></nav>
+<div class="toc-actions"><ul><li><a href="https://github.com/mimmackk/adventofcode/blob/main/2023/R/day16.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li></ul></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title d-none d-lg-block">Day 6</h1>
+<h1 class="title d-none d-lg-block">Day 16</h1>
 <p class="subtitle lead">Advent of Code: Worked Solutions</p>
 </div>
 
@@ -596,14 +596,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">About</div>
     <div class="quarto-title-meta-contents">
-             <p><a href="https://adventofcode.com/2022/day/6">https://adventofcode.com/2022/day/6</a> </p>
+             <p><a href="https://adventofcode.com/2023/day/16">https://adventofcode.com/2023/day/16</a> </p>
           </div>
   </div>
     
     <div>
     <div class="quarto-title-meta-heading">Date</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">December 6, 2022</p>
+      <p class="date">December 16, 2023</p>
     </div>
   </div>
   
@@ -622,52 +622,102 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Read input from file</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>input <span class="ot">&lt;-</span> <span class="fu">read_lines</span>(<span class="st">"../input/day06.txt"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">str_split_1</span>(<span class="st">""</span>) <span class="sc">|&gt;</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enframe</span>(<span class="at">name =</span> <span class="st">"idx"</span>, <span class="at">value =</span> <span class="st">"char"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>input <span class="ot">&lt;-</span> <span class="fu">read_lines</span>(<span class="st">"../input/day16.txt"</span>, <span class="at">skip_empty_rows =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="part-1" class="level2">
 <h2 class="anchored" data-anchor-id="part-1">Part 1</h2>
+<p>Convert text input to a character matrix:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>find_marker <span class="ot">&lt;-</span> <span class="cf">function</span>(df, marker_length) {</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  df <span class="sc">|&gt;</span> </span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Construct sequences of next n chars and count # of unique chars in each</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">transmute</span>(</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">marker_idx =</span> idx <span class="sc">+</span> marker_length <span class="sc">-</span> <span class="dv">1</span>,</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">char_seq =</span> <span class="fu">reduce</span>(</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">.x =</span> <span class="fu">map</span>(<span class="dv">0</span><span class="sc">:</span>(marker_length <span class="sc">-</span> <span class="dv">1</span>), <span class="sc">~</span> <span class="fu">lead</span>(char, <span class="at">n =</span> .x)),</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        <span class="at">.f =</span> str_c</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>      ),</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">n_unique =</span> <span class="fu">map_int</span>(</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>        char_seq,</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>        <span class="sc">~</span> .x <span class="sc">|&gt;</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>          <span class="fu">str_split</span>(<span class="st">""</span>) <span class="sc">|&gt;</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>          <span class="fu">unlist</span>() <span class="sc">|&gt;</span></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>          <span class="fu">unique</span>() <span class="sc">|&gt;</span></span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>          <span class="fu">length</span>()</span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>      )</span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span></span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Extract first instance where all n chars are unique</span></span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(n_unique <span class="sc">==</span> marker_length) <span class="sc">|&gt;</span></span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pull</span>(marker_idx) <span class="sc">|&gt;</span></span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">min</span>()</span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>mtx <span class="ot">&lt;-</span> input <span class="sc">|&gt;</span> </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">str_split</span>(<span class="st">""</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(<span class="sc">~</span> <span class="fu">matrix</span>(.x, <span class="at">nrow =</span> <span class="dv">1</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">reduce</span>(rbind)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p>Define a function that converts a direction, direction index, and sublocation along that direction into standard row/column form, then into a single ID value:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">find_marker</span>(input, <span class="at">marker_length =</span> <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>mtx_id <span class="ot">&lt;-</span> <span class="cf">function</span>(dir, vec_idx, loc_idx) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  row <span class="ot">&lt;-</span> <span class="fu">case_match</span>(dir, <span class="fu">c</span>(<span class="st">'W'</span>, <span class="st">'E'</span>) <span class="sc">~</span> vec_idx, <span class="fu">c</span>(<span class="st">'N'</span>, <span class="st">'S'</span>) <span class="sc">~</span> loc_idx)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  col <span class="ot">&lt;-</span> <span class="fu">case_match</span>(dir, <span class="fu">c</span>(<span class="st">'W'</span>, <span class="st">'E'</span>) <span class="sc">~</span> loc_idx, <span class="fu">c</span>(<span class="st">'N'</span>, <span class="st">'S'</span>) <span class="sc">~</span> vec_idx)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  (row <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> <span class="fu">ncol</span>(mtx) <span class="sc">+</span> col</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Define a function that tracks the beam through the matrix and returns the IDs of the elements visited:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>beam <span class="ot">&lt;-</span> <span class="cf">function</span>(dir, <span class="at">vec_idx =</span> <span class="dv">1</span>, start_idx, visited) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">between</span>(start_idx, <span class="dv">1</span>, <span class="fu">nrow</span>(mtx))) <span class="fu">return</span>(visited)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Initialize</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  vec <span class="ot">&lt;-</span> <span class="cf">if</span> (dir <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">'W'</span>, <span class="st">'E'</span>)) mtx[vec_idx,] <span class="cf">else</span> mtx[,vec_idx]</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  end_idx      <span class="ot">&lt;-</span> <span class="fu">case_match</span>(dir, <span class="fu">c</span>(<span class="st">'E'</span>, <span class="st">'S'</span>) <span class="sc">~</span> <span class="fu">length</span>(vec), <span class="fu">c</span>(<span class="st">'N'</span>, <span class="st">'W'</span>) <span class="sc">~</span> <span class="dv">1</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  chr_split    <span class="ot">&lt;-</span> <span class="fu">case_match</span>(dir, <span class="fu">c</span>(<span class="st">'W'</span>, <span class="st">'E'</span>) <span class="sc">~</span> <span class="st">'|'</span>,         <span class="fu">c</span>(<span class="st">'N'</span>, <span class="st">'S'</span>) <span class="sc">~</span> <span class="st">'-'</span>)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  chr_turn_neg <span class="ot">&lt;-</span> <span class="fu">case_match</span>(dir, <span class="fu">c</span>(<span class="st">'N'</span>, <span class="st">'W'</span>) <span class="sc">~</span> <span class="st">'</span><span class="sc">\\</span><span class="st">'</span>,        <span class="fu">c</span>(<span class="st">'S'</span>, <span class="st">'E'</span>) <span class="sc">~</span> <span class="st">'/'</span>)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  chr_turn_pos <span class="ot">&lt;-</span> <span class="fu">case_match</span>(dir, <span class="fu">c</span>(<span class="st">'N'</span>, <span class="st">'W'</span>) <span class="sc">~</span> <span class="st">'/'</span>,         <span class="fu">c</span>(<span class="st">'S'</span>, <span class="st">'E'</span>) <span class="sc">~</span> <span class="st">'</span><span class="sc">\\</span><span class="st">'</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  dir_split_1  <span class="ot">&lt;-</span> <span class="fu">case_match</span>(dir, <span class="fu">c</span>(<span class="st">'W'</span>, <span class="st">'E'</span>) <span class="sc">~</span> <span class="st">'N'</span>,         <span class="fu">c</span>(<span class="st">'N'</span>, <span class="st">'S'</span>) <span class="sc">~</span> <span class="st">'W'</span>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  dir_split_2  <span class="ot">&lt;-</span> <span class="fu">case_match</span>(dir, <span class="fu">c</span>(<span class="st">'W'</span>, <span class="st">'E'</span>) <span class="sc">~</span> <span class="st">'S'</span>,         <span class="fu">c</span>(<span class="st">'N'</span>, <span class="st">'S'</span>) <span class="sc">~</span> <span class="st">'E'</span>)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  dir_turn_neg <span class="ot">&lt;-</span> <span class="fu">case_match</span>(dir, <span class="fu">c</span>(<span class="st">'N'</span>, <span class="st">'S'</span>) <span class="sc">~</span> <span class="st">'W'</span>,         <span class="fu">c</span>(<span class="st">'W'</span>, <span class="st">'E'</span>) <span class="sc">~</span> <span class="st">'N'</span>)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  dir_turn_pos <span class="ot">&lt;-</span> <span class="fu">case_match</span>(dir, <span class="fu">c</span>(<span class="st">'N'</span>, <span class="st">'S'</span>) <span class="sc">~</span> <span class="st">'E'</span>,         <span class="fu">c</span>(<span class="st">'W'</span>, <span class="st">'E'</span>) <span class="sc">~</span> <span class="st">'S'</span>)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> start_idx<span class="sc">:</span>end_idx) {</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    id <span class="ot">&lt;-</span> <span class="fu">mtx_id</span>(dir, vec_idx, i)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (id <span class="sc">%in%</span> visited[[dir]])</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span>(visited)</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>      visited[[dir]] <span class="ot">&lt;-</span> <span class="fu">c</span>(visited[[dir]], id)</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (vec[[i]] <span class="sc">==</span> chr_split) {</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>      visited <span class="ot">&lt;-</span> <span class="fu">beam</span>(dir_split_1, i, vec_idx <span class="sc">-</span> <span class="dv">1</span>, visited)</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>      visited <span class="ot">&lt;-</span> <span class="fu">beam</span>(dir_split_2, i, vec_idx <span class="sc">+</span> <span class="dv">1</span>, visited)</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>      <span class="cf">break</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> (vec[[i]] <span class="sc">==</span> chr_turn_neg) {</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>      visited <span class="ot">&lt;-</span> <span class="fu">beam</span>(dir_turn_neg, i, vec_idx <span class="sc">-</span> <span class="dv">1</span>, visited)</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>      <span class="cf">break</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> (vec[[i]] <span class="sc">==</span> chr_turn_pos) {</span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>      visited <span class="ot">&lt;-</span> <span class="fu">beam</span>(dir_turn_pos, i, vec_idx <span class="sc">+</span> <span class="dv">1</span>, visited)</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>      <span class="cf">break</span></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>  visited</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Starting from upper left, loop through the matrix and count the number of energized tiles:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>init_visited <span class="ot">&lt;-</span> <span class="fu">map</span>(<span class="fu">set_names</span>(<span class="fu">c</span>(<span class="st">"N"</span>, <span class="st">"S"</span>, <span class="st">"W"</span>, <span class="st">"E"</span>)), <span class="sc">~</span> <span class="fu">c</span>())</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">beam</span>(<span class="st">"E"</span>, <span class="at">vec_idx =</span> <span class="dv">1</span>, <span class="at">start_idx =</span> <span class="dv">1</span>, <span class="at">visited =</span> init_visited) <span class="sc">|&gt;</span> </span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unlist</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unique</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">length</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 1802</code></pre>
+<pre><code>[1] 7046</code></pre>
 </div>
 </div>
 </section>
 <section id="part-2" class="level2">
 <h2 class="anchored" data-anchor-id="part-2">Part 2</h2>
+<p>If the beam can enter from any edge, find the maximum number of energizable tiles:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">find_marker</span>(input, <span class="at">marker_length =</span> <span class="dv">14</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>energize_from <span class="ot">&lt;-</span> <span class="cf">function</span>(dir, vec_idx, start_idx) {</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">beam</span>(dir, vec_idx, start_idx, init_visited) <span class="sc">|&gt;</span> </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">unlist</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">unique</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">length</span>()</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="fu">expand_grid</span>(<span class="at">dir =</span> <span class="fu">c</span>(<span class="st">'N'</span>, <span class="st">'S'</span>, <span class="st">'W'</span>, <span class="st">'E'</span>), <span class="at">vec =</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(mtx)) <span class="sc">|&gt;</span> </span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">start =</span> <span class="fu">case_match</span>(dir, <span class="fu">c</span>(<span class="st">'S'</span>, <span class="st">'E'</span>) <span class="sc">~</span> <span class="dv">1</span>, <span class="fu">c</span>(<span class="st">'N'</span>, <span class="st">'W'</span>) <span class="sc">~</span> <span class="fu">nrow</span>(mtx))) <span class="sc">|&gt;</span> </span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pmap_dbl</span>(\(dir, vec, start) <span class="fu">energize_from</span>(dir, vec, start)) <span class="sc">|&gt;</span> </span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">max</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 3551</code></pre>
+<pre><code>[1] 7313</code></pre>
 </div>
 </div>
 
@@ -1094,13 +1144,13 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="../../2022/R/day05.html" class="pagination-link" aria-label="Day 5">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Day 5</span>
+      <a href="../../2023/R/day15.html" class="pagination-link" aria-label="Day 15">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Day 15</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../../2022/R/day07.html" class="pagination-link" aria-label="Day 7">
-        <span class="nav-page-text">Day 7</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="../../2022/R/day01.html" class="pagination-link" aria-label="Day 1">
+        <span class="nav-page-text">Day 1</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>
@@ -1109,4 +1159,4 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 
 
 
-<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/mimmackk/adventofcode/blob/main/2022/R/day06.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li></ul></div></div></div></footer></body></html>
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/mimmackk/adventofcode/blob/main/2023/R/day16.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li></ul></div></div></div></footer></body></html>
