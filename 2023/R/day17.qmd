@@ -1,0 +1,147 @@
+---
+title: "Day 17"
+date: 2023-12-17
+author:
+  name: https://adventofcode.com/2023/day/17
+  url: https://adventofcode.com/2023/day/17
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day17.txt", skip_empty_rows = TRUE)
+
+```
+
+## Part 1
+
+Convert text input to a set of 2D coordinates (stored as complex numbers) and their costs:
+
+```{r}
+
+vtx <- input |> 
+  enframe(name = "row") |> 
+  mutate(value = str_split(value, "")) |> 
+  unnest_longer(value, indices_to = "col") |> 
+  transmute(
+    id = row_number(),
+    z = complex(real = col, imaginary = row),
+    cost = as.integer(value)
+  )
+
+z    <- pull(vtx, z)
+cost <- pull(vtx, cost)
+
+nmax <- length(z)
+
+```
+
+Define a set of helper functions needed for the pathfinding algorithm:
+
+```{r}
+
+# Sort a list of lists by the value at the given/named index of the inner lists
+nested_sort <- \(x, idx) x[order(sapply(x, '[[', idx))]
+psort <- partial(nested_sort, idx = "priority")
+
+# Compute the manhattan distance between any two vertices
+manhattan_dist <- \(a, b) abs(Re(a - b)) + abs(Im(a - b))
+
+# Pull a vertex's neighbors along the given axis (Re/Im) within a set dist range
+neighbors <- function(vtx, axis = c("Re", "Im"), dmin, dmax) {
+  rng <- c(-dmax:-dmin, dmin:dmax) 
+  nbr <- vtx + (rng * complex(real = axis == "Re", imaginary = axis == "Im"))
+  keep(nbr, ~ .x %in% z)
+}
+
+# Compute the cost of moving in a straight line between two vertices
+move_cost <- function(source, target) {
+  path_indices <- complex(
+    real      = seq(Re(source), Re(target)),
+    imaginary = seq(Im(source), Im(target))
+  ) |> 
+    discard(~ .x == source) |> 
+    match(z)
+  
+  sum(cost[path_indices])
+}
+
+```
+
+A\* pathfinding implementation (with much help from Reddit on use of complex numbers and storing the turns as part of the state):
+
+-   https://en.wikipedia.org/wiki/A\*\_search_algorithm
+-   https://www.redblobgames.com/pathfinding/a-star/introduction.html
+-   https://www.reddit.com/r/adventofcode/comments/18khohi/comment/kdrkivy/
+
+```{r}
+
+a_star <- function(start, goal, h, dmin, dmax) {
+  
+  # Current set of discovered nodes awaitng further investigation
+  frontier <- list(
+    list(id = start, axis = 'Re', priority = 0),
+    list(id = start, axis = 'Im', priority = 0)
+  )
+  
+  # For each vertex, the immediately preceeding vertex on its cheapest path
+  came_from <- rep(list(lst(Re = NA, Im = NA)), nmax)
+  
+  # Tracks the current min cost to get from 'start' node to node n
+  cost_so_far <- rep(list(lst(Re = Inf, Im = Inf)), nmax)
+  cost_so_far[[start]]$Re <- 0
+  cost_so_far[[start]]$Im <- 0
+  
+  while (length(frontier) > 0) {
+    cur_id   <- frontier[[1]]$id
+    cur_z    <- z[[cur_id]]
+    cur_axis <- frontier[[1]]$axis
+    nxt_axis <- case_match(cur_axis, 'Re' ~ 'Im', 'Im' ~ 'Re')
+    frontier <- tail(frontier, -1)
+    
+    # Return info about best path to goal
+    if (cur_id == goal) return(cost_so_far[[cur_id]][[cur_axis]])
+    
+    # If this path is better than the current record, then replace it
+    for (nxt_z in neighbors(cur_z, cur_axis, dmin, dmax)) {
+      nxt_id <- match(nxt_z, z)
+      tentative_cost <- cost_so_far[[cur_id]][[cur_axis]] + move_cost(cur_z, nxt_z)
+      
+      if (tentative_cost < cost_so_far[[nxt_id]][[nxt_axis]]) {
+        came_from[[nxt_id]][[nxt_axis]] <- cur_id
+        cost_so_far[[nxt_id]][[nxt_axis]] <- tentative_cost
+        
+        frontier <- psort(c(frontier, list(list(
+          id = nxt_id, 
+          axis = nxt_axis, 
+          priority = tentative_cost + h(nxt_z, z[[goal]])
+        ))))
+      }
+    }
+  }
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+a_star(1, nmax, h = manhattan_dist, dmin = 1, dmax = 3)
+
+```
+
+## Part 2
+
+Re-run on puzzle input with modified min/max distance values passed to the neighbors function:
+
+```{r}
+
+a_star(1, nmax, h = manhattan_dist, dmin = 4, dmax = 10)
+
+```
