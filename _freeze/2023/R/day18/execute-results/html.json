@@ -1,0 +1,17 @@
+{
+  "hash": "3bdc993f45488ff1ab2fa5145c4b8a21",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 18\"\ndate: 2023-12-18\nauthor:\n  name: https://adventofcode.com/2023/day/18\n  url: https://adventofcode.com/2023/day/18\n---\n\n\n\n## Setup\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\nlibrary(sf)\n\n# Read input from file\ninput <- read_lines(\"../input/day18.txt\", skip_empty_rows = TRUE) |> \n  unglue::unglue_data(\"{dir} {meters} ({color})\", convert = TRUE)\n```\n:::\n\n\n\n## Part 1\n\nConvert the instruction input into list of corners that define the trench polygon:\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ntrench <- input |>\n  mutate(\n    x = case_match(dir, c('U', 'D') ~ 0, 'L' ~ -1, 'R' ~ 1) * meters,\n    y = case_match(dir, c('L', 'R') ~ 0, 'D' ~ -1, 'U' ~ 1) * meters\n  ) |> \n  pmap(\\(x, y, ...) c(x = x, y = y)) |> \n  accumulate(`+`, .init = c(x = 0, y = 0))\n```\n:::\n\n\n\nConvert the polygon's boundary to a spatial object using SF:\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\npolygon <- trench |>\n  reduce(rbind) |> \n  list() |> \n  st_polygon() |> \n  st_buffer(dist = 0.5, joinStyle = 'MITRE', mitreLimit = sqrt(2))\n\nggplot(polygon) + \n  geom_sf() +\n  theme_void()\n```\n\n::: {.cell-output-display}\n![](day18_files/figure-html/unnamed-chunk-2-1.png){width=672}\n:::\n:::\n\n\n\nCompute the polygon's area:\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nst_area(polygon)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 53844\n```\n\n\n:::\n:::\n\n\n\n## Part 2\n\nConvert the hex codes to new trench instructions:\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ntrench <- input |> \n  mutate(\n    meters = strtoi(str_sub(color, 2L, -2L), base = 16L),\n    dir = case_match(\n      str_sub(color, start = -1L),\n      '0' ~ 'R', '1' ~ 'D', '2' ~ 'L', '3' ~ 'U'\n    ),\n    x = case_match(dir, c('U', 'D') ~ 0, 'L' ~ -1, 'R' ~ 1) * meters,\n    y = case_match(dir, c('L', 'R') ~ 0, 'D' ~ -1, 'U' ~ 1) * meters\n  ) |> \n  pmap(\\(x, y, ...) c(x = x, y = y)) |> \n  accumulate(`+`, .init = c(x = 0, y = 0))\n```\n:::\n\n\n\nConvert to a new polygon:\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\npolygon <- trench |>\n  reduce(rbind) |> \n  list() |> \n  st_polygon() |> \n  st_buffer(dist = 0.5, joinStyle = 'MITRE', mitreLimit = sqrt(2))\n\nggplot(polygon) + \n  geom_sf() +\n  theme_void()\n```\n\n::: {.cell-output-display}\n![](day18_files/figure-html/unnamed-chunk-5-1.png){width=672}\n:::\n:::\n\n\n\nCompute the polygon's area:\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nst_area(polygon) |> \n  format(scientific = FALSE)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] \"42708339569950\"\n```\n\n\n:::\n:::\n",
+    "supporting": [
+      "day18_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

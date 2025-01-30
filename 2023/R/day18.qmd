@@ -1,0 +1,109 @@
+---
+title: "Day 18"
+date: 2023-12-18
+author:
+  name: https://adventofcode.com/2023/day/18
+  url: https://adventofcode.com/2023/day/18
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+library(sf)
+
+# Read input from file
+input <- read_lines("../input/day18.txt", skip_empty_rows = TRUE) |> 
+  unglue::unglue_data("{dir} {meters} ({color})", convert = TRUE)
+
+```
+
+## Part 1
+
+Convert the instruction input into list of corners that define the trench polygon:
+
+```{r}
+
+trench <- input |>
+  mutate(
+    x = case_match(dir, c('U', 'D') ~ 0, 'L' ~ -1, 'R' ~ 1) * meters,
+    y = case_match(dir, c('L', 'R') ~ 0, 'D' ~ -1, 'U' ~ 1) * meters
+  ) |> 
+  pmap(\(x, y, ...) c(x = x, y = y)) |> 
+  accumulate(`+`, .init = c(x = 0, y = 0))
+
+```
+
+Convert the polygon's boundary to a spatial object using SF:
+
+```{r}
+
+polygon <- trench |>
+  reduce(rbind) |> 
+  list() |> 
+  st_polygon() |> 
+  st_buffer(dist = 0.5, joinStyle = 'MITRE', mitreLimit = sqrt(2))
+
+ggplot(polygon) + 
+  geom_sf() +
+  theme_void()
+
+```
+
+Compute the polygon's area:
+
+```{r}
+
+st_area(polygon)
+
+```
+
+## Part 2
+
+Convert the hex codes to new trench instructions:
+
+```{r}
+
+trench <- input |> 
+  mutate(
+    meters = strtoi(str_sub(color, 2L, -2L), base = 16L),
+    dir = case_match(
+      str_sub(color, start = -1L),
+      '0' ~ 'R', '1' ~ 'D', '2' ~ 'L', '3' ~ 'U'
+    ),
+    x = case_match(dir, c('U', 'D') ~ 0, 'L' ~ -1, 'R' ~ 1) * meters,
+    y = case_match(dir, c('L', 'R') ~ 0, 'D' ~ -1, 'U' ~ 1) * meters
+  ) |> 
+  pmap(\(x, y, ...) c(x = x, y = y)) |> 
+  accumulate(`+`, .init = c(x = 0, y = 0))
+
+```
+
+Convert to a new polygon:
+
+```{r}
+
+polygon <- trench |>
+  reduce(rbind) |> 
+  list() |> 
+  st_polygon() |> 
+  st_buffer(dist = 0.5, joinStyle = 'MITRE', mitreLimit = sqrt(2))
+
+ggplot(polygon) + 
+  geom_sf() +
+  theme_void()
+
+```
+
+Compute the polygon's area:
+
+```{r}
+
+st_area(polygon) |> 
+  format(scientific = FALSE)
+
+```
+
+

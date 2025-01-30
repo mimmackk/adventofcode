@@ -1,0 +1,156 @@
+---
+title: "Day 20"
+date: 2023-12-20
+author:
+  name: https://adventofcode.com/2023/day/20
+  url: https://adventofcode.com/2023/day/20
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+library(unglue)
+
+# Read input from file
+input <- read_lines("../input/day20.txt", skip_empty_rows = FALSE)
+
+```
+
+## Part 1
+
+Convert text input into a nested list of modules:
+
+```{r}
+
+df <- input |> 
+  unglue_data("{prefix=(%|&)?}{name} -> {destinations}") |> 
+  mutate(destinations = str_split(destinations, ",\\s*"))
+
+sources <- df |> 
+  unnest_longer(destinations) |> 
+  summarize(sources = list(name), .by = destinations)
+
+blank_add <- sources |> 
+  anti_join(df, join_by(x$destinations == y$name)) |> 
+  transmute(name = destinations, prefix = '')
+
+modules <- df |> 
+  left_join(sources, join_by(x$name == y$destinations)) |> 
+  add_row(name = "button", prefix = '', destinations = list("broadcaster")) |> 
+  bind_rows(blank_add) |> 
+  mutate(
+    state = case_when(prefix == '%' ~ FALSE),
+    memories = case_when(
+      prefix == '&' ~ map(sources, ~ set_names(rep(FALSE, length(.x)), .x))
+    ),
+    n_lo = 0,
+    n_hi = 0
+  ) |> 
+  transmute(
+    name,
+    value = pmap(lst(prefix, destinations, state, memories, n_lo, n_hi), lst)
+  ) |> 
+  deframe()
+
+```
+
+Define a function that modifies a set of modules when the button is pushed:
+
+```{r}
+
+push_button <- function(modules) {
+  queue <- list(list(source = "button", target = "broadcaster", pulse = FALSE))
+  modules$button$n_lo <- modules$button$n_lo + 1
+  
+  while (length(queue) > 0) {
+    signal <- queue[[1]]
+    queue  <- queue[-1]
+    module <- modules[[signal$target]]
+    output <- NULL
+    
+    if (signal$target == "broadcaster") {
+      output <- signal$pulse
+    } else if (module$prefix == '%' & signal$pulse == FALSE) {
+      modules[[signal$target]]$state <- !module$state
+      output <- !module$state
+    } else if (module$prefix == '&') {
+      modules[[signal$target]]$memories[[signal$source]] <- signal$pulse
+      output <- !all(modules[[signal$target]]$memories == TRUE)
+    }
+    
+    if (!is.null(output)) {
+      queue_add <- module$destinations |> 
+        map(~ list(source = signal$target, target = .x, pulse = output))
+      queue <- c(queue, queue_add)
+      
+      n <- length(module$destinations)
+      
+      if (output == TRUE)
+        modules[[signal$target]]$n_hi <- modules[[signal$target]]$n_hi + n
+      else
+        modules[[signal$target]]$n_lo <- modules[[signal$target]]$n_lo + n 
+    }
+  }
+  
+  modules
+}
+
+```
+
+Define a function that sums the total low vs high buttons sent at a given state of the modules:
+
+```{r}
+
+count_pulses <- function(modules) {
+  c(
+    lo = sum(map_int(modules, ~ .x$n_lo)),
+    hi = sum(map_int(modules, ~ .x$n_hi))
+  )
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+output <- modules
+
+for (i in 1:1000) {
+  output <- push_button(output)
+}
+
+count_pulses(output) |> 
+  prod()
+
+```
+
+## Part 2
+
+Examining the input, tj sends a low pulse to rx if its last memories (kk, xc, sk, vt) are all high pulses. For each of those memories, we just check when it first sends a high pulse to compute its cycle length, then take the LCM:
+
+```{r}
+
+pushes_until_sent <- function(modules, name, pulse = c("hi", "lo")) {
+  pulse <- c("n_", pulse)
+  i <- 0
+  
+  while (pluck(modules, name, "n_hi") == 0) {
+    modules <- push_button(modules)
+    i <- i + 1
+  }
+  
+  return(i)
+}
+
+c("kk", "xc", "sk", "vt") |> 
+  map_dbl(~ pushes_until_sent(modules, .x, "hi")) |> 
+  numbers::mLCM() |> 
+  format(scientific = FALSE)
+
+```
+
+

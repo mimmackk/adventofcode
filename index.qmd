@@ -28,10 +28,10 @@ Worked solutions in R to the Advent of Code – a yearly advent calendar of prog
 | Day 14 | [★★](/2024/R/day14.html) | [★★](/2023/R/day14.html) | [★★](/2022/R/day14.html) |
 | Day 15 | [★★](/2024/R/day15.html) | [★★](/2023/R/day15.html) | [★★](/2022/R/day15.html) |
 | Day 16 | [★★](/2024/R/day16.html) | [★★](/2023/R/day16.html) | [★★](/2022/R/day16.html) |
-| Day 17 | [★★](/2024/R/day17.html) |  | [★★](/2022/R/day17.html) |
-| Day 18 | [★★](/2024/R/day18.html) |  | [★★](/2022/R/day18.html) |
-| Day 19 | [★★](/2024/R/day19.html) |  | [★★](/2022/R/day19.html) |
-| Day 20 | [★★](/2024/R/day20.html) |  | [★★](/2022/R/day20.html) |
+| Day 17 | [★★](/2024/R/day17.html) | [★★](/2023/R/day17.html) | [★★](/2022/R/day17.html) |
+| Day 18 | [★★](/2024/R/day18.html) | [★★](/2023/R/day18.html) | [★★](/2022/R/day18.html) |
+| Day 19 | [★★](/2024/R/day19.html) | [★★](/2023/R/day19.html) | [★★](/2022/R/day19.html) |
+| Day 20 | [★★](/2024/R/day20.html) | [★★](/2023/R/day20.html) | [★★](/2022/R/day20.html) |
 | Day 21 | [★★](/2024/R/day21.html) |  | [★★](/2022/R/day21.html) |
 | Day 22 | [★★](/2024/R/day22.html) |  | [★★](/2022/R/day22.html) |
 | Day 23 | [★★](/2024/R/day23.html) |  | [★★](/2022/R/day23.html) |

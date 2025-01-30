@@ -1,0 +1,144 @@
+---
+title: "Day 19"
+date: 2023-12-19
+author:
+  name: https://adventofcode.com/2023/day/19
+  url: https://adventofcode.com/2023/day/19
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+library(unglue)
+library(sets)
+
+# Read input from file
+input <- read_lines("../input/day19.txt", skip_empty_rows = FALSE)
+
+```
+
+## Part 1
+
+Separate the input into rules and parts:
+
+```{r}
+
+parts <- input |> 
+  keep(~ str_starts(.x, "\\{")) |> 
+  unglue_data(
+    "{x=[x],m=[m],a=[a],s=[s]}", 
+    open = "[", 
+    close = "]", 
+    convert = TRUE
+  ) |> 
+  pmap(\(x, m, a, s) lst(x, m, a, s))
+
+rules <- input |> 
+  keep(~ str_starts(.x, "\\w")) |> 
+  unglue_data("[name]{[rules]}", open = "[", close = "]") |> 
+  mutate(rules = str_split(rules, ",")) |> 
+  unnest_longer(rules, values_to = "condition", indices_to = "cond_num") |> 
+  unglue_unnest(
+    condition, 
+    c("{var}{eq=[<>]}{val}:{goto}", "{goto}"), 
+    convert = TRUE
+  ) |> 
+  mutate(value = pmap(
+    lst(var, eq, val, goto), 
+    ~ lst(var = ..1, eq = ..2, val = ..3, goto = ..4)
+  )) |> 
+  summarize(value = list(value), .by = name) |> 
+  deframe()
+
+```
+
+Define a function that rates a part according to the rule list for each workflow:
+
+```{r}
+
+rate <- function(part, workflow = "in") {
+  if (workflow %in% c('A', 'R')) 
+    return(workflow == 'A')
+  
+  workflow <- rules[[workflow]]
+  
+  for (rule in workflow) {
+    if (is.na(rule$var))
+      return(rate(part, rule$goto))
+    if (get(rule$eq)(part[[rule$var]], rule$val))
+      return(rate(part, rule$goto))
+  }
+}
+
+```
+
+Rate the list of parts, then for the accepted parts, add all ratings:
+
+```{r}
+
+keep(parts, map_lgl(parts, rate)) |> 
+  unlist() |> 
+  sum()
+
+```
+
+## Part 2
+
+Define a function to cut the valid set of inputs into a set of intervals. Looping through our rules, trim down the intervals for x, m, a, and s until we have the final set of valid inputs:
+
+```{r}
+
+keys  <- set_names(c("x", "m", "a", "s"))
+empty <- map(keys, ~ interval(domain = 'Z'))
+init  <- map(keys, ~ interval(l = 1, r = 4000, domain = 'Z'))
+
+rate_range <- function(cur_range, workflow = "in") {
+  
+  if (workflow == 'A') 
+    return(list(cur_range))
+  if (workflow == 'R')
+    return(list())
+  
+  workflow <- rules[[workflow]]
+  accepted <- list()
+
+  for (rule in workflow) {
+    if (is.na(rule$var)) {
+      accepted <- c(accepted, rate_range(cur_range, rule$goto))
+      return(accepted)
+    }
+
+    rule_range <- sets::interval(
+      l = case_match(rule$eq, '<' ~ 1,            '>' ~ rule$val + 1),
+      r = case_match(rule$eq, '<' ~ rule$val - 1, '>' ~ 4000),
+      domain = 'Z'
+    )
+
+    rule_pass <- cur_range |>
+      modify_at(rule$var, ~ interval_intersection(.x, rule_range))
+    rule_fail <- cur_range |>
+      modify_at(rule$var, ~ interval_complement(rule_range, .x))
+
+    accepted <- c(accepted, rate_range(rule_pass, rule$goto))
+    cur_range <- rule_fail
+  }
+}
+
+
+```
+
+Run and compute the number of total valid combinations:
+
+```{r}
+
+rate_range(init) |> 
+  map(\(intrvl) map_dbl(intrvl, ~ length(as.set(.x)))) |> 
+  map_dbl(prod) |>
+  sum() |> 
+  format(scientific = FALSE)
+
+```
+
