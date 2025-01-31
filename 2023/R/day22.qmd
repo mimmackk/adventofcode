@@ -1,0 +1,202 @@
+---
+title: "Day 22"
+date: 2023-12-22
+author:
+  name: https://adventofcode.com/2023/day/22
+  url: https://adventofcode.com/2023/day/22
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+library(unglue)
+library(igraph)
+
+# Read input from file
+input <- read_lines("../input/day22.txt", skip_empty_rows = FALSE)
+
+```
+
+## Part 1
+
+Convert text input to a list of bricks with x/y/z coordinates:
+
+```{r}
+
+bricks <- input |> 
+  unglue_data("{x1},{y1},{z1}~{x2},{y2},{z2}", convert = TRUE) |> 
+  transmute(
+    id = row_number(),
+    x = map2(x1, x2, seq),
+    y = map2(y1, y2, seq),
+    z = map2(z1, z2, seq)
+  ) |> 
+  transmute(
+    name = id,
+    value = pmap(lst(x, y, z), ~ lst(x = ..1, y = ..2, z = ..3))
+  ) |> 
+  deframe()
+
+```
+
+For performance, gather a list of dependencies between bricks, so that the full list doesn't need to be searched each time.
+
+```{r}
+
+grid <- input |> 
+  unglue_data("{x1},{y1},{z1}~{x2},{y2},{z2}", convert = TRUE) |> 
+  transmute(
+    id = row_number(),
+    x  = map2(x1, x2, seq),
+    y  = map2(y1, y2, seq),
+    z  = map2(z1, z2, seq),
+  ) |> 
+  unnest_longer(x) |> 
+  unnest_longer(y) |> 
+  unnest_longer(z)
+
+depends_on <- bricks |> 
+  map(\(cur) {
+    inner_join(
+      grid,
+      expand_grid(x = cur$x, y = cur$y, z = min(cur$z)),
+      join_by(x, y, x$z < y$z),
+      suffix = c("_dep", "_cur")
+    ) |> 
+      pull(id) |> 
+      unique() |> 
+      as.character()
+  })
+
+dependents <- depends_on |> 
+  enframe() |> 
+  unnest_longer(value) |> 
+  summarize(name = list(name), .by = value) |> 
+  arrange(as.numeric(value)) |> 
+  deframe()
+
+```
+
+Define a function to check if a given brick will fall at a given snapshot in time:
+
+```{r}
+
+fall_dist <- function(bricks, id) {
+  active <- bricks[[id]]
+  others <- bricks[depends_on[[id]]] |> discard(~ is.null(.x))
+  
+  # Initialize the current max z dist that the brick could drop
+  z_drop <- min(active$z) - 1
+  
+  # Check if brick is already on the ground
+  if (z_drop == 0) return(0)
+  
+  # Check if blocked by any other bricks
+  for (other in others) {
+    z_dist <- min(active$z) - max(other$z) - 1
+    if (z_dist == 0) 
+      return(0)
+    else if (z_dist < z_drop) 
+      z_drop <- z_dist
+  }
+  
+  z_drop
+}
+
+```
+
+Sort the bricks using a DAG to avoid needless looping:
+
+```{r}
+
+g <- dependents |> 
+  imap(\(children, parent) map(children, \(child) c(parent, child))) |> 
+  unlist() |> 
+  unname() |> 
+  as.numeric() |> 
+  make_graph(n = length(bricks))
+
+is_dag(g)
+ordering <- as.character(as.numeric(topo_sort(g)))
+
+```
+
+Define a function to make all bricks fall into place:
+
+```{r}
+
+drop_bricks <- function(bricks) {
+  new_stack <- bricks[ordering]
+  
+  for (i in names(new_stack))
+    new_stack[[i]]$z <- new_stack[[i]]$z - fall_dist(new_stack, i)
+
+  new_stack
+}
+
+```
+
+Drop all bricks down and determine which can be safely disentegrated. If a single brick is removed, does re-dropping the bricks change the result? If not, then it can be disintegrated.
+
+```{r}
+
+settled <- drop_bricks(bricks)
+
+names(bricks) |> 
+  
+  # For each brick, determine whether it can be safely disintegrated.
+  map_lgl(\(brick_id) {
+    disintegrated <- discard_at(settled, brick_id)
+    disintegrated <- disintegrated[ordering]
+    for (i in dependents[[brick_id]]) {
+      if (fall_dist(disintegrated, i) > 0) return(FALSE)
+    }
+    return(TRUE)
+  }) |> 
+  
+  # Sum the total number of safely disintegratable bricks
+  sum()
+
+```
+
+
+## Part 2
+
+For each brick, determine the number of cascading bricks that will fall if this one is disintegrated:
+
+```{r}
+
+num_affected_bricks <- function(bricks, id) {
+  new_stack <- bricks[ordering] |> 
+    discard_at(id)
+  
+  to_examine <- tail(ordering[as.logical(cumsum(ordering == id))], -1)
+  
+  total_moved <- 0
+  
+  for (i in to_examine) {
+    move <- fall_dist(new_stack, i)
+    if (move > 0) {
+      new_stack[[i]]$z <- new_stack[[i]]$z - move
+      total_moved <- total_moved + 1
+    }
+  }
+  total_moved
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+names(settled) |> 
+  map_dbl(num_affected_bricks, bricks = settled) |> 
+  sum()
+
+```
+
+
