@@ -1,0 +1,266 @@
+---
+title: "Day 21"
+date: 2023-12-21
+author:
+  name: https://adventofcode.com/2023/day/21
+  url: https://adventofcode.com/2023/day/21
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+
+# Read input from file
+input <- read_lines("../input/day21.txt", skip_empty_rows = FALSE)
+
+```
+
+## Part 1
+
+Convert text input to a graph:
+
+```{r}
+
+# Convert text input to grid coordinates
+df <- input |> 
+  str_split("") |> 
+  enframe(name = "row") |> 
+  unnest_longer(value, indices_to = "col") |> 
+  mutate(id = row_number())
+
+vertices <- pull(df, value)
+
+# Compute edges for all cells to convert to a graph
+neighbors <- df |>
+  mutate(
+    n = case_when(lag(value)  != '#' ~ lag(id)),
+    s = case_when(lead(value) != '#' ~ lead(id)),
+    .by = col
+  ) |> 
+  mutate(
+    w = case_when(lag(value)  != '#' ~ lag(id)),
+    e = case_when(lead(value) != '#' ~ lead(id)),
+    .by = row
+  ) |> 
+  filter(value != '#') |> 
+  select(id, n, s, w, e) |> 
+  pivot_longer(
+    c(n, s, w, e),
+    names_to = "dir", 
+    values_to = "neighbor", 
+    values_drop_na = TRUE
+  ) |> 
+  summarize(neighbors = list(neighbor), .by = id) |> 
+  complete(id = 1:length(vertices)) |> 
+  pull(neighbors) |> 
+  map(sort)
+
+```
+
+For 64 steps, loop through neighbors to find possible locations:
+
+```{r}
+
+num_plots <- function(start, n_steps) {
+  locs <- start
+  for (i in 1:n_steps) {
+    locs <- neighbors |> 
+      keep_at(locs) |> 
+      unlist() |> 
+      unique()
+  }
+  length(locs)
+}
+
+num_plots(match('S', vertices), 64)
+
+```
+
+## Part 2
+
+Since there are no obstacles in the center row or column (where the starting position is), we can easily compute how quickly it takes to enter a given "box" (repeat of the map) and from which direction we enter.
+
+First, we compute the number of steps it takes for a given box to enter a periodic cycle, depending on whether its starting location is from the center starting point, the middle of an edge, or a corner:
+
+```{r}
+
+find_cycle <- function(start_vtx) {
+  locs_prv <- NULL
+  locs_cur <- start_vtx
+  i <- 0
+
+  repeat {
+    locs_new <- neighbors |> 
+      keep_at(locs_cur) |> 
+      unlist() |> 
+      unique() |> 
+      sort()
+    
+    if (identical(locs_prv, locs_new)) 
+      return(i - 1)
+    
+    locs_prv <- locs_cur
+    locs_cur <- locs_new
+    i <- i + 1
+  }
+}
+
+w_max <- max(df$col)
+w_mid <- ceiling(w_max / 2)
+
+starting_points <- df |> 
+  mutate(name = case_when(
+    value == 'S' ~ 'center',
+    col == w_mid & row == 1     ~ 'n',
+    col == w_mid & row == w_max ~ 's',
+    row == w_mid & col == 1     ~ 'w',
+    row == w_mid & col == w_max ~ 'e',
+    col == 1     & row == 1     ~ 'nw',
+    col == w_max & row == 1     ~ 'ne',
+    col == 1     & row == w_max ~ 'sw',
+    col == w_max & row == w_max ~ 'se'
+  )) |> 
+  filter(!is.na(name)) |> 
+  select(name, id) |> 
+  deframe()
+
+# Determine when a cycle first occurs for the center, mid-edge, and corner pieces
+cycles <- map(
+  c(
+    corner   = starting_points[["nw"]],
+    mid_edge = starting_points[["n"]],
+    center   = starting_points[["center"]]
+  ), 
+  find_cycle
+)
+  
+```
+
+Next, we split our total map into different box types. Boxes along the same horizontal/vertical lines as the initial starting point will always be entered from a mid-edge plot. All other boxes -- those along the diagonal/off-diagonal -- will be entered from the corner closest to the origin.
+
+We can map the non-straight-line boxes as concentric rings indicating their Manhattan distance from the origin:
+
+```         
+  3X3
+ 32X23
+321X123
+XXX.XXX
+321X123
+ 32X23
+  3X3
+```
+
+Note that in each quadrant, there's 1 box 1 unit from the origin, 2 boxes 2 units away, 3 boxes 3 units away, etc. Meanwhile, for the straight-line boxes, there's only one box along each axis of its distance from the origin.
+
+Finally, we also have to take into account the fact that the periodic cycles alternate between odd and even steps. The number of plots in a box at a given step number depends on whether we entered that box on an even or an odd step. Below, all boxes entered on an odd step are labeled as A-type boxes, and those entered on an even step are B-type.
+
+The number of plots in a cycling box are straightforward to compute. However, when a box is entered near the last of the steps and doesn't have enough time to enter a cycle, we have to compute its current number of plots separately at the time the simulation ends.
+
+We begin with the diagonal/off-diagonal boxes:
+
+```{r}
+
+n <- 26501365
+
+rings_reached     <- ceiling(n / w_max - 1)
+rings_cycling     <- ceiling((n - cycles$corner) / w_max - 1)
+rings_in_progress <- (rings_cycling + 1):rings_reached
+
+# Compute the current value for the non-cycling diags
+plots_in_progress <- starting_points |> 
+  keep_at(c("nw", "ne", "sw", "se")) |> 
+  map(\(init_idx) {
+    rings_in_progress |> 
+      # Compute the step when each ring was entered from its corner
+      map_dbl(~ w_max * .x + 1) |> 
+      # Compute how many steps into the cycle each box currently is
+      map_dbl(~ n - .x) |> 
+      map_dbl(~ num_plots(init_idx, .x))
+  }) |> 
+  map(~ .x * rings_in_progress) |> 
+  map_dbl(sum)
+
+# Compute the current value for the cycling diags
+cycling_a <- (1:rings_cycling) |> 
+  keep(~ .x %% 2 == 0) |> 
+  sum()
+
+cycling_b <- (1:rings_cycling) |> 
+  keep(~ .x %% 2 == 1) |> 
+  sum()
+
+cycle_steps_even <- cycles$corner + if_else(cycles$corner %% 2 == 0, 0, 1)
+cycle_steps_odd  <- cycles$corner + if_else(cycles$corner %% 2 == 0, 1, 0)
+
+plots_a <- cycling_a * num_plots(1, cycle_steps_even)
+plots_b <- cycling_b * num_plots(1, cycle_steps_odd)
+
+plots_cycling <- plots_a + plots_b
+
+# Compute total value of all diagonal boxes
+plots_diag <- 4 * plots_cycling + sum(plots_in_progress)
+
+```
+
+Now repeat for the straight-line boxes:
+
+```{r}
+
+straights_reached     <- ceiling((n + w_mid) / w_max - 1)
+straights_cycling     <- ceiling((n + w_mid - cycles$mid_edge) / w_max - 1)
+straights_in_progress <- (straights_cycling + 1):straights_reached
+
+# Compute the current value for the non-cycling straights
+plots_in_progress <- starting_points |> 
+  keep_at(c("n", "s", "w", "e")) |> 
+  map_dbl(\(init_idx) {
+    straights_in_progress |> 
+      # Compute the step number when each box was entered from the edge
+      map_dbl(~ w_max * .x - w_mid + 1) |> 
+      # Compute how many steps into the cycle each box currently is
+      map_dbl(~ n - .x) |> 
+      map_dbl(~ num_plots(init_idx, .x)) |> 
+      sum()
+  })
+
+# Compute the current value for the cycling straights
+cycling_a <- (1:straights_cycling) |> 
+  keep(~ .x %% 2 == 0) |> 
+  length()
+
+cycling_b <- (1:straights_cycling) |> 
+  keep(~ .x %% 2 == 1) |> 
+  length()
+
+cycle_steps_even <- cycles$mid_edge + if_else(cycles$mid_edge %% 2 == 0, 0, 1)
+cycle_steps_odd  <- cycles$mid_edge + if_else(cycles$mid_edge %% 2 == 0, 1, 0)
+
+plots_a <- cycling_a * num_plots(w_mid, cycle_steps_even)
+plots_b <- cycling_b * num_plots(w_mid, cycle_steps_odd)
+
+plots_cycling  <- plots_a + plots_b
+
+# Compute total value of all straight-line boxes
+plots_straight <- 4 * plots_cycling + sum(plots_in_progress)
+
+```
+
+Finally, compute the value for the center box:
+
+```{r}
+
+cycle_steps_odd <- if_else(cycles$center %% 2 == 0, 1, 0) + cycles$center
+plots_center <- num_plots(match('S', vertices), cycle_steps_odd)
+
+```
+
+Sum to get the final result:
+
+```{r}
+
+format(plots_center + plots_straight + plots_diag, scientific = FALSE)
+
+```
