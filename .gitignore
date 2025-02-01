@@ -4,4 +4,6 @@
 .Ruserdata
 .DS_Store
 
+/*/input/*.txt
+
 /.quarto/
