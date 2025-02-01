@@ -1,0 +1,183 @@
+---
+title: "Day 24"
+date: 2023-12-24
+author:
+  name: https://adventofcode.com/2023/day/24
+  url: https://adventofcode.com/2023/day/24
+---
+
+## Setup
+
+```{r setup}
+
+# Libraries
+library(tidyverse)
+library(unglue)
+
+# Read input from file
+input <- read_lines("../input/day24.txt", skip_empty_rows = FALSE)
+
+```
+
+## Part 1
+
+Convert text input to structured data:
+
+```{r}
+
+bound_min <- 200000000000000
+bound_max <- 400000000000000
+
+df <- input |> 
+  unglue_data("{px}, {py}, {pz} @ {vx}, {vy}, {vz}", convert = TRUE) |> 
+  mutate(id = row_number(), .before = everything())
+
+vecs_2d <- df |> 
+  transmute(
+    id,
+    p = pmap(lst(px, py), ~ matrix(c(..1, ..2), ncol = 1)),
+    v = pmap(lst(vx, vy), ~ matrix(c(..1, ..2), ncol = 1))
+  )
+
+vecs_3d <- df |> 
+  transmute(
+    id,
+    p = pmap(lst(px, py, pz), ~ matrix(c(..1, ..2, ..3), ncol = 1)),
+    v = pmap(lst(vx, vy, vz), ~ matrix(c(..1, ..2, ..3), ncol = 1))
+  )
+
+```
+
+The position $\vec a$ of a hailstone at any given time $t$ can be written in the format:
+
+$$\vec vt + \vec p$$
+
+The intersection of the paths of any two given hailstones is therefore the point $\vec a$ where:
+
+$$
+\vec a = \vec v_1t_1 + \vec p_1 = \vec v_2t_2 = \vec p_2
+$$
+
+This can be re-written as the system of equations:
+
+$$
+\begin{bmatrix}\vec v_1 &-\vec v_2\end{bmatrix}\begin{bmatrix}t_1\\t_2\end{bmatrix} = \vec p_2 - \vec p_1
+$$
+
+Solving this system of equations for each pair of hailstones will give us the values of $t_1$ and $t_2$ that can then be used to compute the coordinates of their intersection, $\vec a$.
+
+```{r}
+
+# Combine all hailstones' paths pairwise and solve the system of equations
+pairs <- inner_join(
+  vecs_2d, 
+  vecs_2d, 
+  join_by(x$id < y$id), 
+  suffix = c("1", "2")
+) |> 
+  mutate(
+    A = map2(v1, v2, ~ cbind(..1, -..2)),
+    b = map2(p1, p2, ~ ..2 - ..1),
+    det = map_dbl(A, det),
+    t = pmap(lst(A, b, det), \(A, b, det) if (det != 0) as.vector(solve(A, b)))
+  ) |> 
+  unnest_wider(t, names_sep = "") |> 
+  
+  # Check if each path cross is within the bounding box and forward in time
+  mutate(
+    intersection = pmap(lst(t1, v1, p1), ~ ..1 * ..2 + ..3),
+    in_bounds = map_lgl(intersection, ~ all(between(.x, bound_min, bound_max))),
+    future_time = t1 >= 0 & t2 >= 0,
+    flag = replace_na(in_bounds & future_time, FALSE)
+  )
+
+# Count the number of future-crossing paths:
+pairs |> 
+  pull(flag) |> 
+  sum()
+
+```
+
+## Part 2
+
+Now our equation has changed. For each hailstone $i$, and for our initial position $\vec p_*$ and velocity $\vec v_*$, we have the following relationship, where $t_i$ is the nonzero collision time of our rock and the given hailstone:
+
+$$
+(\vec v_* - \vec v_i)t_i = \vec p_* - \vec p_i
+$$
+
+Since $t_i$ is a scalar for each $i$, then $\vec v_i - \vec v_*$ and $\vec p_i - \vec p_*$ are scalar multiples of each other. Thanks to a hint from Reddit user [u/evouga](https://www.reddit.com/r/adventofcode/comments/18pnycy/comment/kepu26z/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button), as these vectors are parallel, their cross product is zero, meaning that for all $i$:
+
+$$
+(\vec p_* - \vec p_i) \times (\vec v_* - \vec v_i) = 0
+$$
+
+Expanding this equation by the distributive property of the vector cross product, we get:
+
+$$
+(\vec p_* \times \vec v_*) - (\vec p_* \times \vec v_i) - (\vec p_i \times \vec v_*) + (\vec p_i \times \vec v_i) = 0
+$$
+
+Via [properties of the cross product](https://en.wikipedia.org/wiki/Cross_product#Conversion_to_matrix_multiplication), we can then represent this as:
+
+$$
+(\vec p_* \times \vec v_*) - [\vec v_i]_\times^\intercal \vec p_* - [\vec p_i]_\times \vec v_* + (\vec p_i \times \vec v_i) = 0
+$$
+
+where $[\vec a]_\times$ is defined as:
+
+$$
+[\vec a]_\times = \begin{bmatrix}0 & -a_3 & a_2 \\ a_3 & 0 & -a_1 \\ -a_2 & a_1 & 0\end{bmatrix}
+$$
+
+We can now (nearly) re-write this as a system of linear equations:
+
+$$
+A_i\vec x = \vec b_i + (\vec p_* \times \vec v_*)
+$$
+
+where
+
+$$
+A_i = \begin{bmatrix}[\vec v_i]_\times^\intercal & [\vec p_i]_\times\end{bmatrix}, \quad \vec x = \begin{bmatrix}\vec p_* \\ \vec v_*\end{bmatrix}, \quad b_i = (\vec p_i \times \vec v_i)
+$$
+
+Since this equation holds for all $i$, we can remove the needless term $(\vec p_* \times \vec v_*)$ and solve for $\vec x$ by subtracting two of these linear systems of equations from each other (using $i = 1,2$ as below, or any other two values of $i$ whose vectors from part 1 are not parallel):
+
+$$
+(A_1 - A_2)\vec x = \vec b_1 - \vec b_2
+$$
+
+Finally, since we've arrived at a system of 3 equations and 6 unknowns, we append $A$ and $\vec b$ with an additional pair of equations (using $i = 2,3$, for example) to solve for a final unique result:
+
+$$
+\begin{bmatrix}A_1 - A_2\\A_2 - A_3\end{bmatrix}\vec x = \begin{bmatrix}\vec b_1 - \vec b_2\\ \vec b_2 - \vec b_3\end{bmatrix}
+$$
+
+```{r}
+
+# Define a function to compute the skeq symmetric matrix [a]_x
+skewsym <- function(x) {
+  matrix(c(0, x[[3]], -x[[2]], -x[[3]], 0, x[[1]], x[[2]], -x[[1]], 0), ncol = 3)
+}
+
+# For the first three vectors in our list, compute their A and b values
+lineqs <- vecs_3d |> 
+  slice_head(n = 3) |> 
+  mutate(
+    A = map2(p, v, \(p, v) cbind(t(skewsym(v)), skewsym(p))),
+    b = map2(p, v, \(p, v) pracma::cross(p, v))
+  )
+
+# Combine the 3 linear equations into a single system & solve
+A <- rbind(lineqs$A[[1]] - lineqs$A[[2]], lineqs$A[[2]] - lineqs$A[[3]])
+b <- rbind(lineqs$b[[1]] - lineqs$b[[2]], lineqs$b[[2]] - lineqs$b[[3]])
+x <- solve(A, b)
+```
+
+Finally, add together the three px, py, and pz coordinates for the initial position:
+
+```{r}
+sum(x[1:3]) |> 
+  format(scientific = FALSE)
+```

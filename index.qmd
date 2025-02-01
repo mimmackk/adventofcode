@@ -33,10 +33,10 @@ Worked solutions in R to the Advent of Code – a yearly advent calendar of prog
 | Day 19 | [★★](/2024/R/day19.html) | [★★](/2023/R/day19.html) | [★★](/2022/R/day19.html) |
 | Day 20 | [★★](/2024/R/day20.html) | [★★](/2023/R/day20.html) | [★★](/2022/R/day20.html) |
 | Day 21 | [★★](/2024/R/day21.html) | [★★](/2023/R/day21.html) | [★★](/2022/R/day21.html) |
-| Day 22 | [★★](/2024/R/day22.html) |  | [★★](/2022/R/day22.html) |
-| Day 23 | [★★](/2024/R/day23.html) |  | [★★](/2022/R/day23.html) |
-| Day 24 | [★★](/2024/R/day24.html) |  | [★★](/2022/R/day24.html) |
-| Day 25 | [★★](/2024/R/day25.html) |  | [★★](/2022/R/day25.html) |
+| Day 22 | [★★](/2024/R/day22.html) | [★★](/2023/R/day22.html) | [★★](/2022/R/day22.html) |
+| Day 23 | [★★](/2024/R/day23.html) | [★★](/2023/R/day23.html) | [★★](/2022/R/day23.html) |
+| Day 24 | [★★](/2024/R/day24.html) | [★★](/2023/R/day24.html) | [★★](/2022/R/day24.html) |
+| Day 25 | [★★](/2024/R/day25.html) | [★★](/2023/R/day25.html) | [★★](/2022/R/day25.html) |
 
 : **SOLUTION INDEX**\
 ★★ = Parts 1 & 2; ★☆ = Part 1 Only

@@ -1,0 +1,17 @@
+{
+  "hash": "4d81263d60da0084b20cf0c536f11188",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 25\"\ndate: 2023-12-25\nauthor:\n  name: https://adventofcode.com/2023/day/25\n  url: https://adventofcode.com/2023/day/25\n---\n\n\n\n\n## Setup\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Libraries\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(igraph)\n\n# Read input from file\ninput <- read_lines(\"../input/day25.txt\", skip_empty_rows = FALSE)\n```\n:::\n\n\n\n\n## Part 1\n\nConvert text input to a graph:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nwires <- input |> \n  str_split(\":? \") |> \n  unlist() |> \n  unique()\n\nedges <- input |> \n  unglue_data(\"{name}: {conn}\") |> \n  mutate(conn = str_split(conn, \" \")) |> \n  unnest_longer(conn) |> \n  mutate(across(c(name, conn), ~ match(.x, wires))) |> \n  pmap(\\(name, conn) c(name, conn)) |> \n  unlist()\n\ng <- make_graph(edges, directed = FALSE)\n```\n:::\n\n\n\n\nCompute the betweenness of each edge and pull the three with the maximum values:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nscores <- edge_betweenness(g)\nidx <- scores |> \n  sort(decreasing = TRUE) |> \n  head(3) |> \n  match(scores)\n```\n:::\n\n\n\n\nPlot for visual confirmation:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nedge_colors <- E(g) |> \n  as.numeric() |> \n  case_match(idx ~ \"blue\", .default = \"grey\")\n\nplot(g, vertex.size = 4, vertex.label = NA, edge.color = edge_colors)\n```\n\n::: {.cell-output-display}\n![](day25_files/figure-html/unnamed-chunk-3-1.png){width=672}\n:::\n:::\n\n\n\n\nRemove the selected vertices from the graph, then calculate the product of the size of its two disconnected groups:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ng |> \n  delete_edges(idx) |> \n  components() |> \n  pluck(\"csize\") |> \n  prod()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 552695\n```\n\n\n:::\n:::\n",
+    "supporting": [
+      "day25_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
