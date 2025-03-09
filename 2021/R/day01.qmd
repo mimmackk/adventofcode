@@ -1,0 +1,55 @@
+---
+title: "Day 01"
+date: 2021-12-01
+author:
+  name: https://adventofcode.com/2021/day/01
+  url: https://adventofcode.com/2021/day/01
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read input from file:
+
+```{r}
+
+input <- read_lines("../input/day01.txt") |> as.integer()
+
+```
+
+## Part 1
+
+Define a function to count the number of increasing values in a sequence:
+
+```{r}
+
+count_incr <- \(x) sum(x - lag(x) > 0, na.rm = TRUE)
+
+```
+
+Run on input:
+
+```{r}
+
+count_incr(input)
+
+```
+
+## Part 2
+
+Count increases for 3-measurement windows:
+
+```{r}
+
+count_incr(input + lead(input) + lead(input, 2))
+
+```
+
+

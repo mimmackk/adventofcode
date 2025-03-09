@@ -1,10 +1,98 @@
 [
   {
+    "objectID": "2021/R/day01.html",
+    "href": "2021/R/day01.html",
+    "title": "Day 01",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; as.integer()",
+    "crumbs": [
+      "2021",
+      "Day 01"
+    ]
+  },
+  {
+    "objectID": "2021/R/day01.html#setup",
+    "href": "2021/R/day01.html#setup",
+    "title": "Day 01",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; as.integer()",
+    "crumbs": [
+      "2021",
+      "Day 01"
+    ]
+  },
+  {
+    "objectID": "2021/R/day01.html#part-1",
+    "href": "2021/R/day01.html#part-1",
+    "title": "Day 01",
+    "section": "Part 1",
+    "text": "Part 1\nDefine a function to count the number of increasing values in a sequence:\n\ncount_incr &lt;- \\(x) sum(x - lag(x) &gt; 0, na.rm = TRUE)\n\nRun on input:\n\ncount_incr(input)\n\n[1] 1581",
+    "crumbs": [
+      "2021",
+      "Day 01"
+    ]
+  },
+  {
+    "objectID": "2021/R/day01.html#part-2",
+    "href": "2021/R/day01.html#part-2",
+    "title": "Day 01",
+    "section": "Part 2",
+    "text": "Part 2\nCount increases for 3-measurement windows:\n\ncount_incr(input + lead(input) + lead(input, 2))\n\n[1] 1618",
+    "crumbs": [
+      "2021",
+      "Day 01"
+    ]
+  },
+  {
+    "objectID": "2021/R/day02.html",
+    "href": "2021/R/day02.html",
+    "title": "Day 02",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_delim(\n  \"../input/day02.txt\", \n  delim = \" \", \n  col_names = c(\"dir\", \"value\"),\n  show_col_types = FALSE\n)",
+    "crumbs": [
+      "2021",
+      "Day 02"
+    ]
+  },
+  {
+    "objectID": "2021/R/day02.html#setup",
+    "href": "2021/R/day02.html#setup",
+    "title": "Day 02",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_delim(\n  \"../input/day02.txt\", \n  delim = \" \", \n  col_names = c(\"dir\", \"value\"),\n  show_col_types = FALSE\n)",
+    "crumbs": [
+      "2021",
+      "Day 02"
+    ]
+  },
+  {
+    "objectID": "2021/R/day02.html#part-1",
+    "href": "2021/R/day02.html#part-1",
+    "title": "Day 02",
+    "section": "Part 1",
+    "text": "Part 1\nConvert input values to final horizontal positions and depth values:\n\npos &lt;- input |&gt; \n  transmute(\n    dim   = case_match(dir, \"forward\" ~ \"horiz\", c(\"up\", \"down\") ~ \"depth\"),\n    value = case_match(dir, \"up\" ~ -value, .default = value)\n  ) |&gt; \n  summarize(value = sum(value), .by = dim)\n\nCompute product of final horizontal position and depth:\n\nprod(pos$value)\n\n[1] 1561344",
+    "crumbs": [
+      "2021",
+      "Day 02"
+    ]
+  },
+  {
+    "objectID": "2021/R/day02.html#part-2",
+    "href": "2021/R/day02.html#part-2",
+    "title": "Day 02",
+    "section": "Part 2",
+    "text": "Part 2\nCompute final horizontal position and depth value using the modified keyword meanings:\n\npos &lt;- input |&gt; \n  transmute(\n    aim   = cumsum(case_match(dir, \"down\" ~ value, \"up\" ~ -value, .default = 0)),\n    horiz = cumsum(case_match(dir, \"forward\" ~ value,             .default = 0)),\n    depth = cumsum(case_match(dir, \"forward\" ~ value * aim,       .default = 0))\n  ) |&gt; \n  select(horiz, depth) |&gt; \n  tail(n = 1)\n\nCompute product of final horizontal position and depth:\n\npos$horiz * pos$depth\n\n[1] 1848454425",
+    "crumbs": [
+      "2021",
+      "Day 02"
+    ]
+  },
+  {
     "objectID": "index.html",
     "href": "index.html",
     "title": "Advent of Code: Worked Solutions",
     "section": "",
-    "text": "Worked solutions in R to the Advent of Code – a yearly advent calendar of programming puzzles.\n\nSOLUTION INDEX\n★★ = Parts 1 & 2; ★☆ = Part 1 Only\n\n\n\n2024\n2023\n2022\n\n\n\n\nDay 1\n★★\n★★\n★★\n\n\nDay 2\n★★\n★★\n★★\n\n\nDay 3\n★★\n★★\n★★\n\n\nDay 4\n★★\n★★\n★★\n\n\nDay 5\n★★\n★★\n★★\n\n\nDay 6\n★★\n★★\n★★\n\n\nDay 7\n★★\n★★\n★★\n\n\nDay 8\n★★\n★★\n★★\n\n\nDay 9\n★★\n★★\n★★\n\n\nDay 10\n★★\n★★\n★★\n\n\nDay 11\n★★\n★★\n★★\n\n\nDay 12\n★★\n★★\n★★\n\n\nDay 13\n★★\n★★\n★★\n\n\nDay 14\n★★\n★★\n★★\n\n\nDay 15\n★★\n★★\n★★\n\n\nDay 16\n★★\n★★\n★★\n\n\nDay 17\n★★\n★★\n★★\n\n\nDay 18\n★★\n★★\n★★\n\n\nDay 19\n★★\n★★\n★★\n\n\nDay 20\n★★\n★★\n★★\n\n\nDay 21\n★★\n★★\n★★\n\n\nDay 22\n★★\n★★\n★★\n\n\nDay 23\n★★\n★★\n★★\n\n\nDay 24\n★★\n★★\n★★\n\n\nDay 25\n★★\n★★\n★★"
+    "text": "Worked solutions in R to the Advent of Code – a yearly advent calendar of programming puzzles.\n\nSOLUTION INDEX\n★★ = Parts 1 & 2; ★☆ = Part 1 Only\n\n\n\n2024\n2023\n2022\n2021\n\n\n\n\nDay 1\n★★\n★★\n★★\n★★\n\n\nDay 2\n★★\n★★\n★★\n★★\n\n\nDay 3\n★★\n★★\n★★\n★★\n\n\nDay 4\n★★\n★★\n★★\n★★\n\n\nDay 5\n★★\n★★\n★★\n\n\n\nDay 6\n★★\n★★\n★★\n\n\n\nDay 7\n★★\n★★\n★★\n\n\n\nDay 8\n★★\n★★\n★★\n\n\n\nDay 9\n★★\n★★\n★★\n\n\n\nDay 10\n★★\n★★\n★★\n\n\n\nDay 11\n★★\n★★\n★★\n\n\n\nDay 12\n★★\n★★\n★★\n\n\n\nDay 13\n★★\n★★\n★★\n\n\n\nDay 14\n★★\n★★\n★★\n\n\n\nDay 15\n★★\n★★\n★★\n\n\n\nDay 16\n★★\n★★\n★★\n\n\n\nDay 17\n★★\n★★\n★★\n\n\n\nDay 18\n★★\n★★\n★★\n\n\n\nDay 19\n★★\n★★\n★★\n\n\n\nDay 20\n★★\n★★\n★★\n\n\n\nDay 21\n★★\n★★\n★★\n\n\n\nDay 22\n★★\n★★\n★★\n\n\n\nDay 23\n★★\n★★\n★★\n\n\n\nDay 24\n★★\n★★\n★★\n\n\n\nDay 25\n★★\n★★\n★★"
   },
   {
     "objectID": "2023/R/day21.html",
@@ -3249,6 +3337,94 @@
     "crumbs": [
       "2023",
       "Day 9"
+    ]
+  },
+  {
+    "objectID": "2021/R/day04.html",
+    "href": "2021/R/day04.html",
+    "title": "Day 04",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\n# List of drawn numbers\ndrawn &lt;- scan(\"../input/day04.txt\", nlines = 1, sep = \",\", quiet = TRUE)\n\n# Set of bingo boards\nboards &lt;- read_table(\"../input/day04.txt\", skip = 2, col_names = FALSE) |&gt; \n  group_split(cumsum(row_number() %% 5 == 1), .keep = FALSE) |&gt; \n  map(~ unname(as.matrix(.x)))",
+    "crumbs": [
+      "2021",
+      "Day 04"
+    ]
+  },
+  {
+    "objectID": "2021/R/day04.html#setup",
+    "href": "2021/R/day04.html#setup",
+    "title": "Day 04",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\n# List of drawn numbers\ndrawn &lt;- scan(\"../input/day04.txt\", nlines = 1, sep = \",\", quiet = TRUE)\n\n# Set of bingo boards\nboards &lt;- read_table(\"../input/day04.txt\", skip = 2, col_names = FALSE) |&gt; \n  group_split(cumsum(row_number() %% 5 == 1), .keep = FALSE) |&gt; \n  map(~ unname(as.matrix(.x)))",
+    "crumbs": [
+      "2021",
+      "Day 04"
+    ]
+  },
+  {
+    "objectID": "2021/R/day04.html#part-1",
+    "href": "2021/R/day04.html#part-1",
+    "title": "Day 04",
+    "section": "Part 1",
+    "text": "Part 1\nFor all bingo boards, determine the time at which each number on their card is drawn.\n\nfilled &lt;- imap_dfr(boards, \\(board, board_id) {\n  imap_dfr(drawn, \\(num, idx) {\n    which(board == num, arr.ind = TRUE) |&gt; \n      as_tibble() |&gt; \n      mutate(\n        time = idx, \n        board_id = board_id\n      )\n  })\n})\n\nFor each board, determine the time at which each “wins” by achieving a full row or column:\n\nwins &lt;- map_dfr(c(\"row\", \"col\"), \\(dim) {\n  filled |&gt; \n    summarize(n = n(), time = max(time), .by = all_of(c(\"board_id\", dim))) |&gt; \n    rename(dim_value = {{ dim }}) |&gt; \n    mutate(dim_name = dim) |&gt; \n    filter(n == 5)\n}) |&gt; \n  summarize(time = min(time), .by = board_id)\n\nDefine a function to score a board at the time of its win:\n\nscore &lt;- function(board_id, time_win) {\n  \n  board      &lt;- boards[[board_id]]\n  nums_drawn &lt;- drawn[1:time_win]\n  unmarked   &lt;- board[!(board %in% nums_drawn)]\n  score      &lt;- sum(unmarked) * tail(nums_drawn, 1)\n\n  return(score)\n}\n\nCompute the final score of the first board to win:\n\nfirst_winner &lt;- slice_min(wins, time)\n\nscore(first_winner$board_id, first_winner$time)\n\n[1] 32844",
+    "crumbs": [
+      "2021",
+      "Day 04"
+    ]
+  },
+  {
+    "objectID": "2021/R/day04.html#part-2",
+    "href": "2021/R/day04.html#part-2",
+    "title": "Day 04",
+    "section": "Part 2",
+    "text": "Part 2\nCompute the final score of the last board to win:\n\nlast_winner &lt;- slice_max(wins, time)\n\nscore(last_winner$board_id, last_winner$time)\n\n[1] 4920",
+    "crumbs": [
+      "2021",
+      "Day 04"
+    ]
+  },
+  {
+    "objectID": "2021/R/day03.html",
+    "href": "2021/R/day03.html",
+    "title": "Day 03",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(vctrs)\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day03.txt\")",
+    "crumbs": [
+      "2021",
+      "Day 03"
+    ]
+  },
+  {
+    "objectID": "2021/R/day03.html#setup",
+    "href": "2021/R/day03.html#setup",
+    "title": "Day 03",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(vctrs)\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day03.txt\")",
+    "crumbs": [
+      "2021",
+      "Day 03"
+    ]
+  },
+  {
+    "objectID": "2021/R/day03.html#part-1",
+    "href": "2021/R/day03.html#part-1",
+    "title": "Day 03",
+    "section": "Part 1",
+    "text": "Part 1\nDefine functions to compute the least and most common values in a vector (using greatest/least values as tiebreakers, as defined later in part 2):\n\nmost_common  &lt;- \\(x) vec_count(x) |&gt; slice_max(count) |&gt; pull(key) |&gt; max()\nleast_common &lt;- \\(x) vec_count(x) |&gt; slice_min(count) |&gt; pull(key) |&gt; min()\n\nDefine a function to convert a vector of binary integers to a decimal number:\n\nbin_to_num &lt;- \\(x) strtoi(str_flatten(x), base = 2)\n\nPrep the input by splitting binary numbers into separate digits by positions:\n\ndf &lt;- input |&gt; \n  str_split(\"\") |&gt; \n  enframe(name = \"id\") |&gt; \n  unnest_longer(value, indices_to = \"pos\") |&gt;   \n  mutate(value = as.integer(value))\n\nCompute the most and least common values in each position to get the gamma and epsilon values, then multiply them together to get the power consumption:\n\ndf |&gt; \n  summarize(\n    gamma = most_common(value), \n    epsilon = least_common(value), \n    .by = pos\n  ) |&gt; \n  summarize(across(c(gamma, epsilon), bin_to_num)) |&gt; \n  prod()\n\n[1] 1025636",
+    "crumbs": [
+      "2021",
+      "Day 03"
+    ]
+  },
+  {
+    "objectID": "2021/R/day03.html#part-2",
+    "href": "2021/R/day03.html#part-2",
+    "title": "Day 03",
+    "section": "Part 2",
+    "text": "Part 2\nDefine a set of functions to compute the oxygen and co2 ratings:\n\nget_rating &lt;- function(data, f = c(\"most_common\", \"least_common\")) {\n  \n  for (i in unique(data$pos)) {\n    id_lst &lt;- data |&gt; \n      filter(pos == i) |&gt; \n      filter(value == get(f)(value)) |&gt; \n      pull(id)\n    \n    data &lt;- filter(data, id %in% id_lst)\n    \n    if (length(id_lst) == 1)\n      return(bin_to_num(data$value))\n  }\n}\n\noxygen_rating &lt;- partial(get_rating, f = \"most_common\")\nco2_rating    &lt;- partial(get_rating, f = \"least_common\")\n\nCompute the final life support rating:\n\noxygen_rating(df) * co2_rating(df)\n\n[1] 793873",
+    "crumbs": [
+      "2021",
+      "Day 03"
     ]
   }
 ]

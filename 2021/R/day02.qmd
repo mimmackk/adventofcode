@@ -1,0 +1,79 @@
+---
+title: "Day 02"
+date: 2021-12-02
+author:
+  name: https://adventofcode.com/2021/day/02
+  url: https://adventofcode.com/2021/day/02
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read input from file:
+
+```{r}
+
+input <- read_delim(
+  "../input/day02.txt", 
+  delim = " ", 
+  col_names = c("dir", "value"),
+  show_col_types = FALSE
+)
+
+```
+
+## Part 1
+
+Convert input values to final horizontal positions and depth values:
+
+```{r}
+
+pos <- input |> 
+  transmute(
+    dim   = case_match(dir, "forward" ~ "horiz", c("up", "down") ~ "depth"),
+    value = case_match(dir, "up" ~ -value, .default = value)
+  ) |> 
+  summarize(value = sum(value), .by = dim)
+
+```
+
+Compute product of final horizontal position and depth:
+
+```{r}
+
+prod(pos$value)
+
+```
+
+## Part 2
+
+Compute final horizontal position and depth value using the modified keyword meanings:
+
+```{r}
+
+pos <- input |> 
+  transmute(
+    aim   = cumsum(case_match(dir, "down" ~ value, "up" ~ -value, .default = 0)),
+    horiz = cumsum(case_match(dir, "forward" ~ value,             .default = 0)),
+    depth = cumsum(case_match(dir, "forward" ~ value * aim,       .default = 0))
+  ) |> 
+  select(horiz, depth) |> 
+  tail(n = 1)
+
+```
+
+Compute product of final horizontal position and depth:
+
+```{r}
+
+pos$horiz * pos$depth
+
+```
+

@@ -1,0 +1,109 @@
+---
+title: "Day 03"
+date: 2021-12-03
+author:
+  name: https://adventofcode.com/2021/day/03
+  url: https://adventofcode.com/2021/day/03
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(vctrs)
+library(tidyverse)
+
+```
+
+Read input from file:
+
+```{r}
+
+input <- read_lines("../input/day03.txt")
+
+```
+
+
+## Part 1
+
+Define functions to compute the least and most common values in a vector (using greatest/least values as tiebreakers, as defined later in part 2):
+
+```{r}
+
+most_common  <- \(x) vec_count(x) |> slice_max(count) |> pull(key) |> max()
+least_common <- \(x) vec_count(x) |> slice_min(count) |> pull(key) |> min()
+
+```
+
+Define a function to convert a vector of binary integers to a decimal number:
+
+```{r}
+
+bin_to_num <- \(x) strtoi(str_flatten(x), base = 2)
+
+```
+
+Prep the input by splitting binary numbers into separate digits by positions:
+
+```{r}
+
+df <- input |> 
+  str_split("") |> 
+  enframe(name = "id") |> 
+  unnest_longer(value, indices_to = "pos") |>   
+  mutate(value = as.integer(value))
+
+```
+
+Compute the most and least common values in each position to get the gamma and epsilon values, then multiply them together to get the power consumption:
+
+```{r}
+
+df |> 
+  summarize(
+    gamma = most_common(value), 
+    epsilon = least_common(value), 
+    .by = pos
+  ) |> 
+  summarize(across(c(gamma, epsilon), bin_to_num)) |> 
+  prod()
+
+```
+
+## Part 2
+
+Define a set of functions to compute the oxygen and co2 ratings:
+
+```{r}
+
+get_rating <- function(data, f = c("most_common", "least_common")) {
+  
+  for (i in unique(data$pos)) {
+    id_lst <- data |> 
+      filter(pos == i) |> 
+      filter(value == get(f)(value)) |> 
+      pull(id)
+    
+    data <- filter(data, id %in% id_lst)
+    
+    if (length(id_lst) == 1)
+      return(bin_to_num(data$value))
+  }
+}
+
+oxygen_rating <- partial(get_rating, f = "most_common")
+co2_rating    <- partial(get_rating, f = "least_common")
+
+```
+
+Compute the final life support rating:
+
+```{r}
+
+oxygen_rating(df) * co2_rating(df)
+
+```
+
+

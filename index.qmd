@@ -10,33 +10,33 @@ author-title: "About"
 
 Worked solutions in R to the Advent of Code – a yearly advent calendar of programming puzzles.
 
-|   | 2024 | 2023 | 2022 |
-|------------------|------------------|------------------|------------------|
-| Day 1 | [★★](/2024/R/day01.html) | [★★](/2023/R/day01.html) | [★★](/2022/R/day01.html) |
-| Day 2 | [★★](/2024/R/day02.html) | [★★](/2023/R/day02.html) | [★★](/2022/R/day02.html) |
-| Day 3 | [★★](/2024/R/day03.html) | [★★](/2023/R/day03.html) | [★★](/2022/R/day03.html) |
-| Day 4 | [★★](/2024/R/day04.html) | [★★](/2023/R/day04.html) | [★★](/2022/R/day04.html) |
-| Day 5 | [★★](/2024/R/day05.html) | [★★](/2023/R/day05.html) | [★★](/2022/R/day05.html) |
-| Day 6 | [★★](/2024/R/day06.html) | [★★](/2023/R/day06.html) | [★★](/2022/R/day06.html) |
-| Day 7 | [★★](/2024/R/day07.html) | [★★](/2023/R/day07.html) | [★★](/2022/R/day07.html) |
-| Day 8 | [★★](/2024/R/day08.html) | [★★](/2023/R/day08.html) | [★★](/2022/R/day08.html) |
-| Day 9 | [★★](/2024/R/day09.html) | [★★](/2023/R/day09.html) | [★★](/2022/R/day09.html) |
-| Day 10 | [★★](/2024/R/day10.html) | [★★](/2023/R/day10.html) | [★★](/2022/R/day10.html) |
-| Day 11 | [★★](/2024/R/day11.html) | [★★](/2023/R/day11.html) | [★★](/2022/R/day11.html) |
-| Day 12 | [★★](/2024/R/day12.html) | [★★](/2023/R/day12.html) | [★★](/2022/R/day12.html) |
-| Day 13 | [★★](/2024/R/day13.html) | [★★](/2023/R/day13.html) | [★★](/2022/R/day13.html) |
-| Day 14 | [★★](/2024/R/day14.html) | [★★](/2023/R/day14.html) | [★★](/2022/R/day14.html) |
-| Day 15 | [★★](/2024/R/day15.html) | [★★](/2023/R/day15.html) | [★★](/2022/R/day15.html) |
-| Day 16 | [★★](/2024/R/day16.html) | [★★](/2023/R/day16.html) | [★★](/2022/R/day16.html) |
-| Day 17 | [★★](/2024/R/day17.html) | [★★](/2023/R/day17.html) | [★★](/2022/R/day17.html) |
-| Day 18 | [★★](/2024/R/day18.html) | [★★](/2023/R/day18.html) | [★★](/2022/R/day18.html) |
-| Day 19 | [★★](/2024/R/day19.html) | [★★](/2023/R/day19.html) | [★★](/2022/R/day19.html) |
-| Day 20 | [★★](/2024/R/day20.html) | [★★](/2023/R/day20.html) | [★★](/2022/R/day20.html) |
-| Day 21 | [★★](/2024/R/day21.html) | [★★](/2023/R/day21.html) | [★★](/2022/R/day21.html) |
-| Day 22 | [★★](/2024/R/day22.html) | [★★](/2023/R/day22.html) | [★★](/2022/R/day22.html) |
-| Day 23 | [★★](/2024/R/day23.html) | [★★](/2023/R/day23.html) | [★★](/2022/R/day23.html) |
-| Day 24 | [★★](/2024/R/day24.html) | [★★](/2023/R/day24.html) | [★★](/2022/R/day24.html) |
-| Day 25 | [★★](/2024/R/day25.html) | [★★](/2023/R/day25.html) | [★★](/2022/R/day25.html) |
+|   | 2024 | 2023 | 2022 | 2021 |
+|----|----|----|----|----|
+| Day 1 | [★★](/2024/R/day01.html) | [★★](/2023/R/day01.html) | [★★](/2022/R/day01.html) | [★★](/2021/R/day01.html) |
+| Day 2 | [★★](/2024/R/day02.html) | [★★](/2023/R/day02.html) | [★★](/2022/R/day02.html) | [★★](/2021/R/day02.html) |
+| Day 3 | [★★](/2024/R/day03.html) | [★★](/2023/R/day03.html) | [★★](/2022/R/day03.html) | [★★](/2021/R/day03.html) |
+| Day 4 | [★★](/2024/R/day04.html) | [★★](/2023/R/day04.html) | [★★](/2022/R/day04.html) | [★★](/2021/R/day04.html) |
+| Day 5 | [★★](/2024/R/day05.html) | [★★](/2023/R/day05.html) | [★★](/2022/R/day05.html) |  |
+| Day 6 | [★★](/2024/R/day06.html) | [★★](/2023/R/day06.html) | [★★](/2022/R/day06.html) |  |
+| Day 7 | [★★](/2024/R/day07.html) | [★★](/2023/R/day07.html) | [★★](/2022/R/day07.html) |  |
+| Day 8 | [★★](/2024/R/day08.html) | [★★](/2023/R/day08.html) | [★★](/2022/R/day08.html) |  |
+| Day 9 | [★★](/2024/R/day09.html) | [★★](/2023/R/day09.html) | [★★](/2022/R/day09.html) |  |
+| Day 10 | [★★](/2024/R/day10.html) | [★★](/2023/R/day10.html) | [★★](/2022/R/day10.html) |  |
+| Day 11 | [★★](/2024/R/day11.html) | [★★](/2023/R/day11.html) | [★★](/2022/R/day11.html) |  |
+| Day 12 | [★★](/2024/R/day12.html) | [★★](/2023/R/day12.html) | [★★](/2022/R/day12.html) |  |
+| Day 13 | [★★](/2024/R/day13.html) | [★★](/2023/R/day13.html) | [★★](/2022/R/day13.html) |  |
+| Day 14 | [★★](/2024/R/day14.html) | [★★](/2023/R/day14.html) | [★★](/2022/R/day14.html) |  |
+| Day 15 | [★★](/2024/R/day15.html) | [★★](/2023/R/day15.html) | [★★](/2022/R/day15.html) |  |
+| Day 16 | [★★](/2024/R/day16.html) | [★★](/2023/R/day16.html) | [★★](/2022/R/day16.html) |  |
+| Day 17 | [★★](/2024/R/day17.html) | [★★](/2023/R/day17.html) | [★★](/2022/R/day17.html) |  |
+| Day 18 | [★★](/2024/R/day18.html) | [★★](/2023/R/day18.html) | [★★](/2022/R/day18.html) |  |
+| Day 19 | [★★](/2024/R/day19.html) | [★★](/2023/R/day19.html) | [★★](/2022/R/day19.html) |  |
+| Day 20 | [★★](/2024/R/day20.html) | [★★](/2023/R/day20.html) | [★★](/2022/R/day20.html) |  |
+| Day 21 | [★★](/2024/R/day21.html) | [★★](/2023/R/day21.html) | [★★](/2022/R/day21.html) |  |
+| Day 22 | [★★](/2024/R/day22.html) | [★★](/2023/R/day22.html) | [★★](/2022/R/day22.html) |  |
+| Day 23 | [★★](/2024/R/day23.html) | [★★](/2023/R/day23.html) | [★★](/2022/R/day23.html) |  |
+| Day 24 | [★★](/2024/R/day24.html) | [★★](/2023/R/day24.html) | [★★](/2022/R/day24.html) |  |
+| Day 25 | [★★](/2024/R/day25.html) | [★★](/2023/R/day25.html) | [★★](/2022/R/day25.html) |  |
 
 : **SOLUTION INDEX**\
 ★★ = Parts 1 & 2; ★☆ = Part 1 Only
