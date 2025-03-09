@@ -1,0 +1,77 @@
+---
+title: "Day 07"
+date: 2021-12-07
+author:
+  name: https://adventofcode.com/2021/day/07
+  url: https://adventofcode.com/2021/day/07
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read input from file:
+
+```{r}
+
+input <- scan("../input/day07.txt", sep = ",", quiet = TRUE)
+
+```
+
+## Part 1
+
+We define the cost function as the sum of the absolute differences between our given point and all crabs:
+
+```{r}
+
+cost <- \(x) sum(abs(x - input))
+
+```
+
+We define the set of candidates for the optimal alignment location:
+
+```{r}
+
+candidates <- min(input):max(input)
+
+```
+
+The total fuel cost is computed by minimizing the cost function over all candidates:
+
+```{r}
+
+candidates |> 
+  map_dbl(cost) |> 
+  min()
+
+```
+
+## Part 2
+
+Instead of the basic absolute difference function, our new distance function for each crab $c_i$ is given by the binomial coefficient:
+
+$$
+1 + 2 + \cdots + |x - c_i| = \sum_{k = 1}^{|x - c_i|}k  = \binom{|x - c_i| + 1}{2}
+$$
+
+```{r}
+
+cost <- \(x) sum(choose(abs(x - input) + 1, 2))
+
+```
+
+Repeating the computation with our new cost function, we get:
+
+```{r}
+
+candidates |> 
+  map_dbl(cost) |> 
+  min()
+
+```

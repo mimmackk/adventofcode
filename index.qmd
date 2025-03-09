@@ -11,15 +11,15 @@ author-title: "About"
 Worked solutions in R to the Advent of Code – a yearly advent calendar of programming puzzles.
 
 |   | 2024 | 2023 | 2022 | 2021 |
-|----|----|----|----|----|
+|---------------|---------------|---------------|---------------|---------------|
 | Day 1 | [★★](/2024/R/day01.html) | [★★](/2023/R/day01.html) | [★★](/2022/R/day01.html) | [★★](/2021/R/day01.html) |
 | Day 2 | [★★](/2024/R/day02.html) | [★★](/2023/R/day02.html) | [★★](/2022/R/day02.html) | [★★](/2021/R/day02.html) |
 | Day 3 | [★★](/2024/R/day03.html) | [★★](/2023/R/day03.html) | [★★](/2022/R/day03.html) | [★★](/2021/R/day03.html) |
 | Day 4 | [★★](/2024/R/day04.html) | [★★](/2023/R/day04.html) | [★★](/2022/R/day04.html) | [★★](/2021/R/day04.html) |
-| Day 5 | [★★](/2024/R/day05.html) | [★★](/2023/R/day05.html) | [★★](/2022/R/day05.html) |  |
-| Day 6 | [★★](/2024/R/day06.html) | [★★](/2023/R/day06.html) | [★★](/2022/R/day06.html) |  |
-| Day 7 | [★★](/2024/R/day07.html) | [★★](/2023/R/day07.html) | [★★](/2022/R/day07.html) |  |
-| Day 8 | [★★](/2024/R/day08.html) | [★★](/2023/R/day08.html) | [★★](/2022/R/day08.html) |  |
+| Day 5 | [★★](/2024/R/day05.html) | [★★](/2023/R/day05.html) | [★★](/2022/R/day05.html) | [★★](/2021/R/day05.html) |
+| Day 6 | [★★](/2024/R/day06.html) | [★★](/2023/R/day06.html) | [★★](/2022/R/day06.html) | [★★](/2021/R/day06.html) |
+| Day 7 | [★★](/2024/R/day07.html) | [★★](/2023/R/day07.html) | [★★](/2022/R/day07.html) | [★★](/2021/R/day07.html) |
+| Day 8 | [★★](/2024/R/day08.html) | [★★](/2023/R/day08.html) | [★★](/2022/R/day08.html) | [★★](/2021/R/day08.html) |
 | Day 9 | [★★](/2024/R/day09.html) | [★★](/2023/R/day09.html) | [★★](/2022/R/day09.html) |  |
 | Day 10 | [★★](/2024/R/day10.html) | [★★](/2023/R/day10.html) | [★★](/2022/R/day10.html) |  |
 | Day 11 | [★★](/2024/R/day11.html) | [★★](/2023/R/day11.html) | [★★](/2022/R/day11.html) |  |

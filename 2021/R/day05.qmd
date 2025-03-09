@@ -1,0 +1,85 @@
+---
+title: "Day 05"
+date: 2021-12-05
+author:
+  name: https://adventofcode.com/2021/day/05
+  url: https://adventofcode.com/2021/day/05
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read input from file:
+
+```{r}
+
+input <- read_lines("../input/day05.txt")
+
+```
+
+Convert plain-text input to a dataframe of numeric values:
+
+```{r}
+
+input_df <- input |> 
+  unglue_data("{x1=\\d+},{y1=\\d+} -> {x2=\\d+},{y2=\\d+}", convert = TRUE) |> 
+  mutate(id = row_number(), .before = everything())
+
+```
+
+
+## Part 1
+
+Flag each line segment as horizontal, vertical or diagonal. Then, compute the list of all integer points that fall along the line.
+
+```{r}
+
+lines <- input_df |> 
+  mutate(
+    type = case_when(
+      x1 == x2 ~ "v",
+      y1 == y2 ~ "h",
+      .default = "d"
+    ),
+    x = map2(x1, x2, ~ seq(..1, ..2)),
+    y = map2(y1, y2, ~ seq(..1, ..2))
+  ) |> 
+  unnest(cols = c(x, y))
+
+```
+
+Compute the number of points that are covered by at least 2 overlapping horizontal or vertical lines (diagonals excluded):
+
+```{r}
+
+lines |> 
+  filter(type %in% c("v", "h")) |> 
+  summarize(n = n(), .by = c(x, y)) |> 
+  filter(n > 1) |> 
+  nrow()
+
+```
+
+## Part 2
+
+Repeat the count of overlapping points, now allowing diagonals:
+
+```{r}
+
+lines |> 
+  summarize(n = n(), .by = c(x, y)) |> 
+  filter(n > 1) |> 
+  nrow()
+
+```
+
+
+

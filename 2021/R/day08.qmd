@@ -1,0 +1,139 @@
+---
+title: "Day 08"
+date: 2021-12-08
+author:
+  name: https://adventofcode.com/2021/day/08
+  url: https://adventofcode.com/2021/day/08
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read input from file:
+
+```{r}
+
+input <- read_delim(
+  file = "../input/day08.txt", 
+  delim = " | ",
+  col_names = c("signal", "output"),
+  show_col_types = FALSE
+) |> 
+  mutate(across(everything(), ~ str_split(.x, " ")))
+
+```
+
+## Part 1
+
+Count the total number of digits 1, 4, 7, and 8 in each output by counting the number of output values with length 2, 3, 4, or 7:
+
+```{r}
+
+input |> 
+  pull(output) |> 
+  list_c() |> 
+  str_length() |> 
+  keep(~ .x %in% c(2, 3, 4, 7)) |> 
+  length()
+
+```
+
+## Part 2
+
+By visual examination, we have the following rules:
+
+-   Digits 1, 4, 7, and 8 are identifiable by length alone.
+-   Digits 0, 6, 9 all have the same length:
+    -   9 is the only superset of 4
+    -   Once 9 is identified, 0 is the only remaining superset of 1
+    -   6 is the last remaining value.
+-   Digits 2, 3, 5 all have the same length.
+    -   3 is the only superset of 1
+    -   5 is the only subset of 6
+    -   2 is the remainder
+
+Using these rules, we can quickly identify which signals correspond to which digits. First, we define a helper function needed to fill null values in a single-value list:
+
+```{r}
+
+lst_fill <- function(x) {
+  x |> 
+    discard(is.null) |> 
+    unique() |> 
+    rep(length(x))
+}
+
+```
+
+Next, prepare our input by splitting and sorting the characters in each code:
+
+```{r}
+
+df <- input |> 
+  mutate(entry_id = row_number()) |> 
+  pivot_longer(c(signal, output), names_to = "type", values_to = "code") |> 
+  unnest_longer(code) |> 
+  mutate(
+    code = map(code, ~ sort(str_split_1(.x, ""))),
+    length = map_int(code, length)
+  )
+
+```
+
+Identify the digit corresponding to each code:
+
+```{r}
+
+result <- df |> 
+  mutate(
+    
+    # Identify digits 1, 4, 7, 8 by length only
+    digit = case_match(length, 2 ~ 1, 4 ~ 4, 3 ~ 7, 7 ~ 8),
+    
+    # Identify digits 0, 6, 9 by whether they have 1/4 as a subset
+    four = lst_fill(case_when(digit == 4 ~ code)),
+    one  = lst_fill(case_when(digit == 1 ~ code)),
+    digit = case_when(
+      length == 6 & map2_lgl(code, four, ~ all(.y %in% .x)) ~ 9,
+      length == 6 & map2_lgl(code, one,  ~ all(.y %in% .x)) ~ 0,
+      length == 6 ~ 6,
+      .default = digit
+    ),
+    
+    # Identify digits 2, 3, 5 by whether they have 1/6 as a subset/superset
+    six = lst_fill(case_when(digit == 6 ~ code)),
+    digit = case_when(
+      length == 5 & map2_lgl(code, one, ~ all(.y %in% .x)) ~ 3,
+      length == 5 & map2_lgl(code, six, ~ all(.x %in% .y)) ~ 5,
+      length == 5 ~ 2,
+      .default = digit
+    ),
+    
+    .by = entry_id
+  ) |> 
+  select(entry_id, type, digit, code)
+
+```
+
+Determine the output value for each entry and take the sum for the final result:
+
+```{r}
+
+result |> 
+  filter(type == "output") |> 
+  summarize(
+    value = parse_number(str_c(digit, collapse = "")), 
+    .by = entry_id
+  ) |> 
+  pull(value) |> 
+  sum()
+
+```
+

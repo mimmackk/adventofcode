@@ -1,90 +1,178 @@
 [
   {
-    "objectID": "2021/R/day01.html",
-    "href": "2021/R/day01.html",
-    "title": "Day 01",
+    "objectID": "2021/R/day08.html",
+    "href": "2021/R/day08.html",
+    "title": "Day 08",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; as.integer()",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_delim(\n  file = \"../input/day08.txt\", \n  delim = \" | \",\n  col_names = c(\"signal\", \"output\"),\n  show_col_types = FALSE\n) |&gt; \n  mutate(across(everything(), ~ str_split(.x, \" \")))",
     "crumbs": [
       "2021",
-      "Day 01"
+      "Day 08"
     ]
   },
   {
-    "objectID": "2021/R/day01.html#setup",
-    "href": "2021/R/day01.html#setup",
-    "title": "Day 01",
+    "objectID": "2021/R/day08.html#setup",
+    "href": "2021/R/day08.html#setup",
+    "title": "Day 08",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; as.integer()",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_delim(\n  file = \"../input/day08.txt\", \n  delim = \" | \",\n  col_names = c(\"signal\", \"output\"),\n  show_col_types = FALSE\n) |&gt; \n  mutate(across(everything(), ~ str_split(.x, \" \")))",
     "crumbs": [
       "2021",
-      "Day 01"
+      "Day 08"
     ]
   },
   {
-    "objectID": "2021/R/day01.html#part-1",
-    "href": "2021/R/day01.html#part-1",
-    "title": "Day 01",
+    "objectID": "2021/R/day08.html#part-1",
+    "href": "2021/R/day08.html#part-1",
+    "title": "Day 08",
     "section": "Part 1",
-    "text": "Part 1\nDefine a function to count the number of increasing values in a sequence:\n\ncount_incr &lt;- \\(x) sum(x - lag(x) &gt; 0, na.rm = TRUE)\n\nRun on input:\n\ncount_incr(input)\n\n[1] 1581",
+    "text": "Part 1\nCount the total number of digits 1, 4, 7, and 8 in each output by counting the number of output values with length 2, 3, 4, or 7:\n\ninput |&gt; \n  pull(output) |&gt; \n  list_c() |&gt; \n  str_length() |&gt; \n  keep(~ .x %in% c(2, 3, 4, 7)) |&gt; \n  length()\n\n[1] 245",
     "crumbs": [
       "2021",
-      "Day 01"
+      "Day 08"
     ]
   },
   {
-    "objectID": "2021/R/day01.html#part-2",
-    "href": "2021/R/day01.html#part-2",
-    "title": "Day 01",
+    "objectID": "2021/R/day08.html#part-2",
+    "href": "2021/R/day08.html#part-2",
+    "title": "Day 08",
     "section": "Part 2",
-    "text": "Part 2\nCount increases for 3-measurement windows:\n\ncount_incr(input + lead(input) + lead(input, 2))\n\n[1] 1618",
+    "text": "Part 2\nBy visual examination, we have the following rules:\n\nDigits 1, 4, 7, and 8 are identifiable by length alone.\nDigits 0, 6, 9 all have the same length:\n\n9 is the only superset of 4\nOnce 9 is identified, 0 is the only remaining superset of 1\n6 is the last remaining value.\n\nDigits 2, 3, 5 all have the same length.\n\n3 is the only superset of 1\n5 is the only subset of 6\n2 is the remainder\n\n\nUsing these rules, we can quickly identify which signals correspond to which digits. First, we define a helper function needed to fill null values in a single-value list:\n\nlst_fill &lt;- function(x) {\n  x |&gt; \n    discard(is.null) |&gt; \n    unique() |&gt; \n    rep(length(x))\n}\n\nNext, prepare our input by splitting and sorting the characters in each code:\n\ndf &lt;- input |&gt; \n  mutate(entry_id = row_number()) |&gt; \n  pivot_longer(c(signal, output), names_to = \"type\", values_to = \"code\") |&gt; \n  unnest_longer(code) |&gt; \n  mutate(\n    code = map(code, ~ sort(str_split_1(.x, \"\"))),\n    length = map_int(code, length)\n  )\n\nIdentify the digit corresponding to each code:\n\nresult &lt;- df |&gt; \n  mutate(\n    \n    # Identify digits 1, 4, 7, 8 by length only\n    digit = case_match(length, 2 ~ 1, 4 ~ 4, 3 ~ 7, 7 ~ 8),\n    \n    # Identify digits 0, 6, 9 by whether they have 1/4 as a subset\n    four = lst_fill(case_when(digit == 4 ~ code)),\n    one  = lst_fill(case_when(digit == 1 ~ code)),\n    digit = case_when(\n      length == 6 & map2_lgl(code, four, ~ all(.y %in% .x)) ~ 9,\n      length == 6 & map2_lgl(code, one,  ~ all(.y %in% .x)) ~ 0,\n      length == 6 ~ 6,\n      .default = digit\n    ),\n    \n    # Identify digits 2, 3, 5 by whether they have 1/6 as a subset/superset\n    six = lst_fill(case_when(digit == 6 ~ code)),\n    digit = case_when(\n      length == 5 & map2_lgl(code, one, ~ all(.y %in% .x)) ~ 3,\n      length == 5 & map2_lgl(code, six, ~ all(.x %in% .y)) ~ 5,\n      length == 5 ~ 2,\n      .default = digit\n    ),\n    \n    .by = entry_id\n  ) |&gt; \n  select(entry_id, type, digit, code)\n\nDetermine the output value for each entry and take the sum for the final result:\n\nresult |&gt; \n  filter(type == \"output\") |&gt; \n  summarize(\n    value = parse_number(str_c(digit, collapse = \"\")), \n    .by = entry_id\n  ) |&gt; \n  pull(value) |&gt; \n  sum()\n\n[1] 983026",
     "crumbs": [
       "2021",
-      "Day 01"
+      "Day 08"
     ]
   },
   {
-    "objectID": "2021/R/day02.html",
-    "href": "2021/R/day02.html",
-    "title": "Day 02",
+    "objectID": "2021/R/day03.html",
+    "href": "2021/R/day03.html",
+    "title": "Day 03",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_delim(\n  \"../input/day02.txt\", \n  delim = \" \", \n  col_names = c(\"dir\", \"value\"),\n  show_col_types = FALSE\n)",
+    "text": "Import libraries:\n\nlibrary(vctrs)\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day03.txt\")",
     "crumbs": [
       "2021",
-      "Day 02"
+      "Day 03"
     ]
   },
   {
-    "objectID": "2021/R/day02.html#setup",
-    "href": "2021/R/day02.html#setup",
-    "title": "Day 02",
+    "objectID": "2021/R/day03.html#setup",
+    "href": "2021/R/day03.html#setup",
+    "title": "Day 03",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_delim(\n  \"../input/day02.txt\", \n  delim = \" \", \n  col_names = c(\"dir\", \"value\"),\n  show_col_types = FALSE\n)",
+    "text": "Import libraries:\n\nlibrary(vctrs)\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day03.txt\")",
     "crumbs": [
       "2021",
-      "Day 02"
+      "Day 03"
     ]
   },
   {
-    "objectID": "2021/R/day02.html#part-1",
-    "href": "2021/R/day02.html#part-1",
-    "title": "Day 02",
+    "objectID": "2021/R/day03.html#part-1",
+    "href": "2021/R/day03.html#part-1",
+    "title": "Day 03",
     "section": "Part 1",
-    "text": "Part 1\nConvert input values to final horizontal positions and depth values:\n\npos &lt;- input |&gt; \n  transmute(\n    dim   = case_match(dir, \"forward\" ~ \"horiz\", c(\"up\", \"down\") ~ \"depth\"),\n    value = case_match(dir, \"up\" ~ -value, .default = value)\n  ) |&gt; \n  summarize(value = sum(value), .by = dim)\n\nCompute product of final horizontal position and depth:\n\nprod(pos$value)\n\n[1] 1561344",
+    "text": "Part 1\nDefine functions to compute the least and most common values in a vector (using greatest/least values as tiebreakers, as defined later in part 2):\n\nmost_common  &lt;- \\(x) vec_count(x) |&gt; slice_max(count) |&gt; pull(key) |&gt; max()\nleast_common &lt;- \\(x) vec_count(x) |&gt; slice_min(count) |&gt; pull(key) |&gt; min()\n\nDefine a function to convert a vector of binary integers to a decimal number:\n\nbin_to_num &lt;- \\(x) strtoi(str_flatten(x), base = 2)\n\nPrep the input by splitting binary numbers into separate digits by positions:\n\ndf &lt;- input |&gt; \n  str_split(\"\") |&gt; \n  enframe(name = \"id\") |&gt; \n  unnest_longer(value, indices_to = \"pos\") |&gt;   \n  mutate(value = as.integer(value))\n\nCompute the most and least common values in each position to get the gamma and epsilon values, then multiply them together to get the power consumption:\n\ndf |&gt; \n  summarize(\n    gamma = most_common(value), \n    epsilon = least_common(value), \n    .by = pos\n  ) |&gt; \n  summarize(across(c(gamma, epsilon), bin_to_num)) |&gt; \n  prod()\n\n[1] 1025636",
     "crumbs": [
       "2021",
-      "Day 02"
+      "Day 03"
     ]
   },
   {
-    "objectID": "2021/R/day02.html#part-2",
-    "href": "2021/R/day02.html#part-2",
-    "title": "Day 02",
+    "objectID": "2021/R/day03.html#part-2",
+    "href": "2021/R/day03.html#part-2",
+    "title": "Day 03",
     "section": "Part 2",
-    "text": "Part 2\nCompute final horizontal position and depth value using the modified keyword meanings:\n\npos &lt;- input |&gt; \n  transmute(\n    aim   = cumsum(case_match(dir, \"down\" ~ value, \"up\" ~ -value, .default = 0)),\n    horiz = cumsum(case_match(dir, \"forward\" ~ value,             .default = 0)),\n    depth = cumsum(case_match(dir, \"forward\" ~ value * aim,       .default = 0))\n  ) |&gt; \n  select(horiz, depth) |&gt; \n  tail(n = 1)\n\nCompute product of final horizontal position and depth:\n\npos$horiz * pos$depth\n\n[1] 1848454425",
+    "text": "Part 2\nDefine a set of functions to compute the oxygen and co2 ratings:\n\nget_rating &lt;- function(data, f = c(\"most_common\", \"least_common\")) {\n  \n  for (i in unique(data$pos)) {\n    id_lst &lt;- data |&gt; \n      filter(pos == i) |&gt; \n      filter(value == get(f)(value)) |&gt; \n      pull(id)\n    \n    data &lt;- filter(data, id %in% id_lst)\n    \n    if (length(id_lst) == 1)\n      return(bin_to_num(data$value))\n  }\n}\n\noxygen_rating &lt;- partial(get_rating, f = \"most_common\")\nco2_rating    &lt;- partial(get_rating, f = \"least_common\")\n\nCompute the final life support rating:\n\noxygen_rating(df) * co2_rating(df)\n\n[1] 793873",
     "crumbs": [
       "2021",
-      "Day 02"
+      "Day 03"
+    ]
+  },
+  {
+    "objectID": "2021/R/day06.html",
+    "href": "2021/R/day06.html",
+    "title": "Day 06",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nDisable scientific formatting when displaying large numbers:\n\noptions(scipen = 999)\n\nRead input from file:\n\ninput &lt;- scan(\"../input/day06.txt\", sep = \",\", quiet = TRUE)",
+    "crumbs": [
+      "2021",
+      "Day 06"
+    ]
+  },
+  {
+    "objectID": "2021/R/day06.html#setup",
+    "href": "2021/R/day06.html#setup",
+    "title": "Day 06",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nDisable scientific formatting when displaying large numbers:\n\noptions(scipen = 999)\n\nRead input from file:\n\ninput &lt;- scan(\"../input/day06.txt\", sep = \",\", quiet = TRUE)",
+    "crumbs": [
+      "2021",
+      "Day 06"
+    ]
+  },
+  {
+    "objectID": "2021/R/day06.html#part-1",
+    "href": "2021/R/day06.html#part-1",
+    "title": "Day 06",
+    "section": "Part 1",
+    "text": "Part 1\nAt any given point in time, we can only have fish with ages 0-8. We track the state of our system by logging counts of how many fish exist in each age bucket. To begin, we construct the initial state as a vector of counts for each age, filling with zeroes for ages not present:\n\ninit &lt;- input |&gt; \n  enframe(name = NULL, value = \"age\") |&gt; \n  summarize(n = n(), .by = age) |&gt; \n  complete(age = 0:8, fill = lst(n = 0)) |&gt; \n  pull(n) |&gt; \n  as.numeric()\n\nDefine a function to compute the count of fish on the next day given a fish count on the current day. All counts shift down one unit in age. Fish at age 0 all move to age 6 and create a new age-8 fish.\n\nage_up &lt;- \\(x) c(x[2:7], x[8] + x[1], x[9], x[1])\n\nDefine a function to run the simulation for n days and count the total fish at the end:\n\ncount_fish &lt;- function(init, n_days) {\n  reduce(1:n_days, \\(acc, nxt) age_up(acc), .init = init) |&gt; \n    sum()\n}\n\nCount the total fish after 80 days:\n\ncount_fish(init, 80)\n\n[1] 365862",
+    "crumbs": [
+      "2021",
+      "Day 06"
+    ]
+  },
+  {
+    "objectID": "2021/R/day06.html#part-2",
+    "href": "2021/R/day06.html#part-2",
+    "title": "Day 06",
+    "section": "Part 2",
+    "text": "Part 2\nCount the total fish after 256 days:\n\ncount_fish(init, 256)\n\n[1] 1653250886439",
+    "crumbs": [
+      "2021",
+      "Day 06"
+    ]
+  },
+  {
+    "objectID": "2021/R/day05.html",
+    "href": "2021/R/day05.html",
+    "title": "Day 05",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day05.txt\")\n\nConvert plain-text input to a dataframe of numeric values:\n\ninput_df &lt;- input |&gt; \n  unglue_data(\"{x1=\\\\d+},{y1=\\\\d+} -&gt; {x2=\\\\d+},{y2=\\\\d+}\", convert = TRUE) |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "crumbs": [
+      "2021",
+      "Day 05"
+    ]
+  },
+  {
+    "objectID": "2021/R/day05.html#setup",
+    "href": "2021/R/day05.html#setup",
+    "title": "Day 05",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day05.txt\")\n\nConvert plain-text input to a dataframe of numeric values:\n\ninput_df &lt;- input |&gt; \n  unglue_data(\"{x1=\\\\d+},{y1=\\\\d+} -&gt; {x2=\\\\d+},{y2=\\\\d+}\", convert = TRUE) |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "crumbs": [
+      "2021",
+      "Day 05"
+    ]
+  },
+  {
+    "objectID": "2021/R/day05.html#part-1",
+    "href": "2021/R/day05.html#part-1",
+    "title": "Day 05",
+    "section": "Part 1",
+    "text": "Part 1\nFlag each line segment as horizontal, vertical or diagonal. Then, compute the list of all integer points that fall along the line.\n\nlines &lt;- input_df |&gt; \n  mutate(\n    type = case_when(\n      x1 == x2 ~ \"v\",\n      y1 == y2 ~ \"h\",\n      .default = \"d\"\n    ),\n    x = map2(x1, x2, ~ seq(..1, ..2)),\n    y = map2(y1, y2, ~ seq(..1, ..2))\n  ) |&gt; \n  unnest(cols = c(x, y))\n\nCompute the number of points that are covered by at least 2 overlapping horizontal or vertical lines (diagonals excluded):\n\nlines |&gt; \n  filter(type %in% c(\"v\", \"h\")) |&gt; \n  summarize(n = n(), .by = c(x, y)) |&gt; \n  filter(n &gt; 1) |&gt; \n  nrow()\n\n[1] 8060",
+    "crumbs": [
+      "2021",
+      "Day 05"
+    ]
+  },
+  {
+    "objectID": "2021/R/day05.html#part-2",
+    "href": "2021/R/day05.html#part-2",
+    "title": "Day 05",
+    "section": "Part 2",
+    "text": "Part 2\nRepeat the count of overlapping points, now allowing diagonals:\n\nlines |&gt; \n  summarize(n = n(), .by = c(x, y)) |&gt; \n  filter(n &gt; 1) |&gt; \n  nrow()\n\n[1] 21577",
+    "crumbs": [
+      "2021",
+      "Day 05"
     ]
   },
   {
@@ -92,7 +180,7 @@
     "href": "index.html",
     "title": "Advent of Code: Worked Solutions",
     "section": "",
-    "text": "Worked solutions in R to the Advent of Code – a yearly advent calendar of programming puzzles.\n\nSOLUTION INDEX\n★★ = Parts 1 & 2; ★☆ = Part 1 Only\n\n\n\n2024\n2023\n2022\n2021\n\n\n\n\nDay 1\n★★\n★★\n★★\n★★\n\n\nDay 2\n★★\n★★\n★★\n★★\n\n\nDay 3\n★★\n★★\n★★\n★★\n\n\nDay 4\n★★\n★★\n★★\n★★\n\n\nDay 5\n★★\n★★\n★★\n\n\n\nDay 6\n★★\n★★\n★★\n\n\n\nDay 7\n★★\n★★\n★★\n\n\n\nDay 8\n★★\n★★\n★★\n\n\n\nDay 9\n★★\n★★\n★★\n\n\n\nDay 10\n★★\n★★\n★★\n\n\n\nDay 11\n★★\n★★\n★★\n\n\n\nDay 12\n★★\n★★\n★★\n\n\n\nDay 13\n★★\n★★\n★★\n\n\n\nDay 14\n★★\n★★\n★★\n\n\n\nDay 15\n★★\n★★\n★★\n\n\n\nDay 16\n★★\n★★\n★★\n\n\n\nDay 17\n★★\n★★\n★★\n\n\n\nDay 18\n★★\n★★\n★★\n\n\n\nDay 19\n★★\n★★\n★★\n\n\n\nDay 20\n★★\n★★\n★★\n\n\n\nDay 21\n★★\n★★\n★★\n\n\n\nDay 22\n★★\n★★\n★★\n\n\n\nDay 23\n★★\n★★\n★★\n\n\n\nDay 24\n★★\n★★\n★★\n\n\n\nDay 25\n★★\n★★\n★★"
+    "text": "Worked solutions in R to the Advent of Code – a yearly advent calendar of programming puzzles.\n\nSOLUTION INDEX\n★★ = Parts 1 & 2; ★☆ = Part 1 Only\n\n\n\n2024\n2023\n2022\n2021\n\n\n\n\nDay 1\n★★\n★★\n★★\n★★\n\n\nDay 2\n★★\n★★\n★★\n★★\n\n\nDay 3\n★★\n★★\n★★\n★★\n\n\nDay 4\n★★\n★★\n★★\n★★\n\n\nDay 5\n★★\n★★\n★★\n★★\n\n\nDay 6\n★★\n★★\n★★\n★★\n\n\nDay 7\n★★\n★★\n★★\n★★\n\n\nDay 8\n★★\n★★\n★★\n★★\n\n\nDay 9\n★★\n★★\n★★\n\n\n\nDay 10\n★★\n★★\n★★\n\n\n\nDay 11\n★★\n★★\n★★\n\n\n\nDay 12\n★★\n★★\n★★\n\n\n\nDay 13\n★★\n★★\n★★\n\n\n\nDay 14\n★★\n★★\n★★\n\n\n\nDay 15\n★★\n★★\n★★\n\n\n\nDay 16\n★★\n★★\n★★\n\n\n\nDay 17\n★★\n★★\n★★\n\n\n\nDay 18\n★★\n★★\n★★\n\n\n\nDay 19\n★★\n★★\n★★\n\n\n\nDay 20\n★★\n★★\n★★\n\n\n\nDay 21\n★★\n★★\n★★\n\n\n\nDay 22\n★★\n★★\n★★\n\n\n\nDay 23\n★★\n★★\n★★\n\n\n\nDay 24\n★★\n★★\n★★\n\n\n\nDay 25\n★★\n★★\n★★"
   },
   {
     "objectID": "2023/R/day21.html",
@@ -3384,47 +3472,135 @@
     ]
   },
   {
-    "objectID": "2021/R/day03.html",
-    "href": "2021/R/day03.html",
-    "title": "Day 03",
+    "objectID": "2021/R/day07.html",
+    "href": "2021/R/day07.html",
+    "title": "Day 07",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(vctrs)\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day03.txt\")",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- scan(\"../input/day07.txt\", sep = \",\", quiet = TRUE)",
     "crumbs": [
       "2021",
-      "Day 03"
+      "Day 07"
     ]
   },
   {
-    "objectID": "2021/R/day03.html#setup",
-    "href": "2021/R/day03.html#setup",
-    "title": "Day 03",
+    "objectID": "2021/R/day07.html#setup",
+    "href": "2021/R/day07.html#setup",
+    "title": "Day 07",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(vctrs)\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day03.txt\")",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- scan(\"../input/day07.txt\", sep = \",\", quiet = TRUE)",
     "crumbs": [
       "2021",
-      "Day 03"
+      "Day 07"
     ]
   },
   {
-    "objectID": "2021/R/day03.html#part-1",
-    "href": "2021/R/day03.html#part-1",
-    "title": "Day 03",
+    "objectID": "2021/R/day07.html#part-1",
+    "href": "2021/R/day07.html#part-1",
+    "title": "Day 07",
     "section": "Part 1",
-    "text": "Part 1\nDefine functions to compute the least and most common values in a vector (using greatest/least values as tiebreakers, as defined later in part 2):\n\nmost_common  &lt;- \\(x) vec_count(x) |&gt; slice_max(count) |&gt; pull(key) |&gt; max()\nleast_common &lt;- \\(x) vec_count(x) |&gt; slice_min(count) |&gt; pull(key) |&gt; min()\n\nDefine a function to convert a vector of binary integers to a decimal number:\n\nbin_to_num &lt;- \\(x) strtoi(str_flatten(x), base = 2)\n\nPrep the input by splitting binary numbers into separate digits by positions:\n\ndf &lt;- input |&gt; \n  str_split(\"\") |&gt; \n  enframe(name = \"id\") |&gt; \n  unnest_longer(value, indices_to = \"pos\") |&gt;   \n  mutate(value = as.integer(value))\n\nCompute the most and least common values in each position to get the gamma and epsilon values, then multiply them together to get the power consumption:\n\ndf |&gt; \n  summarize(\n    gamma = most_common(value), \n    epsilon = least_common(value), \n    .by = pos\n  ) |&gt; \n  summarize(across(c(gamma, epsilon), bin_to_num)) |&gt; \n  prod()\n\n[1] 1025636",
+    "text": "Part 1\nWe define the cost function as the sum of the absolute differences between our given point and all crabs:\n\ncost &lt;- \\(x) sum(abs(x - input))\n\nWe define the set of candidates for the optimal alignment location:\n\ncandidates &lt;- min(input):max(input)\n\nThe total fuel cost is computed by minimizing the cost function over all candidates:\n\ncandidates |&gt; \n  map_dbl(cost) |&gt; \n  min()\n\n[1] 352997",
     "crumbs": [
       "2021",
-      "Day 03"
+      "Day 07"
     ]
   },
   {
-    "objectID": "2021/R/day03.html#part-2",
-    "href": "2021/R/day03.html#part-2",
-    "title": "Day 03",
+    "objectID": "2021/R/day07.html#part-2",
+    "href": "2021/R/day07.html#part-2",
+    "title": "Day 07",
     "section": "Part 2",
-    "text": "Part 2\nDefine a set of functions to compute the oxygen and co2 ratings:\n\nget_rating &lt;- function(data, f = c(\"most_common\", \"least_common\")) {\n  \n  for (i in unique(data$pos)) {\n    id_lst &lt;- data |&gt; \n      filter(pos == i) |&gt; \n      filter(value == get(f)(value)) |&gt; \n      pull(id)\n    \n    data &lt;- filter(data, id %in% id_lst)\n    \n    if (length(id_lst) == 1)\n      return(bin_to_num(data$value))\n  }\n}\n\noxygen_rating &lt;- partial(get_rating, f = \"most_common\")\nco2_rating    &lt;- partial(get_rating, f = \"least_common\")\n\nCompute the final life support rating:\n\noxygen_rating(df) * co2_rating(df)\n\n[1] 793873",
+    "text": "Part 2\nInstead of the basic absolute difference function, our new distance function for each crab \\(c_i\\) is given by the binomial coefficient:\n\\[\n1 + 2 + \\cdots + |x - c_i| = \\sum_{k = 1}^{|x - c_i|}k  = \\binom{|x - c_i| + 1}{2}\n\\]\n\ncost &lt;- \\(x) sum(choose(abs(x - input) + 1, 2))\n\nRepeating the computation with our new cost function, we get:\n\ncandidates |&gt; \n  map_dbl(cost) |&gt; \n  min()\n\n[1] 101571302",
     "crumbs": [
       "2021",
-      "Day 03"
+      "Day 07"
+    ]
+  },
+  {
+    "objectID": "2021/R/day02.html",
+    "href": "2021/R/day02.html",
+    "title": "Day 02",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_delim(\n  \"../input/day02.txt\", \n  delim = \" \", \n  col_names = c(\"dir\", \"value\"),\n  show_col_types = FALSE\n)",
+    "crumbs": [
+      "2021",
+      "Day 02"
+    ]
+  },
+  {
+    "objectID": "2021/R/day02.html#setup",
+    "href": "2021/R/day02.html#setup",
+    "title": "Day 02",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_delim(\n  \"../input/day02.txt\", \n  delim = \" \", \n  col_names = c(\"dir\", \"value\"),\n  show_col_types = FALSE\n)",
+    "crumbs": [
+      "2021",
+      "Day 02"
+    ]
+  },
+  {
+    "objectID": "2021/R/day02.html#part-1",
+    "href": "2021/R/day02.html#part-1",
+    "title": "Day 02",
+    "section": "Part 1",
+    "text": "Part 1\nConvert input values to final horizontal positions and depth values:\n\npos &lt;- input |&gt; \n  transmute(\n    dim   = case_match(dir, \"forward\" ~ \"horiz\", c(\"up\", \"down\") ~ \"depth\"),\n    value = case_match(dir, \"up\" ~ -value, .default = value)\n  ) |&gt; \n  summarize(value = sum(value), .by = dim)\n\nCompute product of final horizontal position and depth:\n\nprod(pos$value)\n\n[1] 1561344",
+    "crumbs": [
+      "2021",
+      "Day 02"
+    ]
+  },
+  {
+    "objectID": "2021/R/day02.html#part-2",
+    "href": "2021/R/day02.html#part-2",
+    "title": "Day 02",
+    "section": "Part 2",
+    "text": "Part 2\nCompute final horizontal position and depth value using the modified keyword meanings:\n\npos &lt;- input |&gt; \n  transmute(\n    aim   = cumsum(case_match(dir, \"down\" ~ value, \"up\" ~ -value, .default = 0)),\n    horiz = cumsum(case_match(dir, \"forward\" ~ value,             .default = 0)),\n    depth = cumsum(case_match(dir, \"forward\" ~ value * aim,       .default = 0))\n  ) |&gt; \n  select(horiz, depth) |&gt; \n  tail(n = 1)\n\nCompute product of final horizontal position and depth:\n\npos$horiz * pos$depth\n\n[1] 1848454425",
+    "crumbs": [
+      "2021",
+      "Day 02"
+    ]
+  },
+  {
+    "objectID": "2021/R/day01.html",
+    "href": "2021/R/day01.html",
+    "title": "Day 01",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; as.integer()",
+    "crumbs": [
+      "2021",
+      "Day 01"
+    ]
+  },
+  {
+    "objectID": "2021/R/day01.html#setup",
+    "href": "2021/R/day01.html#setup",
+    "title": "Day 01",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; as.integer()",
+    "crumbs": [
+      "2021",
+      "Day 01"
+    ]
+  },
+  {
+    "objectID": "2021/R/day01.html#part-1",
+    "href": "2021/R/day01.html#part-1",
+    "title": "Day 01",
+    "section": "Part 1",
+    "text": "Part 1\nDefine a function to count the number of increasing values in a sequence:\n\ncount_incr &lt;- \\(x) sum(x - lag(x) &gt; 0, na.rm = TRUE)\n\nRun on input:\n\ncount_incr(input)\n\n[1] 1581",
+    "crumbs": [
+      "2021",
+      "Day 01"
+    ]
+  },
+  {
+    "objectID": "2021/R/day01.html#part-2",
+    "href": "2021/R/day01.html#part-2",
+    "title": "Day 01",
+    "section": "Part 2",
+    "text": "Part 2\nCount increases for 3-measurement windows:\n\ncount_incr(input + lead(input) + lead(input, 2))\n\n[1] 1618",
+    "crumbs": [
+      "2021",
+      "Day 01"
     ]
   }
 ]
