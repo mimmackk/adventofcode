@@ -1,0 +1,133 @@
+---
+title: "Day 11"
+date: 2021-12-11
+author:
+  name: https://adventofcode.com/2021/day/11
+  url: https://adventofcode.com/2021/day/11
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read input from plain-text file into a matrix:
+
+```{r}
+
+input <- read_fwf(
+  file = "../input/day11.txt", 
+  col_positions = fwf_widths(rep(1, 10)), 
+  col_types = "i",
+  show_col_types = FALSE
+) |> 
+  as.matrix() |> 
+  unname()
+
+width  <- ncol(input)
+height <- nrow(input)
+
+```
+
+## Part 1
+
+Define a function to compute the energy boost from a single flash:
+
+```{r}
+
+n <- \(x) lag(x, default = 0)
+s <- \(x) lead(x, default = 0)
+w <- \(x) t(lag(t(x), default = 0))
+e <- \(x) t(lead(t(x), default = 0))
+
+add_energy <- function(x) {
+  n(x) + s(x) + e(x) + w(x) + n(w(x)) + n(e(x)) + s(w(x)) + s(e(x))
+}
+
+```
+
+Define a function to run a single step, which may consist of many flashes until a stable state is reached:
+
+```{r}
+
+step <- function(mtx) {
+  
+  # Initialize
+  mtx <- mtx + 1
+  has_flashed <- matrix(FALSE, nrow = height, ncol = width)
+  
+  # Repeat until done flashing
+  repeat {
+    cur_flash <- mtx > 9 & !has_flashed
+    
+    if (all(cur_flash == FALSE)) break
+    
+    has_flashed <- has_flashed | cur_flash
+    mtx <- mtx + add_energy(cur_flash)
+  }
+  
+  # Replace all flashed values with 0
+  replace(mtx, has_flashed, 0)
+}
+
+```
+
+Define a function to count the total individual flashes that occur over a defined number of steps:
+
+```{r}
+
+count_flashes <- function(mtx, n_steps) {
+  
+  flashes <- 0
+  for (i in 1:n_steps) {
+    mtx <- step(mtx)
+    flashes <- flashes + sum(mtx == 0)
+  }
+  
+  flashes
+}
+
+```
+
+Run on puzzle input. Count the flashes over 100 steps:
+
+```{r}
+
+count_flashes(input, 100) 
+
+```
+
+## Part 2
+
+Define a function to find the first step when all cells flash in unison:
+
+```{r}
+
+first_in_unison <- function(mtx) {
+  i <- 0
+  
+  while (any(mtx != 0)) {
+     mtx <- step(mtx)
+     i <- i + 1
+  }
+  
+  i
+}
+
+```
+
+Run on input:
+
+```{r}
+
+first_in_unison(input)
+
+```
+
+
+

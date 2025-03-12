@@ -1,0 +1,129 @@
+---
+title: "Day 10"
+date: 2021-12-10
+author:
+  name: https://adventofcode.com/2021/day/10
+  url: https://adventofcode.com/2021/day/10
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read input from file:
+
+```{r}
+
+input <- read_lines("../input/day10.txt") |> 
+  str_split("")
+
+```
+## Part 1
+
+Define our open/close bracket pairs and the scores for each type:
+
+```{r}
+
+b_open  <- c("(", "[", "{", "<")
+b_close <- c(")", "]", "}", ">")
+b_pairs <- c(set_names(b_close, b_open), set_names(b_open, b_close))
+b_score <- set_names(c(3, 57, 1197, 25137), b_close)
+
+```
+
+Define a function to move through a line, add/remove brackets to a stack, and return the first invalid closing bracket found.
+
+```{r}
+
+check_line <- function(x) {
+  stack <- c()
+  for (chr in x) {
+    if (chr %in% b_open)
+      stack <- c(stack, chr)
+    else if (tail(stack, 1) == b_pairs[chr])
+      stack <- head(stack, -1)
+    else
+      return(chr)
+  }
+}
+
+```
+
+Identify which lines have mistakes:
+
+```{r}
+
+scanned <- input |> 
+  map(check_line)
+
+```
+
+Sum the total score for all mistakes:
+
+```{r}
+
+scanned |> 
+  unlist() |> 
+  map_int(~ b_score[[.x]]) |> 
+  sum()
+
+```
+
+## Part 2
+
+Modify the point values for each closing bracket:
+
+```{r}
+
+b_score <- set_names(1:4, b_close)
+
+```
+
+Alter the line-scanning function to return the autocomplete brackets:
+
+```{r}
+
+complete_line <- function(x) {
+  stack <- c()
+  for (chr in x) {
+    if (chr %in% b_open)
+      stack <- c(stack, chr)
+    else if (tail(stack, 1) == b_pairs[chr])
+      stack <- head(stack, -1)
+  }
+  
+  return(unname(b_pairs[rev(stack)]))
+}
+
+```
+
+Define a function to score a given completion string:
+
+```{r}
+
+score_autocomplete <- \(x) reduce(x, ~ .x * 5 + b_score[[.y]], .init = 0)
+
+```
+
+Autocomplete all non-error inputs, score the results, then take the median:
+
+```{r}
+
+is_incomplete <- map_lgl(scanned, is.null)
+
+input |> 
+  keep(is_incomplete) |> 
+  map(complete_line) |> 
+  map_dbl(score_autocomplete) |> 
+  median()
+
+```
+
+
+

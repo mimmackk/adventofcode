@@ -1,0 +1,138 @@
+---
+title: "Day 9"
+date: 2021-12-09
+author:
+  name: https://adventofcode.com/2021/day/09
+  url: https://adventofcode.com/2021/day/09
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(igraph)
+
+```
+
+Read input from file:
+
+```{r}
+
+input <- scan(file = "../input/day09.txt", what = character(), quiet = TRUE)
+
+```
+
+Convert input from plaintext to an integer matrix:
+
+```{r}
+
+mtx <- input |> 
+  str_split("") |> 
+  list_c() |> 
+  as.integer() |> 
+  matrix(nrow = length(input), byrow = TRUE)
+
+```
+
+## Part 1
+
+Create shifted versions of our matrix to get the values above, below, to the left, and to the right of any given cell:
+
+```{r}
+
+mtx_above <- lag(mtx)
+mtx_below <- lead(mtx)
+mtx_left  <- t(lag(t(mtx)))
+mtx_right <- t(lead(t(mtx)))
+
+```
+
+Find all low points:
+
+```{r}
+
+low <- (
+  mtx < mtx_above & 
+  mtx < mtx_below & 
+  mtx < mtx_left  & 
+  mtx < mtx_right
+)
+
+low[is.na(low)] <- TRUE
+
+```
+
+Compute the risk level of each low point:
+
+```{r}
+
+sum(mtx[low] + 1)
+
+```
+
+## Part 2
+
+For each applicable point on the map, determine its smallest surrounding coordinate(s) where smoke will flow:
+
+```{r}
+
+neighbors <- pmap(
+  list(mtx, mtx_left, mtx_right, mtx_above, mtx_below),
+  \(i, l, r, u, d) {
+    dirs <- c("I" = i, "L" = l, "R" = r, "U" = u, "D" = d)
+    flow <- dirs[dirs == min(dirs, na.rm = TRUE)] |> 
+      discard(is.na) |> 
+      discard_at("I") |> 
+      names()
+    if (i != 9) flow else character(0)
+  }
+) |> 
+  enframe(name = "loc_id", value = "neighbor") |> 
+  unnest_longer(neighbor) |> 
+  mutate(
+    neighbor = case_match(neighbor,
+      "U" ~ loc_id - 1,
+      "D" ~ loc_id + 1,
+      "L" ~ loc_id - nrow(mtx),
+      "R" ~ loc_id + nrow(mtx)
+    )
+  )
+
+```
+
+Convert list of neighbors to a graph:
+
+```{r}
+
+g <- neighbors |> 
+  pmap(~ c(..1, ..2)) |> 
+  list_c() |> 
+  make_graph()
+
+```
+
+For each low point, compute the size of its basin from its graph neighborhood:
+
+```{r}
+
+basin_ids  <- components(g)$membership[which(low)]
+basin_size <- components(g)$csize[basin_ids]
+
+```
+
+Multiply together the sizes of the three largest basins:
+
+```{r}
+
+basin_size |> 
+  sort(decreasing = TRUE) |> 
+  head(3) |> 
+  prod()
+
+```
+
+
+

@@ -1,5 +1,5 @@
 ---
-title: "Day 08"
+title: "Day 8"
 date: 2021-12-08
 author:
   name: https://adventofcode.com/2021/day/08
