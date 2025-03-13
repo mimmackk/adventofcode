@@ -1,0 +1,15 @@
+{
+  "hash": "f4cc18b0edf95df0f58586fe265b53a7",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 12\"\ndate: 2021-12-12\nauthor:\n  name: https://adventofcode.com/2021/day/12\n  url: https://adventofcode.com/2021/day/12\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\n```\n:::\n\n\n\n\nRead input from file:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_delim(\n  \"../input/day12.txt\", \n  delim = '-', \n  col_names = c(\"source\", \"target\"),\n  show_col_types = FALSE\n)\n```\n:::\n\n\n\n\n## Part 1\n\nConvert input to a data frame of edges for every vertex (disallowing returns to the \"start\" vertex and departures from the \"end\" vertex):\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nadj <- bind_rows(\n  input,\n  select(input, target = source, source = target)\n) |> \n  filter(target != \"start\" & source != \"end\") |> \n  arrange(source, target)\n\nsmall_caves <- adj$source |> \n  keep(~ .x == str_to_lower(.x)) |> \n  discard(~ .x == \"start\") |> \n  unique()\n```\n:::\n\n\n\n\nBeginning from the 'start' node, expand outward until the 'end' node is found in each tree. End the search early if a small cave is visited more than once or no valid options remain.\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninvalid <- function(path) {\n  any(duplicated(keep(path, ~ .x %in% small_caves)))\n}\n\nfind_paths <- function(adj, cur_path = \"start\") {\n  \n  src <- tail(cur_path, 1)\n  \n  if (src == \"end\")\n    return(list(cur_path))\n  if (invalid(cur_path))\n    return(list())\n  \n  paths <- list()\n  nxt <- adj |> \n    filter(source == src) |> \n    pull(target)\n  \n  for (vtx in nxt)\n    paths <- c(paths, find_paths(adj, c(cur_path, vtx)))\n  \n  return(paths)\n}\n```\n:::\n\n\n\n\nCompute the total number of paths for the puzzle input:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nfind_paths(adj) |> \n  length()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 5920\n```\n\n\n:::\n:::\n\n\n\n\n## Part 2\n\nModify the `invalid` function to allow up to two visits to any one small cave:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninvalid <- function(path) {\n  counts <- path |> \n    keep(~ .x %in% small_caves) |> \n    sort() |> \n    rle()\n  \n  max(counts$lengths) > 2 | sum(counts$lengths == 2) > 1\n}\n```\n:::\n\n\n\n\nRe-run on puzzle input:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nfind_paths(adj) |> \n  length()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 155477\n```\n\n\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

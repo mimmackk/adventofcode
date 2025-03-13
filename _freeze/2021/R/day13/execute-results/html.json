@@ -1,0 +1,15 @@
+{
+  "hash": "72cd10789c7726ab556117839cba05c2",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 13\"\ndate: 2021-12-13\nauthor:\n  name: https://adventofcode.com/2021/day/13\n  url: https://adventofcode.com/2021/day/13\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\nlibrary(unglue)\n```\n:::\n\n\n\n\nRead input from file:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day13.txt\", skip_empty_rows = TRUE)\n```\n:::\n\n\n\n\nSplit input from plain-text strings into (1) x/y dot coordinates, and (2) a set of fold instructions.\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndots <- input |> \n  unglue_data(\"{x},{y}\", convert = TRUE) |> \n  drop_na()\n\nfolds <- input |> \n  unglue_data(\"fold along {axis}={value}\", convert = TRUE) |> \n  drop_na()\n```\n:::\n\n\n\n\n\n## Part 1\n\nDefine a function to fold the paper with the list of dots over a given line:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nfold_paper <- function(df, axis, value) {\n  df |> \n    mutate(across(all_of(axis), ~ case_when(\n      .x > value ~ value - (.x - value),\n      .default = .x\n    ))) |> \n    distinct()\n}\n```\n:::\n\n\n\n\nCount the dots after the first fold is complete:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nfold_paper(dots, folds$axis[[1]], folds$value[[1]]) |> \n  nrow()\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 807\n```\n\n\n:::\n:::\n\n\n\n\n## Part 2\n\nFold the paper completely:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nfolded <- reduce2(\n  .x = folds$axis, \n  .y = folds$value, \n  .f = \\(acc, axis, value) fold_paper(acc, axis, value), \n  .init = dots\n)\n```\n:::\n\n\n\n\nPrint the output:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nfolded |> \n  mutate(chr = '#') |> \n  complete(x = full_seq(x, 1), y = full_seq(y, 1), fill = list(\"chr\" = \" \")) |> \n  arrange(y, x) |> \n  summarize(chr = str_flatten(chr), .by = y) |> \n  pull(chr) |> \n  cat(sep = \"\\n\")\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n#     ##  #  # ####  ##  #  # ####   ##\n#    #  # #  # #    #  # #  # #       #\n#    #    #### ###  #    #  # ###     #\n#    # ## #  # #    # ## #  # #       #\n#    #  # #  # #    #  # #  # #    #  #\n####  ### #  # ####  ###  ##  ####  ## \n```\n\n\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

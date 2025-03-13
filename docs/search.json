@@ -44,47 +44,91 @@
     ]
   },
   {
-    "objectID": "2021/R/day01.html",
-    "href": "2021/R/day01.html",
-    "title": "Day 1",
+    "objectID": "2021/R/day14.html",
+    "href": "2021/R/day14.html",
+    "title": "Day 14",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; as.integer()",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day14.txt\", skip_empty_rows = TRUE)\n\nConvert input to a starting sequence and a list of pair insertion rules:\n\ntemplate &lt;- head(input, 1)\n\nrules &lt;- tail(input, -1) |&gt; \n  unglue_data(\"{pair} -&gt; {output}\")\n\nDisable scientific formatting when displaying large numbers:\n\noptions(scipen = 999)",
     "crumbs": [
       "2021",
-      "Day 1"
+      "Day 14"
     ]
   },
   {
-    "objectID": "2021/R/day01.html#setup",
-    "href": "2021/R/day01.html#setup",
-    "title": "Day 1",
+    "objectID": "2021/R/day14.html#setup",
+    "href": "2021/R/day14.html#setup",
+    "title": "Day 14",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; as.integer()",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day14.txt\", skip_empty_rows = TRUE)\n\nConvert input to a starting sequence and a list of pair insertion rules:\n\ntemplate &lt;- head(input, 1)\n\nrules &lt;- tail(input, -1) |&gt; \n  unglue_data(\"{pair} -&gt; {output}\")\n\nDisable scientific formatting when displaying large numbers:\n\noptions(scipen = 999)",
     "crumbs": [
       "2021",
-      "Day 1"
+      "Day 14"
     ]
   },
   {
-    "objectID": "2021/R/day01.html#part-1",
-    "href": "2021/R/day01.html#part-1",
-    "title": "Day 1",
+    "objectID": "2021/R/day14.html#part-1",
+    "href": "2021/R/day14.html#part-1",
+    "title": "Day 14",
     "section": "Part 1",
-    "text": "Part 1\nDefine a function to count the number of increasing values in a sequence:\n\ncount_incr &lt;- \\(x) sum(x - lag(x) &gt; 0, na.rm = TRUE)\n\nRun on input:\n\ncount_incr(input)\n\n[1] 1581",
+    "text": "Part 1\nDefine a function to grow the polymer n times, then take the count of the most common character in the string and subtract the count of the least common character:\n\ngrow_n &lt;- function(polymer, n) {\n  \n  # Save the first and last letter for later reference\n  letter_start &lt;- str_sub(polymer,  1L,  1L)\n  letter_final &lt;- str_sub(polymer, -1L, -1L)\n  \n  # Reformat the initial string as a dataframe of pairs and counts\n  polymer &lt;- map2_dfr(\n    .x = head(str_split_1(polymer, \"\"), -1),\n    .y = tail(str_split_1(polymer, \"\"), -1),\n    ~ tibble(pair = str_c(.x, .y))\n  ) |&gt; \n    summarize(n = n(), .by = pair)\n  \n  # Grow the polymer N times, tracking its growth as compact counts of pairs\n  for (i in 1:n) {\n    polymer &lt;- polymer |&gt; \n      left_join(rules, join_by(pair)) |&gt; \n      mutate(\n        pair1 = str_replace(pair, \".$\", output),\n        pair2 = str_replace(pair, \"^.\", output),\n        pair3 = case_when(is.na(output) ~ pair)\n      ) |&gt; \n      select(n, pair1, pair2, pair3) |&gt; \n      pivot_longer(\n        starts_with(\"pair\"), \n        values_to = \"pair\", \n        names_to = NULL, \n        values_drop_na = TRUE\n      ) |&gt; \n      summarize(n = sum(n), .by = pair)\n  }\n  \n  # Count final letters and de-duplicate\n  counts &lt;- polymer |&gt; \n    mutate(letters = str_split(pair, \"\")) |&gt; \n    unnest_longer(letters) |&gt; \n    summarize(n = sum(n), .by = letters) |&gt; \n    \n    # Initial and final letters were not duplicated, so return +1 to them\n    mutate(\n      n = case_when(letters == letter_start ~ n + 1, .default = n),\n      n = case_when(letters == letter_final ~ n + 1, .default = n),\n      n = n / 2\n    ) |&gt; \n    pull(n)\n  \n  # Return the range of greatest - least letter counts\n  max(counts) - min(counts)\n}\n\nRun for 10 steps on puzzle input:\n\ngrow_n(template, 10)\n\n[1] 3213",
     "crumbs": [
       "2021",
-      "Day 1"
+      "Day 14"
     ]
   },
   {
-    "objectID": "2021/R/day01.html#part-2",
-    "href": "2021/R/day01.html#part-2",
-    "title": "Day 1",
+    "objectID": "2021/R/day14.html#part-2",
+    "href": "2021/R/day14.html#part-2",
+    "title": "Day 14",
     "section": "Part 2",
-    "text": "Part 2\nCount increases for 3-measurement windows:\n\ncount_incr(input + lead(input) + lead(input, 2))\n\n[1] 1618",
+    "text": "Part 2\nRun for 40 steps on puzzle input:\n\ngrow_n(template, 40)\n\n[1] 3711743744429",
     "crumbs": [
       "2021",
-      "Day 1"
+      "Day 14"
+    ]
+  },
+  {
+    "objectID": "2021/R/day15.html",
+    "href": "2021/R/day15.html",
+    "title": "Day 15",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(igraph)\n\nRead input from file into a row/column indexed data frame:\n\ninput &lt;- read_lines(file = \"../input/day15.txt\") |&gt; \n  str_split(\"\") |&gt; \n  imap_dfr(\\(vec, idx) {\n    tibble(row = idx, col = 1:length(vec), risk = as.integer(vec))\n  }) |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "crumbs": [
+      "2021",
+      "Day 15"
+    ]
+  },
+  {
+    "objectID": "2021/R/day15.html#setup",
+    "href": "2021/R/day15.html#setup",
+    "title": "Day 15",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(igraph)\n\nRead input from file into a row/column indexed data frame:\n\ninput &lt;- read_lines(file = \"../input/day15.txt\") |&gt; \n  str_split(\"\") |&gt; \n  imap_dfr(\\(vec, idx) {\n    tibble(row = idx, col = 1:length(vec), risk = as.integer(vec))\n  }) |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "crumbs": [
+      "2021",
+      "Day 15"
+    ]
+  },
+  {
+    "objectID": "2021/R/day15.html#part-1",
+    "href": "2021/R/day15.html#part-1",
+    "title": "Day 15",
+    "section": "Part 1",
+    "text": "Part 1\nConvert input into a directed graph. Define the edge weights to be the risk level of each target vertex.\n\ndf_to_graph &lt;- function(df) {\n  \n  edges &lt;- df |&gt; \n  \n    # Define all neighbors and edge weights to the n/s/w/e of each vertex\n    mutate(n_target =  lag(id), n_weight =  lag(risk), .by = col) |&gt; \n    mutate(s_target = lead(id), s_weight = lead(risk), .by = col) |&gt; \n    mutate(w_target =  lag(id), w_weight =  lag(risk), .by = row) |&gt; \n    mutate(e_target = lead(id), e_weight = lead(risk), .by = row) |&gt; \n    \n    # Convert to a list of formatted vertex pairs for igraph\n    pivot_longer(\n      starts_with(c(\"n_\", \"s_\", \"w_\", \"e_\")), \n      names_to = \".value\", \n      names_pattern = \"._(.*)\",\n      values_drop_na = TRUE\n    ) |&gt; \n    select(src = id, target, weight)\n  \n  # Convert to a weighted graph\n  g &lt;- make_graph(list_c(map2(edges$src, edges$target, ~ c(.x, .y))))\n  E(g)$weight &lt;- edges$weight\n  \n  return(g)\n}\n\nFind the path with the least total risk and compute its risk:\n\nmin_risk &lt;- function(df) {\n  vtx_start &lt;- min(df$id)\n  vtx_end   &lt;- max(df$id)\n \n  graph &lt;- df_to_graph(df)\n  path &lt;- shortest_paths(graph, from = vtx_start, to = vtx_end)$vpath[[1]]\n  \n  df$risk[path] |&gt; \n    tail(n = -1) |&gt; \n    sum()\n}\n\nRun on puzzle input:\n\nmin_risk(input)\n\n[1] 423",
+    "crumbs": [
+      "2021",
+      "Day 15"
+    ]
+  },
+  {
+    "objectID": "2021/R/day15.html#part-2",
+    "href": "2021/R/day15.html#part-2",
+    "title": "Day 15",
+    "section": "Part 2",
+    "text": "Part 2\nExpand the input X5 in each direction:\n\nnrow &lt;- max(input$row)\nncol &lt;- max(input$col)\n\ndf_big &lt;- accumulate(\n  1:4, \n  \\(df, n) mutate(df, col = col + ncol, risk = pmax(1, (risk + 1) %% 10)), \n  .init = input\n) |&gt; \n  bind_rows() |&gt; \n  accumulate(\n    1:4, \n    \\(df, n) mutate(df, row = row + nrow, risk = pmax(1, (risk + 1) %% 10)), \n    .init = _\n  ) |&gt; \n  bind_rows() |&gt; \n  arrange(row, col) |&gt; \n  mutate(id = row_number())\n\nRe-run the minimum risk function on the expanded input:\n\nmin_risk(df_big)\n\n[1] 2778",
+    "crumbs": [
+      "2021",
+      "Day 15"
     ]
   },
   {
@@ -129,6 +173,50 @@
     "crumbs": [
       "2021",
       "Day 2"
+    ]
+  },
+  {
+    "objectID": "2021/R/day12.html",
+    "href": "2021/R/day12.html",
+    "title": "Day 12",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_delim(\n  \"../input/day12.txt\", \n  delim = '-', \n  col_names = c(\"source\", \"target\"),\n  show_col_types = FALSE\n)",
+    "crumbs": [
+      "2021",
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2021/R/day12.html#setup",
+    "href": "2021/R/day12.html#setup",
+    "title": "Day 12",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_delim(\n  \"../input/day12.txt\", \n  delim = '-', \n  col_names = c(\"source\", \"target\"),\n  show_col_types = FALSE\n)",
+    "crumbs": [
+      "2021",
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2021/R/day12.html#part-1",
+    "href": "2021/R/day12.html#part-1",
+    "title": "Day 12",
+    "section": "Part 1",
+    "text": "Part 1\nConvert input to a data frame of edges for every vertex (disallowing returns to the “start” vertex and departures from the “end” vertex):\n\nadj &lt;- bind_rows(\n  input,\n  select(input, target = source, source = target)\n) |&gt; \n  filter(target != \"start\" & source != \"end\") |&gt; \n  arrange(source, target)\n\nsmall_caves &lt;- adj$source |&gt; \n  keep(~ .x == str_to_lower(.x)) |&gt; \n  discard(~ .x == \"start\") |&gt; \n  unique()\n\nBeginning from the ‘start’ node, expand outward until the ‘end’ node is found in each tree. End the search early if a small cave is visited more than once or no valid options remain.\n\ninvalid &lt;- function(path) {\n  any(duplicated(keep(path, ~ .x %in% small_caves)))\n}\n\nfind_paths &lt;- function(adj, cur_path = \"start\") {\n  \n  src &lt;- tail(cur_path, 1)\n  \n  if (src == \"end\")\n    return(list(cur_path))\n  if (invalid(cur_path))\n    return(list())\n  \n  paths &lt;- list()\n  nxt &lt;- adj |&gt; \n    filter(source == src) |&gt; \n    pull(target)\n  \n  for (vtx in nxt)\n    paths &lt;- c(paths, find_paths(adj, c(cur_path, vtx)))\n  \n  return(paths)\n}\n\nCompute the total number of paths for the puzzle input:\n\nfind_paths(adj) |&gt; \n  length()\n\n[1] 5920",
+    "crumbs": [
+      "2021",
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2021/R/day12.html#part-2",
+    "href": "2021/R/day12.html#part-2",
+    "title": "Day 12",
+    "section": "Part 2",
+    "text": "Part 2\nModify the invalid function to allow up to two visits to any one small cave:\n\ninvalid &lt;- function(path) {\n  counts &lt;- path |&gt; \n    keep(~ .x %in% small_caves) |&gt; \n    sort() |&gt; \n    rle()\n  \n  max(counts$lengths) &gt; 2 | sum(counts$lengths == 2) &gt; 1\n}\n\nRe-run on puzzle input:\n\nfind_paths(adj) |&gt; \n  length()\n\n[1] 155477",
+    "crumbs": [
+      "2021",
+      "Day 12"
     ]
   },
   {
@@ -3513,7 +3601,7 @@
     "href": "index.html",
     "title": "Advent of Code: Worked Solutions",
     "section": "",
-    "text": "Worked solutions in R to the Advent of Code – a yearly advent calendar of programming puzzles.\n\nSOLUTION INDEX\n★★ = Parts 1 & 2; ★☆ = Part 1 Only\n\n\n\n2024\n2023\n2022\n2021\n\n\n\n\nDay 1\n★★\n★★\n★★\n★★\n\n\nDay 2\n★★\n★★\n★★\n★★\n\n\nDay 3\n★★\n★★\n★★\n★★\n\n\nDay 4\n★★\n★★\n★★\n★★\n\n\nDay 5\n★★\n★★\n★★\n★★\n\n\nDay 6\n★★\n★★\n★★\n★★\n\n\nDay 7\n★★\n★★\n★★\n★★\n\n\nDay 8\n★★\n★★\n★★\n★★\n\n\nDay 9\n★★\n★★\n★★\n★★\n\n\nDay 10\n★★\n★★\n★★\n★★\n\n\nDay 11\n★★\n★★\n★★\n★★\n\n\nDay 12\n★★\n★★\n★★\n\n\n\nDay 13\n★★\n★★\n★★\n\n\n\nDay 14\n★★\n★★\n★★\n\n\n\nDay 15\n★★\n★★\n★★\n\n\n\nDay 16\n★★\n★★\n★★\n\n\n\nDay 17\n★★\n★★\n★★\n\n\n\nDay 18\n★★\n★★\n★★\n\n\n\nDay 19\n★★\n★★\n★★\n\n\n\nDay 20\n★★\n★★\n★★\n\n\n\nDay 21\n★★\n★★\n★★\n\n\n\nDay 22\n★★\n★★\n★★\n\n\n\nDay 23\n★★\n★★\n★★\n\n\n\nDay 24\n★★\n★★\n★★\n\n\n\nDay 25\n★★\n★★\n★★"
+    "text": "Solutions in R to the Advent of Code – a yearly advent calendar of programming puzzles."
   },
   {
     "objectID": "2021/R/day04.html",
@@ -3604,6 +3692,50 @@
     ]
   },
   {
+    "objectID": "2021/R/day13.html",
+    "href": "2021/R/day13.html",
+    "title": "Day 13",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day13.txt\", skip_empty_rows = TRUE)\n\nSplit input from plain-text strings into (1) x/y dot coordinates, and (2) a set of fold instructions.\n\ndots &lt;- input |&gt; \n  unglue_data(\"{x},{y}\", convert = TRUE) |&gt; \n  drop_na()\n\nfolds &lt;- input |&gt; \n  unglue_data(\"fold along {axis}={value}\", convert = TRUE) |&gt; \n  drop_na()",
+    "crumbs": [
+      "2021",
+      "Day 13"
+    ]
+  },
+  {
+    "objectID": "2021/R/day13.html#setup",
+    "href": "2021/R/day13.html#setup",
+    "title": "Day 13",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day13.txt\", skip_empty_rows = TRUE)\n\nSplit input from plain-text strings into (1) x/y dot coordinates, and (2) a set of fold instructions.\n\ndots &lt;- input |&gt; \n  unglue_data(\"{x},{y}\", convert = TRUE) |&gt; \n  drop_na()\n\nfolds &lt;- input |&gt; \n  unglue_data(\"fold along {axis}={value}\", convert = TRUE) |&gt; \n  drop_na()",
+    "crumbs": [
+      "2021",
+      "Day 13"
+    ]
+  },
+  {
+    "objectID": "2021/R/day13.html#part-1",
+    "href": "2021/R/day13.html#part-1",
+    "title": "Day 13",
+    "section": "Part 1",
+    "text": "Part 1\nDefine a function to fold the paper with the list of dots over a given line:\n\nfold_paper &lt;- function(df, axis, value) {\n  df |&gt; \n    mutate(across(all_of(axis), ~ case_when(\n      .x &gt; value ~ value - (.x - value),\n      .default = .x\n    ))) |&gt; \n    distinct()\n}\n\nCount the dots after the first fold is complete:\n\nfold_paper(dots, folds$axis[[1]], folds$value[[1]]) |&gt; \n  nrow()\n\n[1] 807",
+    "crumbs": [
+      "2021",
+      "Day 13"
+    ]
+  },
+  {
+    "objectID": "2021/R/day13.html#part-2",
+    "href": "2021/R/day13.html#part-2",
+    "title": "Day 13",
+    "section": "Part 2",
+    "text": "Part 2\nFold the paper completely:\n\nfolded &lt;- reduce2(\n  .x = folds$axis, \n  .y = folds$value, \n  .f = \\(acc, axis, value) fold_paper(acc, axis, value), \n  .init = dots\n)\n\nPrint the output:\n\nfolded |&gt; \n  mutate(chr = '#') |&gt; \n  complete(x = full_seq(x, 1), y = full_seq(y, 1), fill = list(\"chr\" = \" \")) |&gt; \n  arrange(y, x) |&gt; \n  summarize(chr = str_flatten(chr), .by = y) |&gt; \n  pull(chr) |&gt; \n  cat(sep = \"\\n\")\n\n#     ##  #  # ####  ##  #  # ####   ##\n#    #  # #  # #    #  # #  # #       #\n#    #    #### ###  #    #  # ###     #\n#    # ## #  # #    # ## #  # #       #\n#    #  # #  # #    #  # #  # #    #  #\n####  ### #  # ####  ###  ##  ####  ##",
+    "crumbs": [
+      "2021",
+      "Day 13"
+    ]
+  },
+  {
     "objectID": "2021/R/day06.html",
     "href": "2021/R/day06.html",
     "title": "Day 6",
@@ -3689,6 +3821,50 @@
     "crumbs": [
       "2021",
       "Day 3"
+    ]
+  },
+  {
+    "objectID": "2021/R/day01.html",
+    "href": "2021/R/day01.html",
+    "title": "Day 1",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; as.integer()",
+    "crumbs": [
+      "2021",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2021/R/day01.html#setup",
+    "href": "2021/R/day01.html#setup",
+    "title": "Day 1",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; as.integer()",
+    "crumbs": [
+      "2021",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2021/R/day01.html#part-1",
+    "href": "2021/R/day01.html#part-1",
+    "title": "Day 1",
+    "section": "Part 1",
+    "text": "Part 1\nDefine a function to count the number of increasing values in a sequence:\n\ncount_incr &lt;- \\(x) sum(x - lag(x) &gt; 0, na.rm = TRUE)\n\nRun on input:\n\ncount_incr(input)\n\n[1] 1581",
+    "crumbs": [
+      "2021",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2021/R/day01.html#part-2",
+    "href": "2021/R/day01.html#part-2",
+    "title": "Day 1",
+    "section": "Part 2",
+    "text": "Part 2\nCount increases for 3-measurement windows:\n\ncount_incr(input + lead(input) + lead(input, 2))\n\n[1] 1618",
+    "crumbs": [
+      "2021",
+      "Day 1"
     ]
   },
   {

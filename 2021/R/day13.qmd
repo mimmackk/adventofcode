@@ -1,0 +1,103 @@
+---
+title: "Day 13"
+date: 2021-12-13
+author:
+  name: https://adventofcode.com/2021/day/13
+  url: https://adventofcode.com/2021/day/13
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read input from file:
+
+```{r}
+
+input <- read_lines("../input/day13.txt", skip_empty_rows = TRUE)
+
+```
+
+Split input from plain-text strings into (1) x/y dot coordinates, and (2) a set of fold instructions.
+
+```{r}
+
+dots <- input |> 
+  unglue_data("{x},{y}", convert = TRUE) |> 
+  drop_na()
+
+folds <- input |> 
+  unglue_data("fold along {axis}={value}", convert = TRUE) |> 
+  drop_na()
+
+```
+
+
+## Part 1
+
+Define a function to fold the paper with the list of dots over a given line:
+
+```{r}
+
+fold_paper <- function(df, axis, value) {
+  df |> 
+    mutate(across(all_of(axis), ~ case_when(
+      .x > value ~ value - (.x - value),
+      .default = .x
+    ))) |> 
+    distinct()
+}
+
+```
+
+Count the dots after the first fold is complete:
+
+```{r}
+
+fold_paper(dots, folds$axis[[1]], folds$value[[1]]) |> 
+  nrow()
+
+```
+
+## Part 2
+
+Fold the paper completely:
+
+```{r}
+
+folded <- reduce2(
+  .x = folds$axis, 
+  .y = folds$value, 
+  .f = \(acc, axis, value) fold_paper(acc, axis, value), 
+  .init = dots
+)
+
+```
+
+Print the output:
+
+```{r}
+
+folded |> 
+  mutate(chr = '#') |> 
+  complete(x = full_seq(x, 1), y = full_seq(y, 1), fill = list("chr" = " ")) |> 
+  arrange(y, x) |> 
+  summarize(chr = str_flatten(chr), .by = y) |> 
+  pull(chr) |> 
+  cat(sep = "\n")
+
+```
+
+
+
+
+
+
+

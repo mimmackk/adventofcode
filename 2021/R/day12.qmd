@@ -1,0 +1,119 @@
+---
+title: "Day 12"
+date: 2021-12-12
+author:
+  name: https://adventofcode.com/2021/day/12
+  url: https://adventofcode.com/2021/day/12
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read input from file:
+
+```{r}
+
+input <- read_delim(
+  "../input/day12.txt", 
+  delim = '-', 
+  col_names = c("source", "target"),
+  show_col_types = FALSE
+)
+
+```
+
+## Part 1
+
+Convert input to a data frame of edges for every vertex (disallowing returns to the "start" vertex and departures from the "end" vertex):
+
+```{r}
+
+adj <- bind_rows(
+  input,
+  select(input, target = source, source = target)
+) |> 
+  filter(target != "start" & source != "end") |> 
+  arrange(source, target)
+
+small_caves <- adj$source |> 
+  keep(~ .x == str_to_lower(.x)) |> 
+  discard(~ .x == "start") |> 
+  unique()
+
+```
+
+Beginning from the 'start' node, expand outward until the 'end' node is found in each tree. End the search early if a small cave is visited more than once or no valid options remain.
+
+```{r}
+
+invalid <- function(path) {
+  any(duplicated(keep(path, ~ .x %in% small_caves)))
+}
+
+find_paths <- function(adj, cur_path = "start") {
+  
+  src <- tail(cur_path, 1)
+  
+  if (src == "end")
+    return(list(cur_path))
+  if (invalid(cur_path))
+    return(list())
+  
+  paths <- list()
+  nxt <- adj |> 
+    filter(source == src) |> 
+    pull(target)
+  
+  for (vtx in nxt)
+    paths <- c(paths, find_paths(adj, c(cur_path, vtx)))
+  
+  return(paths)
+}
+
+```
+
+Compute the total number of paths for the puzzle input:
+
+```{r}
+
+find_paths(adj) |> 
+  length()
+
+```
+
+## Part 2
+
+Modify the `invalid` function to allow up to two visits to any one small cave:
+
+```{r}
+
+invalid <- function(path) {
+  counts <- path |> 
+    keep(~ .x %in% small_caves) |> 
+    sort() |> 
+    rle()
+  
+  max(counts$lengths) > 2 | sum(counts$lengths == 2) > 1
+}
+
+```
+
+Re-run on puzzle input:
+
+```{r}
+
+find_paths(adj) |> 
+  length()
+
+```
+
+
+
+

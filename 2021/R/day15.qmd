@@ -1,0 +1,128 @@
+---
+title: "Day 15"
+date: 2021-12-15
+author:
+  name: https://adventofcode.com/2021/day/15
+  url: https://adventofcode.com/2021/day/15
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(igraph)
+
+```
+
+Read input from file into a row/column indexed data frame:
+
+```{r}
+
+input <- read_lines(file = "../input/day15.txt") |> 
+  str_split("") |> 
+  imap_dfr(\(vec, idx) {
+    tibble(row = idx, col = 1:length(vec), risk = as.integer(vec))
+  }) |> 
+  mutate(id = row_number(), .before = everything())
+
+```
+
+## Part 1
+
+Convert input into a directed graph. Define the edge weights to be the risk level of each target vertex.
+
+```{r}
+
+df_to_graph <- function(df) {
+  
+  edges <- df |> 
+  
+    # Define all neighbors and edge weights to the n/s/w/e of each vertex
+    mutate(n_target =  lag(id), n_weight =  lag(risk), .by = col) |> 
+    mutate(s_target = lead(id), s_weight = lead(risk), .by = col) |> 
+    mutate(w_target =  lag(id), w_weight =  lag(risk), .by = row) |> 
+    mutate(e_target = lead(id), e_weight = lead(risk), .by = row) |> 
+    
+    # Convert to a list of formatted vertex pairs for igraph
+    pivot_longer(
+      starts_with(c("n_", "s_", "w_", "e_")), 
+      names_to = ".value", 
+      names_pattern = "._(.*)",
+      values_drop_na = TRUE
+    ) |> 
+    select(src = id, target, weight)
+  
+  # Convert to a weighted graph
+  g <- make_graph(list_c(map2(edges$src, edges$target, ~ c(.x, .y))))
+  E(g)$weight <- edges$weight
+  
+  return(g)
+}
+
+```
+
+Find the path with the least total risk and compute its risk:
+
+```{r}
+
+min_risk <- function(df) {
+  vtx_start <- min(df$id)
+  vtx_end   <- max(df$id)
+ 
+  graph <- df_to_graph(df)
+  path <- shortest_paths(graph, from = vtx_start, to = vtx_end)$vpath[[1]]
+  
+  df$risk[path] |> 
+    tail(n = -1) |> 
+    sum()
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+min_risk(input)
+
+```
+
+## Part 2
+
+Expand the input X5 in each direction:
+
+```{r}
+
+nrow <- max(input$row)
+ncol <- max(input$col)
+
+df_big <- accumulate(
+  1:4, 
+  \(df, n) mutate(df, col = col + ncol, risk = pmax(1, (risk + 1) %% 10)), 
+  .init = input
+) |> 
+  bind_rows() |> 
+  accumulate(
+    1:4, 
+    \(df, n) mutate(df, row = row + nrow, risk = pmax(1, (risk + 1) %% 10)), 
+    .init = _
+  ) |> 
+  bind_rows() |> 
+  arrange(row, col) |> 
+  mutate(id = row_number())
+
+```
+
+Re-run the minimum risk function on the expanded input:
+
+```{r}
+
+min_risk(df_big)
+
+```
+
+
+

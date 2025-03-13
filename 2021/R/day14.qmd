@@ -1,0 +1,123 @@
+---
+title: "Day 14"
+date: 2021-12-14
+author:
+  name: https://adventofcode.com/2021/day/14
+  url: https://adventofcode.com/2021/day/14
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read input from file:
+
+```{r}
+
+input <- read_lines("../input/day14.txt", skip_empty_rows = TRUE)
+
+```
+
+Convert input to a starting sequence and a list of pair insertion rules:
+
+```{r}
+
+template <- head(input, 1)
+
+rules <- tail(input, -1) |> 
+  unglue_data("{pair} -> {output}")
+
+```
+
+Disable scientific formatting when displaying large numbers:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+## Part 1
+
+Define a function to grow the polymer `n` times, then take the count of the most common character in the string and subtract the count of the least common character:
+
+```{r}
+
+grow_n <- function(polymer, n) {
+  
+  # Save the first and last letter for later reference
+  letter_start <- str_sub(polymer,  1L,  1L)
+  letter_final <- str_sub(polymer, -1L, -1L)
+  
+  # Reformat the initial string as a dataframe of pairs and counts
+  polymer <- map2_dfr(
+    .x = head(str_split_1(polymer, ""), -1),
+    .y = tail(str_split_1(polymer, ""), -1),
+    ~ tibble(pair = str_c(.x, .y))
+  ) |> 
+    summarize(n = n(), .by = pair)
+  
+  # Grow the polymer N times, tracking its growth as compact counts of pairs
+  for (i in 1:n) {
+    polymer <- polymer |> 
+      left_join(rules, join_by(pair)) |> 
+      mutate(
+        pair1 = str_replace(pair, ".$", output),
+        pair2 = str_replace(pair, "^.", output),
+        pair3 = case_when(is.na(output) ~ pair)
+      ) |> 
+      select(n, pair1, pair2, pair3) |> 
+      pivot_longer(
+        starts_with("pair"), 
+        values_to = "pair", 
+        names_to = NULL, 
+        values_drop_na = TRUE
+      ) |> 
+      summarize(n = sum(n), .by = pair)
+  }
+  
+  # Count final letters and de-duplicate
+  counts <- polymer |> 
+    mutate(letters = str_split(pair, "")) |> 
+    unnest_longer(letters) |> 
+    summarize(n = sum(n), .by = letters) |> 
+    
+    # Initial and final letters were not duplicated, so return +1 to them
+    mutate(
+      n = case_when(letters == letter_start ~ n + 1, .default = n),
+      n = case_when(letters == letter_final ~ n + 1, .default = n),
+      n = n / 2
+    ) |> 
+    pull(n)
+  
+  # Return the range of greatest - least letter counts
+  max(counts) - min(counts)
+}
+
+```
+
+Run for 10 steps on puzzle input:
+
+```{r}
+
+grow_n(template, 10)
+
+```
+
+## Part 2
+
+Run for 40 steps on puzzle input:
+
+```{r}
+
+grow_n(template, 40)
+
+```
+
