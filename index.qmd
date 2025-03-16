@@ -9,3 +9,14 @@ author-title: "About"
 ---
 
 Solutions in R to the Advent of Code – a yearly advent calendar of programming puzzles.
+
+Concepts include:
+
+-   Text parsing (including regex)
+-   Graph traversal
+-   Pathfinding
+-   Breadth-first and depth-first search
+-   Memoization
+-   Optimization
+-   Bitwise arithmetic
+-   Modular arithmetic

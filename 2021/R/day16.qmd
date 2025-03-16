@@ -1,0 +1,203 @@
+---
+title: "Day 16"
+date: 2021-12-16
+author:
+  name: https://adventofcode.com/2021/day/16
+  url: https://adventofcode.com/2021/day/16
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read input from file into a row/column indexed data frame:
+
+```{r}
+
+input <- read_lines(file = "../input/day16.txt")
+
+```
+
+## Part 1
+
+Convert hex input to a binary string:
+
+```{r}
+
+bin <- input |> 
+  str_split_1("") |> 
+  strtoi(base = 16L) |> 
+  map_chr(
+    ~ .x |> 
+      intToBits() |> 
+      as.integer() |>       
+      rev() |> 
+      tail(4) |> 
+      str_flatten()
+  ) |> 
+  str_flatten()
+
+```
+
+Define a helper function to parse binary strings larger than 32 bits (which can't be handled by the built-in `strtoi` function):
+
+```{r}
+
+strtodbl <- function(str) {
+  str |> 
+    str_split_1("") |> 
+    rev() |> 
+    as.integer() |> 
+    imap_dbl(\(x, idx) if_else(x == 1, 2^(idx - 1), 0)) |> 
+    sum()
+}
+
+```
+
+Define a function to convert a binary string into an integer following the designated decoding pattern, where values are grouped into sets of 5 bits:
+
+```{r}
+
+read_literal <- function(bin) {
+  str <- str_extract(bin, "^(1....)*(0....)")
+  bin <- str_replace_all(str, "(.(....))", "\\2")
+  val <- strtoi(bin, base = 2)
+  
+  # strtoi can only handle 32 bit integers. Use helper func for larger cases
+  if (is.na(val)) {
+    val <- strtodbl(bin)
+  }
+  
+  lst(value = val, nbits = str_length(str))
+}
+
+```
+
+Define a function to read the header info from a packet and delagate the rest of the packet to the correct function to parse:
+
+```{r}
+
+read_packet <- function(bin) {
+  
+  # Return early if the end is an artifact of decimal representation
+  if (str_length(bin) < 4 | str_detect(bin, "^0+$")) 
+    return(lst(ver = NULL, type = NULL, nbits = str_length(bin), value = NULL))
+  
+  # Read in packet header/metadata
+  ver  <- str_sub(bin, start = 1L, end =  3L) |> strtoi(base = 2)
+  type <- str_sub(bin, start = 4L, end =  6L) |> strtoi(base = 2)
+  bin  <- str_sub(bin, start = 7L, end = -1L)
+  
+  # Choose the correct function to read in the packet based on type ID
+  fn <- get(case_match(type, 4 ~ "read_literal", .default = "read_subpackets"))
+  output <- fn(bin)
+  
+  lst(ver = ver, type = type, nbits = output$nbits + 6L, value = output$value)
+}
+
+```
+
+Define a function to read and merge sub-packets from within an operator packet:
+
+```{r}
+
+read_subpackets <- function(bin) {
+  
+  # Determine whether the length is in terms of bits or # of subpackets
+  type <- str_sub(bin, end = 1L) |> as.integer()
+  
+  # Pull length value as an integer and assign the max packet number if applcbl
+  bits <- case_match(type, 0 ~ 15L, 1 ~ 11L)
+  len  <- str_sub(bin, start = 2L, end = bits + 1L) |> strtoi(base = 2)
+  nmax <- case_match(type, 0 ~ Inf, 1 ~ len)
+  
+  # Trim the binary str to begin after the header and end at designated length
+  bin <- str_sub(
+    bin, 
+    start = bits + 2L,
+    end = case_match(type, 0 ~ bits + 1L + len, 1 ~ -1L)
+  )
+
+  # Initialize the loop
+  packets <- list()
+  nbits   <- bits + 1L
+  
+  # Parse subpackets until the end of the binary value or max count is reached
+  while (str_length(bin) > 0 & length(packets) < nmax) {
+    output  <- read_packet(bin)
+    nbits   <- nbits + output$nbits
+    packets <- c(packets, list(output))
+    bin     <- str_sub(bin, start = output$nbits + 1L)
+  }
+  
+  return(lst(nbits = nbits, value = packets))
+}
+
+```
+
+Parse puzzle input into a set of nested packets of integers:
+
+```{r}
+
+parsed <- read_packet(bin)
+
+```
+
+Sum the version numbers from each packet:
+
+```{r}
+
+parsed |>
+  unlist() |>
+  keep_at(~ str_detect(.x, "ver")) |>
+  sum()
+
+```
+
+## Part 2
+
+Type IDs (other than 4) now represent operations. Map these IDs to their operation:
+
+```{r}
+
+op_lst   <- c("+", "*", "min", "max", "I", ">", "<", "==")
+id_to_op <- \(id) get(op_lst[id + 1])
+
+```
+
+Define a function that parses the nested packet structure and calculates the appropriate output:
+
+```{r}
+
+calc_packet <- function(packet) {
+  if (packet$type == 4) return(packet$value)
+  
+  packet$value |> 
+    map_dbl(calc_packet) |> 
+    reduce(id_to_op(packet$type)) |> 
+    as.numeric()
+}
+
+```
+
+Calculate the output:
+
+```{r}
+
+calc_packet(parsed)
+
+```
+
+
+
+
+
+
+
+
