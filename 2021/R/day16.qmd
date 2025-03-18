@@ -16,7 +16,7 @@ library(tidyverse)
 
 ```
 
-Read input from file into a row/column indexed data frame:
+Read input from file:
 
 ```{r}
 

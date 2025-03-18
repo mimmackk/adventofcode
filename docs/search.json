@@ -44,91 +44,135 @@
     ]
   },
   {
-    "objectID": "2021/R/day14.html",
-    "href": "2021/R/day14.html",
-    "title": "Day 14",
+    "objectID": "2021/R/day18.html",
+    "href": "2021/R/day18.html",
+    "title": "Day 18",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day14.txt\", skip_empty_rows = TRUE)\n\nConvert input to a starting sequence and a list of pair insertion rules:\n\ntemplate &lt;- head(input, 1)\n\nrules &lt;- tail(input, -1) |&gt; \n  unglue_data(\"{pair} -&gt; {output}\")\n\nDisable scientific formatting when displaying large numbers:\n\noptions(scipen = 999)",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(file = \"../input/day18.txt\")\n\nConvert JSON-like input to “snailfish number” format: a flat, named vector whose names give the depth of the nesting:\n\nnested_to_sn &lt;- function(nested, depth = 0) {\n  if (is.integer(nested))\n    set_names(nested, depth)\n  else\n    map(nested, \\(lst) nested_to_sn(lst, depth + 1)) |&gt; \n      list_c()\n}\n\nsn &lt;- input |&gt; \n  map(~ jsonlite::fromJSON(.x, simplifyVector = FALSE)) |&gt; \n  map(nested_to_sn)",
     "crumbs": [
       "2021",
-      "Day 14"
+      "Day 18"
     ]
   },
   {
-    "objectID": "2021/R/day14.html#setup",
-    "href": "2021/R/day14.html#setup",
-    "title": "Day 14",
+    "objectID": "2021/R/day18.html#setup",
+    "href": "2021/R/day18.html#setup",
+    "title": "Day 18",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day14.txt\", skip_empty_rows = TRUE)\n\nConvert input to a starting sequence and a list of pair insertion rules:\n\ntemplate &lt;- head(input, 1)\n\nrules &lt;- tail(input, -1) |&gt; \n  unglue_data(\"{pair} -&gt; {output}\")\n\nDisable scientific formatting when displaying large numbers:\n\noptions(scipen = 999)",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(file = \"../input/day18.txt\")\n\nConvert JSON-like input to “snailfish number” format: a flat, named vector whose names give the depth of the nesting:\n\nnested_to_sn &lt;- function(nested, depth = 0) {\n  if (is.integer(nested))\n    set_names(nested, depth)\n  else\n    map(nested, \\(lst) nested_to_sn(lst, depth + 1)) |&gt; \n      list_c()\n}\n\nsn &lt;- input |&gt; \n  map(~ jsonlite::fromJSON(.x, simplifyVector = FALSE)) |&gt; \n  map(nested_to_sn)",
     "crumbs": [
       "2021",
-      "Day 14"
+      "Day 18"
     ]
   },
   {
-    "objectID": "2021/R/day14.html#part-1",
-    "href": "2021/R/day14.html#part-1",
-    "title": "Day 14",
+    "objectID": "2021/R/day18.html#part-1",
+    "href": "2021/R/day18.html#part-1",
+    "title": "Day 18",
     "section": "Part 1",
-    "text": "Part 1\nDefine a function to grow the polymer n times, then take the count of the most common character in the string and subtract the count of the least common character:\n\ngrow_n &lt;- function(polymer, n) {\n  \n  # Save the first and last letter for later reference\n  letter_start &lt;- str_sub(polymer,  1L,  1L)\n  letter_final &lt;- str_sub(polymer, -1L, -1L)\n  \n  # Reformat the initial string as a dataframe of pairs and counts\n  polymer &lt;- map2_dfr(\n    .x = head(str_split_1(polymer, \"\"), -1),\n    .y = tail(str_split_1(polymer, \"\"), -1),\n    ~ tibble(pair = str_c(.x, .y))\n  ) |&gt; \n    summarize(n = n(), .by = pair)\n  \n  # Grow the polymer N times, tracking its growth as compact counts of pairs\n  for (i in 1:n) {\n    polymer &lt;- polymer |&gt; \n      left_join(rules, join_by(pair)) |&gt; \n      mutate(\n        pair1 = str_replace(pair, \".$\", output),\n        pair2 = str_replace(pair, \"^.\", output),\n        pair3 = case_when(is.na(output) ~ pair)\n      ) |&gt; \n      select(n, pair1, pair2, pair3) |&gt; \n      pivot_longer(\n        starts_with(\"pair\"), \n        values_to = \"pair\", \n        names_to = NULL, \n        values_drop_na = TRUE\n      ) |&gt; \n      summarize(n = sum(n), .by = pair)\n  }\n  \n  # Count final letters and de-duplicate\n  counts &lt;- polymer |&gt; \n    mutate(letters = str_split(pair, \"\")) |&gt; \n    unnest_longer(letters) |&gt; \n    summarize(n = sum(n), .by = letters) |&gt; \n    \n    # Initial and final letters were not duplicated, so return +1 to them\n    mutate(\n      n = case_when(letters == letter_start ~ n + 1, .default = n),\n      n = case_when(letters == letter_final ~ n + 1, .default = n),\n      n = n / 2\n    ) |&gt; \n    pull(n)\n  \n  # Return the range of greatest - least letter counts\n  max(counts) - min(counts)\n}\n\nRun for 10 steps on puzzle input:\n\ngrow_n(template, 10)\n\n[1] 3213",
+    "text": "Part 1\nDefine a function to explode the first applicable pair in a snailfish number:\n\nexplode_sn &lt;- function(x) {\n  \n  idx &lt;- which((names(x) == lead(names(x))) & names(x) &gt; 4) |&gt; head(1)\n  \n  # Return as-is if there are no numbers to explode\n  if (length(idx) == 0) return(x)\n  \n  # Add the values of the exploding pair outward to the left and right\n  1:length(x) |&gt; \n    case_match(\n      idx - 1 ~ x + lead(x),\n      idx + 2 ~ x + lag(x),\n      .default = x\n    ) |&gt; \n    \n    # Replace the exploded pair with 0 and reduce its depth\n    discard_at(idx) |&gt; \n    modify_at(idx, ~ 0) |&gt; \n    set_names(\\(nm) {\n      case_match(\n        1:length(nm), \n        idx ~ as.character(as.numeric(nm) - 1), \n        .default = nm\n      )\n    })\n}\n\nDefine a function to split the first applicable pair in a snailfish number:\n\nsplit_sn &lt;- function(x) {\n  idx &lt;- detect_index(x, ~ .x &gt;= 10)\n  val &lt;- keep_at(x, idx)\n\n  # Return as-is if there are no numbers to split\n  if (idx == 0) return(x)\n  \n  # Convert the value to a new pair at 1 level greater depth\n  pair &lt;- c(floor(val / 2), ceiling(val / 2)) |&gt; \n    set_names(\\(nm) as.character(as.numeric(nm) + 1))\n  \n  # Replace the old value with the new pair\n  c(head(x, idx - 1), pair, tail(x, -idx))\n}\n\nDefine a function to reduce a snailfish number by iteravely exploding and splitting its contents:\n\nreduce_sn &lt;- function(x) {\n  prv &lt;- x\n\n  repeat {\n    x &lt;- explode_sn(x)\n    if (identical(x, prv)) {\n      x &lt;- split_sn(x)\n      if (identical(x, prv)) return(x)\n    }\n    prv &lt;- x\n  }\n}\n\nDefine a function that adds two snailfish numbers by combining them as a new pair and then reducing them:\n\nadd_sn &lt;- \\(x, y) {\n  c(x, y) |&gt; \n    set_names(\\(nm) as.character(as.numeric(nm) + 1)) |&gt; \n    reduce_sn()\n}\n\nDefine a function to compute the magnitude of a snailfish number:\n\nmagnitude &lt;- function(x) {\n  \n  # Iteratively replace the deepest pair with its magnitude\n  while (length(x) &gt; 1) {\n    idx &lt;- which(as.numeric(names(x)) == max(as.numeric(names(x)))) |&gt; head(1)\n    mag &lt;- (x[idx] * 3 + x[idx + 1] * 2) |&gt; \n      set_names(\\(nm) as.character(as.numeric(nm) - 1))\n    x &lt;- c(head(x, idx - 1), mag, tail(x, -(idx + 1)))\n  }\n  \n  unname(x)\n}\n\nAdd together all numbers from the input in order:\n\nfinal_sn &lt;- reduce(sn, add_sn)\n\nCompute the magnitude of the result:\n\nmagnitude(final_sn)\n\n[1] 4480",
     "crumbs": [
       "2021",
-      "Day 14"
+      "Day 18"
     ]
   },
   {
-    "objectID": "2021/R/day14.html#part-2",
-    "href": "2021/R/day14.html#part-2",
-    "title": "Day 14",
+    "objectID": "2021/R/day18.html#part-2",
+    "href": "2021/R/day18.html#part-2",
+    "title": "Day 18",
     "section": "Part 2",
-    "text": "Part 2\nRun for 40 steps on puzzle input:\n\ngrow_n(template, 40)\n\n[1] 3711743744429",
+    "text": "Part 2\nProduce all pairs of values from the input:\n\ndf &lt;- sn |&gt;\n  as_tibble_col(column_name = \"sn1\") |&gt;\n  mutate(id1 = row_number())\n\npairs &lt;- df |&gt;\n  cross_join(rename(df, sn2 = sn1, id2 = id1)) |&gt;\n  filter(id2 != id1)\n\nCompute the maximum magnitude across all summed pairs:\n\npairs |&gt;\n  pmap_dbl(\\(sn1, sn2, ...) magnitude(add_sn(sn1, sn2))) |&gt;\n  max()\n\n[1] 4676",
     "crumbs": [
       "2021",
-      "Day 14"
+      "Day 18"
     ]
   },
   {
-    "objectID": "2021/R/day15.html",
-    "href": "2021/R/day15.html",
-    "title": "Day 15",
+    "objectID": "2021/R/day01.html",
+    "href": "2021/R/day01.html",
+    "title": "Day 1",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(igraph)\n\nRead input from file into a row/column indexed data frame:\n\ninput &lt;- read_lines(file = \"../input/day15.txt\") |&gt; \n  str_split(\"\") |&gt; \n  imap_dfr(\\(vec, idx) {\n    tibble(row = idx, col = 1:length(vec), risk = as.integer(vec))\n  }) |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; as.integer()",
     "crumbs": [
       "2021",
-      "Day 15"
+      "Day 1"
     ]
   },
   {
-    "objectID": "2021/R/day15.html#setup",
-    "href": "2021/R/day15.html#setup",
-    "title": "Day 15",
+    "objectID": "2021/R/day01.html#setup",
+    "href": "2021/R/day01.html#setup",
+    "title": "Day 1",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(igraph)\n\nRead input from file into a row/column indexed data frame:\n\ninput &lt;- read_lines(file = \"../input/day15.txt\") |&gt; \n  str_split(\"\") |&gt; \n  imap_dfr(\\(vec, idx) {\n    tibble(row = idx, col = 1:length(vec), risk = as.integer(vec))\n  }) |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; as.integer()",
     "crumbs": [
       "2021",
-      "Day 15"
+      "Day 1"
     ]
   },
   {
-    "objectID": "2021/R/day15.html#part-1",
-    "href": "2021/R/day15.html#part-1",
-    "title": "Day 15",
+    "objectID": "2021/R/day01.html#part-1",
+    "href": "2021/R/day01.html#part-1",
+    "title": "Day 1",
     "section": "Part 1",
-    "text": "Part 1\nConvert input into a directed graph. Define the edge weights to be the risk level of each target vertex.\n\ndf_to_graph &lt;- function(df) {\n  \n  edges &lt;- df |&gt; \n  \n    # Define all neighbors and edge weights to the n/s/w/e of each vertex\n    mutate(n_target =  lag(id), n_weight =  lag(risk), .by = col) |&gt; \n    mutate(s_target = lead(id), s_weight = lead(risk), .by = col) |&gt; \n    mutate(w_target =  lag(id), w_weight =  lag(risk), .by = row) |&gt; \n    mutate(e_target = lead(id), e_weight = lead(risk), .by = row) |&gt; \n    \n    # Convert to a list of formatted vertex pairs for igraph\n    pivot_longer(\n      starts_with(c(\"n_\", \"s_\", \"w_\", \"e_\")), \n      names_to = \".value\", \n      names_pattern = \"._(.*)\",\n      values_drop_na = TRUE\n    ) |&gt; \n    select(src = id, target, weight)\n  \n  # Convert to a weighted graph\n  g &lt;- make_graph(list_c(map2(edges$src, edges$target, ~ c(.x, .y))))\n  E(g)$weight &lt;- edges$weight\n  \n  return(g)\n}\n\nFind the path with the least total risk and compute its risk:\n\nmin_risk &lt;- function(df) {\n  vtx_start &lt;- min(df$id)\n  vtx_end   &lt;- max(df$id)\n \n  graph &lt;- df_to_graph(df)\n  path &lt;- shortest_paths(graph, from = vtx_start, to = vtx_end)$vpath[[1]]\n  \n  df$risk[path] |&gt; \n    tail(n = -1) |&gt; \n    sum()\n}\n\nRun on puzzle input:\n\nmin_risk(input)\n\n[1] 423",
+    "text": "Part 1\nDefine a function to count the number of increasing values in a sequence:\n\ncount_incr &lt;- \\(x) sum(x - lag(x) &gt; 0, na.rm = TRUE)\n\nRun on input:\n\ncount_incr(input)\n\n[1] 1581",
     "crumbs": [
       "2021",
-      "Day 15"
+      "Day 1"
     ]
   },
   {
-    "objectID": "2021/R/day15.html#part-2",
-    "href": "2021/R/day15.html#part-2",
-    "title": "Day 15",
+    "objectID": "2021/R/day01.html#part-2",
+    "href": "2021/R/day01.html#part-2",
+    "title": "Day 1",
     "section": "Part 2",
-    "text": "Part 2\nExpand the input X5 in each direction:\n\nnrow &lt;- max(input$row)\nncol &lt;- max(input$col)\n\ndf_big &lt;- accumulate(\n  1:4, \n  \\(df, n) mutate(df, col = col + ncol, risk = pmax(1, (risk + 1) %% 10)), \n  .init = input\n) |&gt; \n  bind_rows() |&gt; \n  accumulate(\n    1:4, \n    \\(df, n) mutate(df, row = row + nrow, risk = pmax(1, (risk + 1) %% 10)), \n    .init = _\n  ) |&gt; \n  bind_rows() |&gt; \n  arrange(row, col) |&gt; \n  mutate(id = row_number())\n\nRe-run the minimum risk function on the expanded input:\n\nmin_risk(df_big)\n\n[1] 2778",
+    "text": "Part 2\nCount increases for 3-measurement windows:\n\ncount_incr(input + lead(input) + lead(input, 2))\n\n[1] 1618",
     "crumbs": [
       "2021",
-      "Day 15"
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2021/R/day03.html",
+    "href": "2021/R/day03.html",
+    "title": "Day 3",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(vctrs)\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day03.txt\")",
+    "crumbs": [
+      "2021",
+      "Day 3"
+    ]
+  },
+  {
+    "objectID": "2021/R/day03.html#setup",
+    "href": "2021/R/day03.html#setup",
+    "title": "Day 3",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(vctrs)\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day03.txt\")",
+    "crumbs": [
+      "2021",
+      "Day 3"
+    ]
+  },
+  {
+    "objectID": "2021/R/day03.html#part-1",
+    "href": "2021/R/day03.html#part-1",
+    "title": "Day 3",
+    "section": "Part 1",
+    "text": "Part 1\nDefine functions to compute the least and most common values in a vector (using greatest/least values as tiebreakers, as defined later in part 2):\n\nmost_common  &lt;- \\(x) vec_count(x) |&gt; slice_max(count) |&gt; pull(key) |&gt; max()\nleast_common &lt;- \\(x) vec_count(x) |&gt; slice_min(count) |&gt; pull(key) |&gt; min()\n\nDefine a function to convert a vector of binary integers to a decimal number:\n\nbin_to_num &lt;- \\(x) strtoi(str_flatten(x), base = 2)\n\nPrep the input by splitting binary numbers into separate digits by positions:\n\ndf &lt;- input |&gt; \n  str_split(\"\") |&gt; \n  enframe(name = \"id\") |&gt; \n  unnest_longer(value, indices_to = \"pos\") |&gt;   \n  mutate(value = as.integer(value))\n\nCompute the most and least common values in each position to get the gamma and epsilon values, then multiply them together to get the power consumption:\n\ndf |&gt; \n  summarize(\n    gamma = most_common(value), \n    epsilon = least_common(value), \n    .by = pos\n  ) |&gt; \n  summarize(across(c(gamma, epsilon), bin_to_num)) |&gt; \n  prod()\n\n[1] 1025636",
+    "crumbs": [
+      "2021",
+      "Day 3"
+    ]
+  },
+  {
+    "objectID": "2021/R/day03.html#part-2",
+    "href": "2021/R/day03.html#part-2",
+    "title": "Day 3",
+    "section": "Part 2",
+    "text": "Part 2\nDefine a set of functions to compute the oxygen and co2 ratings:\n\nget_rating &lt;- function(data, f = c(\"most_common\", \"least_common\")) {\n  \n  for (i in unique(data$pos)) {\n    id_lst &lt;- data |&gt; \n      filter(pos == i) |&gt; \n      filter(value == get(f)(value)) |&gt; \n      pull(id)\n    \n    data &lt;- filter(data, id %in% id_lst)\n    \n    if (length(id_lst) == 1)\n      return(bin_to_num(data$value))\n  }\n}\n\noxygen_rating &lt;- partial(get_rating, f = \"most_common\")\nco2_rating    &lt;- partial(get_rating, f = \"least_common\")\n\nCompute the final life support rating:\n\noxygen_rating(df) * co2_rating(df)\n\n[1] 793873",
+    "crumbs": [
+      "2021",
+      "Day 3"
     ]
   },
   {
@@ -136,7 +180,7 @@
     "href": "2021/R/day16.html",
     "title": "Day 16",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file into a row/column indexed data frame:\n\ninput &lt;- read_lines(file = \"../input/day16.txt\")",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(file = \"../input/day16.txt\")",
     "crumbs": [
       "2021",
       "Day 16"
@@ -147,7 +191,7 @@
     "href": "2021/R/day16.html#setup",
     "title": "Day 16",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file into a row/column indexed data frame:\n\ninput &lt;- read_lines(file = \"../input/day16.txt\")",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(file = \"../input/day16.txt\")",
     "crumbs": [
       "2021",
       "Day 16"
@@ -3824,91 +3868,135 @@
     ]
   },
   {
-    "objectID": "2021/R/day03.html",
-    "href": "2021/R/day03.html",
-    "title": "Day 3",
+    "objectID": "2021/R/day17.html",
+    "href": "2021/R/day17.html",
+    "title": "Day 17",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(vctrs)\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day03.txt\")",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead input from file:\n\ninput &lt;- read_lines(file = \"../input/day17.txt\")\n\nExtract numeric bounds from text input:\n\ntarget &lt;- unglue_data(\n  input,\n  \"target area: x={xmin}..{xmax}, y={ymin}..{ymax}\", \n  convert = TRUE\n) |&gt; \n  as.list()",
     "crumbs": [
       "2021",
-      "Day 3"
+      "Day 17"
     ]
   },
   {
-    "objectID": "2021/R/day03.html#setup",
-    "href": "2021/R/day03.html#setup",
-    "title": "Day 3",
+    "objectID": "2021/R/day17.html#setup",
+    "href": "2021/R/day17.html#setup",
+    "title": "Day 17",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(vctrs)\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day03.txt\")",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead input from file:\n\ninput &lt;- read_lines(file = \"../input/day17.txt\")\n\nExtract numeric bounds from text input:\n\ntarget &lt;- unglue_data(\n  input,\n  \"target area: x={xmin}..{xmax}, y={ymin}..{ymax}\", \n  convert = TRUE\n) |&gt; \n  as.list()",
     "crumbs": [
       "2021",
-      "Day 3"
+      "Day 17"
     ]
   },
   {
-    "objectID": "2021/R/day03.html#part-1",
-    "href": "2021/R/day03.html#part-1",
-    "title": "Day 3",
+    "objectID": "2021/R/day17.html#part-1",
+    "href": "2021/R/day17.html#part-1",
+    "title": "Day 17",
     "section": "Part 1",
-    "text": "Part 1\nDefine functions to compute the least and most common values in a vector (using greatest/least values as tiebreakers, as defined later in part 2):\n\nmost_common  &lt;- \\(x) vec_count(x) |&gt; slice_max(count) |&gt; pull(key) |&gt; max()\nleast_common &lt;- \\(x) vec_count(x) |&gt; slice_min(count) |&gt; pull(key) |&gt; min()\n\nDefine a function to convert a vector of binary integers to a decimal number:\n\nbin_to_num &lt;- \\(x) strtoi(str_flatten(x), base = 2)\n\nPrep the input by splitting binary numbers into separate digits by positions:\n\ndf &lt;- input |&gt; \n  str_split(\"\") |&gt; \n  enframe(name = \"id\") |&gt; \n  unnest_longer(value, indices_to = \"pos\") |&gt;   \n  mutate(value = as.integer(value))\n\nCompute the most and least common values in each position to get the gamma and epsilon values, then multiply them together to get the power consumption:\n\ndf |&gt; \n  summarize(\n    gamma = most_common(value), \n    epsilon = least_common(value), \n    .by = pos\n  ) |&gt; \n  summarize(across(c(gamma, epsilon), bin_to_num)) |&gt; \n  prod()\n\n[1] 1025636",
+    "text": "Part 1\nThe minimum x velocity is whichever value will cause the probe to come to rest just inside the target region. The maximum x velocity is the greatest x-value of the target (as the probe will get there in 1 step).\nTo compute the minimum starting x velocity, we take the ceiling of the n-value from the following formula:\n\\[\\sum_{i = 1}^n i = \\frac{n(n+1)}{2} = \\mathrm{xmin} \\quad \\rightarrow \\quad \\frac{1}{2}n^2 + \\frac{1}{2}n - \\mathrm{xmin} = 0 \\quad \\rightarrow \\quad n = -\\frac{1}{2} + \\sqrt{\\frac{1}{4} + 2*\\mathrm{xmin}}\\]\n\nx_vmin &lt;- ceiling(-0.5 + sqrt(0.25 + 2 * target$xmin))\nx_vmax &lt;- target$xmax\n\nWe also know that since gravity behaves symmetrically, we can’t have an initial y velocity greater than the ymin boundary. Otherwise by the time it returns to y = 0, it will overshoot the target area in the next step.\n\ny_vmin &lt;- target$ymin\ny_vmax &lt;- abs(target$ymin)\n\nCompute the min/maximum number time steps when the probe is in the target x/y range. Compute x and y ranges separately, first:\n\nx_set &lt;- tibble(v = x_vmin:x_vmax) |&gt; \n  mutate(\n    pos  = map(v, ~ accumulate(.x:1, sum)),\n    xmax  = map_int(pos, ~ tail(.x, 1)),\n    tset = map(pos, \\(x) which(between(x, target$xmin, target$xmax))),\n    tmin = map_dbl(tset, min),\n    tmax = map_dbl(tset, max),\n    tmax = if_else(between(xmax, target$xmin, target$xmax), Inf, tmax)\n  ) |&gt; \n  select(-tset) |&gt; \n  filter(tmin &lt;= tmax)\n\ny_set &lt;- tibble(v = y_vmin:y_vmax) |&gt;\n  mutate(\n    pos  = map(v, \\(v) accumulate(v:(-abs(v) - abs(target$ymin)), sum)),\n    tset = map(pos,  \\(y) which(between(y, target$ymin, target$ymax))),\n    tmin = map_dbl(tset, min),\n    tmax = map_dbl(tset, max),\n    ymax = map2_dbl(pos, tmax, \\(y, t) max(head(y, t)))\n  ) |&gt; \n  select(-tset) |&gt; \n  filter(tmin &lt;= tmax)\n\nCombine the x and y valid ranges to detect when both are in the target at the same time:\n\nvalid_set &lt;- cross_join(x_set, y_set) |&gt; \n  mutate(\n    tmin = pmax(tmin.x, tmin.y),\n    tmax = pmin(tmax.x, tmax.y)\n  ) |&gt; \n  filter(tmin &lt;= tmax)\n\nPull the maximum y value attained by all valid starting velocities:\n\nvalid_set |&gt; \n  pull(ymax) |&gt; \n  max()\n\n[1] 8646",
     "crumbs": [
       "2021",
-      "Day 3"
+      "Day 17"
     ]
   },
   {
-    "objectID": "2021/R/day03.html#part-2",
-    "href": "2021/R/day03.html#part-2",
-    "title": "Day 3",
+    "objectID": "2021/R/day17.html#part-2",
+    "href": "2021/R/day17.html#part-2",
+    "title": "Day 17",
     "section": "Part 2",
-    "text": "Part 2\nDefine a set of functions to compute the oxygen and co2 ratings:\n\nget_rating &lt;- function(data, f = c(\"most_common\", \"least_common\")) {\n  \n  for (i in unique(data$pos)) {\n    id_lst &lt;- data |&gt; \n      filter(pos == i) |&gt; \n      filter(value == get(f)(value)) |&gt; \n      pull(id)\n    \n    data &lt;- filter(data, id %in% id_lst)\n    \n    if (length(id_lst) == 1)\n      return(bin_to_num(data$value))\n  }\n}\n\noxygen_rating &lt;- partial(get_rating, f = \"most_common\")\nco2_rating    &lt;- partial(get_rating, f = \"least_common\")\n\nCompute the final life support rating:\n\noxygen_rating(df) * co2_rating(df)\n\n[1] 793873",
+    "text": "Part 2\nCount the entries in the valid set of starting velocities:\n\nnrow(valid_set)\n\n[1] 5945",
     "crumbs": [
       "2021",
-      "Day 3"
+      "Day 17"
     ]
   },
   {
-    "objectID": "2021/R/day01.html",
-    "href": "2021/R/day01.html",
-    "title": "Day 1",
+    "objectID": "2021/R/day15.html",
+    "href": "2021/R/day15.html",
+    "title": "Day 15",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; as.integer()",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(igraph)\n\nRead input from file into a row/column indexed data frame:\n\ninput &lt;- read_lines(file = \"../input/day15.txt\") |&gt; \n  str_split(\"\") |&gt; \n  imap_dfr(\\(vec, idx) {\n    tibble(row = idx, col = 1:length(vec), risk = as.integer(vec))\n  }) |&gt; \n  mutate(id = row_number(), .before = everything())",
     "crumbs": [
       "2021",
-      "Day 1"
+      "Day 15"
     ]
   },
   {
-    "objectID": "2021/R/day01.html#setup",
-    "href": "2021/R/day01.html#setup",
-    "title": "Day 1",
+    "objectID": "2021/R/day15.html#setup",
+    "href": "2021/R/day15.html#setup",
+    "title": "Day 15",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; as.integer()",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(igraph)\n\nRead input from file into a row/column indexed data frame:\n\ninput &lt;- read_lines(file = \"../input/day15.txt\") |&gt; \n  str_split(\"\") |&gt; \n  imap_dfr(\\(vec, idx) {\n    tibble(row = idx, col = 1:length(vec), risk = as.integer(vec))\n  }) |&gt; \n  mutate(id = row_number(), .before = everything())",
     "crumbs": [
       "2021",
-      "Day 1"
+      "Day 15"
     ]
   },
   {
-    "objectID": "2021/R/day01.html#part-1",
-    "href": "2021/R/day01.html#part-1",
-    "title": "Day 1",
+    "objectID": "2021/R/day15.html#part-1",
+    "href": "2021/R/day15.html#part-1",
+    "title": "Day 15",
     "section": "Part 1",
-    "text": "Part 1\nDefine a function to count the number of increasing values in a sequence:\n\ncount_incr &lt;- \\(x) sum(x - lag(x) &gt; 0, na.rm = TRUE)\n\nRun on input:\n\ncount_incr(input)\n\n[1] 1581",
+    "text": "Part 1\nConvert input into a directed graph. Define the edge weights to be the risk level of each target vertex.\n\ndf_to_graph &lt;- function(df) {\n  \n  edges &lt;- df |&gt; \n  \n    # Define all neighbors and edge weights to the n/s/w/e of each vertex\n    mutate(n_target =  lag(id), n_weight =  lag(risk), .by = col) |&gt; \n    mutate(s_target = lead(id), s_weight = lead(risk), .by = col) |&gt; \n    mutate(w_target =  lag(id), w_weight =  lag(risk), .by = row) |&gt; \n    mutate(e_target = lead(id), e_weight = lead(risk), .by = row) |&gt; \n    \n    # Convert to a list of formatted vertex pairs for igraph\n    pivot_longer(\n      starts_with(c(\"n_\", \"s_\", \"w_\", \"e_\")), \n      names_to = \".value\", \n      names_pattern = \"._(.*)\",\n      values_drop_na = TRUE\n    ) |&gt; \n    select(src = id, target, weight)\n  \n  # Convert to a weighted graph\n  g &lt;- make_graph(list_c(map2(edges$src, edges$target, ~ c(.x, .y))))\n  E(g)$weight &lt;- edges$weight\n  \n  return(g)\n}\n\nFind the path with the least total risk and compute its risk:\n\nmin_risk &lt;- function(df) {\n  vtx_start &lt;- min(df$id)\n  vtx_end   &lt;- max(df$id)\n \n  graph &lt;- df_to_graph(df)\n  path &lt;- shortest_paths(graph, from = vtx_start, to = vtx_end)$vpath[[1]]\n  \n  df$risk[path] |&gt; \n    tail(n = -1) |&gt; \n    sum()\n}\n\nRun on puzzle input:\n\nmin_risk(input)\n\n[1] 423",
     "crumbs": [
       "2021",
-      "Day 1"
+      "Day 15"
     ]
   },
   {
-    "objectID": "2021/R/day01.html#part-2",
-    "href": "2021/R/day01.html#part-2",
-    "title": "Day 1",
+    "objectID": "2021/R/day15.html#part-2",
+    "href": "2021/R/day15.html#part-2",
+    "title": "Day 15",
     "section": "Part 2",
-    "text": "Part 2\nCount increases for 3-measurement windows:\n\ncount_incr(input + lead(input) + lead(input, 2))\n\n[1] 1618",
+    "text": "Part 2\nExpand the input X5 in each direction:\n\nnrow &lt;- max(input$row)\nncol &lt;- max(input$col)\n\ndf_big &lt;- accumulate(\n  1:4, \n  \\(df, n) mutate(df, col = col + ncol, risk = pmax(1, (risk + 1) %% 10)), \n  .init = input\n) |&gt; \n  bind_rows() |&gt; \n  accumulate(\n    1:4, \n    \\(df, n) mutate(df, row = row + nrow, risk = pmax(1, (risk + 1) %% 10)), \n    .init = _\n  ) |&gt; \n  bind_rows() |&gt; \n  arrange(row, col) |&gt; \n  mutate(id = row_number())\n\nRe-run the minimum risk function on the expanded input:\n\nmin_risk(df_big)\n\n[1] 2778",
     "crumbs": [
       "2021",
-      "Day 1"
+      "Day 15"
+    ]
+  },
+  {
+    "objectID": "2021/R/day14.html",
+    "href": "2021/R/day14.html",
+    "title": "Day 14",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day14.txt\", skip_empty_rows = TRUE)\n\nConvert input to a starting sequence and a list of pair insertion rules:\n\ntemplate &lt;- head(input, 1)\n\nrules &lt;- tail(input, -1) |&gt; \n  unglue_data(\"{pair} -&gt; {output}\")\n\nDisable scientific formatting when displaying large numbers:\n\noptions(scipen = 999)",
+    "crumbs": [
+      "2021",
+      "Day 14"
+    ]
+  },
+  {
+    "objectID": "2021/R/day14.html#setup",
+    "href": "2021/R/day14.html#setup",
+    "title": "Day 14",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day14.txt\", skip_empty_rows = TRUE)\n\nConvert input to a starting sequence and a list of pair insertion rules:\n\ntemplate &lt;- head(input, 1)\n\nrules &lt;- tail(input, -1) |&gt; \n  unglue_data(\"{pair} -&gt; {output}\")\n\nDisable scientific formatting when displaying large numbers:\n\noptions(scipen = 999)",
+    "crumbs": [
+      "2021",
+      "Day 14"
+    ]
+  },
+  {
+    "objectID": "2021/R/day14.html#part-1",
+    "href": "2021/R/day14.html#part-1",
+    "title": "Day 14",
+    "section": "Part 1",
+    "text": "Part 1\nDefine a function to grow the polymer n times, then take the count of the most common character in the string and subtract the count of the least common character:\n\ngrow_n &lt;- function(polymer, n) {\n  \n  # Save the first and last letter for later reference\n  letter_start &lt;- str_sub(polymer,  1L,  1L)\n  letter_final &lt;- str_sub(polymer, -1L, -1L)\n  \n  # Reformat the initial string as a dataframe of pairs and counts\n  polymer &lt;- map2_dfr(\n    .x = head(str_split_1(polymer, \"\"), -1),\n    .y = tail(str_split_1(polymer, \"\"), -1),\n    ~ tibble(pair = str_c(.x, .y))\n  ) |&gt; \n    summarize(n = n(), .by = pair)\n  \n  # Grow the polymer N times, tracking its growth as compact counts of pairs\n  for (i in 1:n) {\n    polymer &lt;- polymer |&gt; \n      left_join(rules, join_by(pair)) |&gt; \n      mutate(\n        pair1 = str_replace(pair, \".$\", output),\n        pair2 = str_replace(pair, \"^.\", output),\n        pair3 = case_when(is.na(output) ~ pair)\n      ) |&gt; \n      select(n, pair1, pair2, pair3) |&gt; \n      pivot_longer(\n        starts_with(\"pair\"), \n        values_to = \"pair\", \n        names_to = NULL, \n        values_drop_na = TRUE\n      ) |&gt; \n      summarize(n = sum(n), .by = pair)\n  }\n  \n  # Count final letters and de-duplicate\n  counts &lt;- polymer |&gt; \n    mutate(letters = str_split(pair, \"\")) |&gt; \n    unnest_longer(letters) |&gt; \n    summarize(n = sum(n), .by = letters) |&gt; \n    \n    # Initial and final letters were not duplicated, so return +1 to them\n    mutate(\n      n = case_when(letters == letter_start ~ n + 1, .default = n),\n      n = case_when(letters == letter_final ~ n + 1, .default = n),\n      n = n / 2\n    ) |&gt; \n    pull(n)\n  \n  # Return the range of greatest - least letter counts\n  max(counts) - min(counts)\n}\n\nRun for 10 steps on puzzle input:\n\ngrow_n(template, 10)\n\n[1] 3213",
+    "crumbs": [
+      "2021",
+      "Day 14"
+    ]
+  },
+  {
+    "objectID": "2021/R/day14.html#part-2",
+    "href": "2021/R/day14.html#part-2",
+    "title": "Day 14",
+    "section": "Part 2",
+    "text": "Part 2\nRun for 40 steps on puzzle input:\n\ngrow_n(template, 40)\n\n[1] 3711743744429",
+    "crumbs": [
+      "2021",
+      "Day 14"
     ]
   },
   {

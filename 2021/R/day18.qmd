@@ -1,0 +1,193 @@
+---
+title: "Day 18"
+date: 2021-12-18
+author:
+  name: https://adventofcode.com/2021/day/18
+  url: https://adventofcode.com/2021/day/18
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read input from file:
+
+```{r}
+
+input <- read_lines(file = "../input/day18.txt")
+
+```
+
+Convert JSON-like input to "snailfish number" format: a flat, named vector whose names give the depth of the nesting:
+
+```{r}
+
+nested_to_sn <- function(nested, depth = 0) {
+  if (is.integer(nested))
+    set_names(nested, depth)
+  else
+    map(nested, \(lst) nested_to_sn(lst, depth + 1)) |> 
+      list_c()
+}
+
+sn <- input |> 
+  map(~ jsonlite::fromJSON(.x, simplifyVector = FALSE)) |> 
+  map(nested_to_sn)
+
+```
+
+
+## Part 1
+
+Define a function to explode the first applicable pair in a snailfish number:
+
+```{r}
+
+explode_sn <- function(x) {
+  
+  idx <- which((names(x) == lead(names(x))) & names(x) > 4) |> head(1)
+  
+  # Return as-is if there are no numbers to explode
+  if (length(idx) == 0) return(x)
+  
+  # Add the values of the exploding pair outward to the left and right
+  1:length(x) |> 
+    case_match(
+      idx - 1 ~ x + lead(x),
+      idx + 2 ~ x + lag(x),
+      .default = x
+    ) |> 
+    
+    # Replace the exploded pair with 0 and reduce its depth
+    discard_at(idx) |> 
+    modify_at(idx, ~ 0) |> 
+    set_names(\(nm) {
+      case_match(
+        1:length(nm), 
+        idx ~ as.character(as.numeric(nm) - 1), 
+        .default = nm
+      )
+    })
+}
+
+```
+
+Define a function to split the first applicable pair in a snailfish number:
+
+```{r}
+
+split_sn <- function(x) {
+  idx <- detect_index(x, ~ .x >= 10)
+  val <- keep_at(x, idx)
+
+  # Return as-is if there are no numbers to split
+  if (idx == 0) return(x)
+  
+  # Convert the value to a new pair at 1 level greater depth
+  pair <- c(floor(val / 2), ceiling(val / 2)) |> 
+    set_names(\(nm) as.character(as.numeric(nm) + 1))
+  
+  # Replace the old value with the new pair
+  c(head(x, idx - 1), pair, tail(x, -idx))
+}
+
+```
+
+Define a function to reduce a snailfish number by iteravely exploding and splitting its contents:
+
+```{r}
+
+reduce_sn <- function(x) {
+  prv <- x
+
+  repeat {
+    x <- explode_sn(x)
+    if (identical(x, prv)) {
+      x <- split_sn(x)
+      if (identical(x, prv)) return(x)
+    }
+    prv <- x
+  }
+}
+
+```
+
+Define a function that adds two snailfish numbers by combining them as a new pair and then reducing them:
+
+```{r}
+
+add_sn <- \(x, y) {
+  c(x, y) |> 
+    set_names(\(nm) as.character(as.numeric(nm) + 1)) |> 
+    reduce_sn()
+}
+
+```
+
+Define a function to compute the magnitude of a snailfish number:
+
+```{r}
+
+magnitude <- function(x) {
+  
+  # Iteratively replace the deepest pair with its magnitude
+  while (length(x) > 1) {
+    idx <- which(as.numeric(names(x)) == max(as.numeric(names(x)))) |> head(1)
+    mag <- (x[idx] * 3 + x[idx + 1] * 2) |> 
+      set_names(\(nm) as.character(as.numeric(nm) - 1))
+    x <- c(head(x, idx - 1), mag, tail(x, -(idx + 1)))
+  }
+  
+  unname(x)
+}
+
+
+```
+
+Add together all numbers from the input in order:
+
+```{r}
+
+final_sn <- reduce(sn, add_sn)
+
+```
+
+Compute the magnitude of the result:
+
+```{r}
+
+magnitude(final_sn)
+
+```
+
+## Part 2
+
+Produce all pairs of values from the input:
+
+```{r}
+
+df <- sn |>
+  as_tibble_col(column_name = "sn1") |>
+  mutate(id1 = row_number())
+
+pairs <- df |>
+  cross_join(rename(df, sn2 = sn1, id2 = id1)) |>
+  filter(id2 != id1)
+
+```
+
+Compute the maximum magnitude across all summed pairs:
+
+```{r}
+
+pairs |>
+  pmap_dbl(\(sn1, sn2, ...) magnitude(add_sn(sn1, sn2))) |>
+  max()
+
+```

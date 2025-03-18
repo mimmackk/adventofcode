@@ -1,0 +1,127 @@
+---
+title: "Day 17"
+date: 2021-12-17
+author:
+  name: https://adventofcode.com/2021/day/17
+  url: https://adventofcode.com/2021/day/17
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read input from file:
+
+```{r}
+
+input <- read_lines(file = "../input/day17.txt")
+
+```
+
+Extract numeric bounds from text input:
+
+```{r}
+
+target <- unglue_data(
+  input,
+  "target area: x={xmin}..{xmax}, y={ymin}..{ymax}", 
+  convert = TRUE
+) |> 
+  as.list()
+
+```
+
+## Part 1
+
+The minimum x velocity is whichever value will cause the probe to come to rest just inside the target region. The maximum x velocity is the greatest x-value of the target (as the probe will get there in 1 step).
+
+To compute the minimum starting x velocity, we take the ceiling of the n-value from the following formula:
+
+$$\sum_{i = 1}^n i = \frac{n(n+1)}{2} = \mathrm{xmin} \quad \rightarrow \quad \frac{1}{2}n^2 + \frac{1}{2}n - \mathrm{xmin} = 0 \quad \rightarrow \quad n = -\frac{1}{2} + \sqrt{\frac{1}{4} + 2*\mathrm{xmin}}$$
+
+```{r}
+
+x_vmin <- ceiling(-0.5 + sqrt(0.25 + 2 * target$xmin))
+x_vmax <- target$xmax
+
+```
+
+We also know that since gravity behaves symmetrically, we can't have an initial y velocity greater than the ymin boundary. Otherwise by the time it returns to y = 0, it will overshoot the target area in the next step.
+
+```{r}
+
+y_vmin <- target$ymin
+y_vmax <- abs(target$ymin)
+
+```
+
+Compute the min/maximum number time steps when the probe is in the target x/y range. Compute x and y ranges separately, first:
+
+```{r}
+#| warning: false
+
+x_set <- tibble(v = x_vmin:x_vmax) |> 
+  mutate(
+    pos  = map(v, ~ accumulate(.x:1, sum)),
+    xmax  = map_int(pos, ~ tail(.x, 1)),
+    tset = map(pos, \(x) which(between(x, target$xmin, target$xmax))),
+    tmin = map_dbl(tset, min),
+    tmax = map_dbl(tset, max),
+    tmax = if_else(between(xmax, target$xmin, target$xmax), Inf, tmax)
+  ) |> 
+  select(-tset) |> 
+  filter(tmin <= tmax)
+
+y_set <- tibble(v = y_vmin:y_vmax) |>
+  mutate(
+    pos  = map(v, \(v) accumulate(v:(-abs(v) - abs(target$ymin)), sum)),
+    tset = map(pos,  \(y) which(between(y, target$ymin, target$ymax))),
+    tmin = map_dbl(tset, min),
+    tmax = map_dbl(tset, max),
+    ymax = map2_dbl(pos, tmax, \(y, t) max(head(y, t)))
+  ) |> 
+  select(-tset) |> 
+  filter(tmin <= tmax)
+
+```
+
+Combine the x and y valid ranges to detect when both are in the target at the same time:
+
+```{r}
+
+valid_set <- cross_join(x_set, y_set) |> 
+  mutate(
+    tmin = pmax(tmin.x, tmin.y),
+    tmax = pmin(tmax.x, tmax.y)
+  ) |> 
+  filter(tmin <= tmax)
+
+```
+
+Pull the maximum y value attained by all valid starting velocities:
+
+```{r}
+
+valid_set |> 
+  pull(ymax) |> 
+  max()
+
+```
+
+## Part 2
+
+Count the entries in the valid set of starting velocities:
+
+```{r}
+
+nrow(valid_set)
+
+```
+
