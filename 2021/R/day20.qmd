@@ -1,0 +1,139 @@
+---
+title: "Day 20"
+date: 2021-12-20
+author:
+  name: https://adventofcode.com/2021/day/20
+  url: https://adventofcode.com/2021/day/20
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read input from file, converting "#"/"." characters to 1/0 integers:
+
+```{r}
+
+input <- read_lines("../input/day20.txt", skip_empty_rows = TRUE) |> 
+  str_split("") |> 
+  map(~ case_match(.x, "." ~ 0, "#" ~ 1))
+
+```
+
+Separate the input into the algorithm sequence and image matrix:
+
+```{r}
+
+alg <- pluck(input, 1)
+img <- tail(input, -1) |> do.call(what = rbind)
+
+```
+
+## Part 1
+
+Print the starting image:
+
+```{r}
+
+print_img <- \(img) {
+  image(
+    t(img)[, nrow(img):1],
+    col = c("black", "white"), 
+    asp = nrow(img) / ncol(img),
+    axes = FALSE
+  )
+}
+
+print_img(img)
+
+```
+
+Define a function to enhance the given image. Since the character representing the infinte expansion in all directions can change from enhancement to enhancement, we track its current value in the `inf` argument.
+
+```{r}
+
+enhance <- function(mtx, inf = 0) {
+  
+  # Expand the borders of the image so that all 3x3 subsets are accessible
+  mtx <- rbind(inf, inf, cbind(inf, inf, mtx, inf, inf), inf, inf)
+  
+  # Generate the full set of output coords
+  mtx_out <- expand_grid(
+    row = 1:(nrow(mtx) - 2),
+    col = 1:(ncol(mtx) - 2) 
+  ) |> 
+    
+    # Convert output coords to 3x3 ranges of the input and get the output value
+    mutate(
+      bin = map2_chr(row, col, ~ str_flatten(t(mtx[.x + 0:2, .y + 0:2]), "")),
+      idx = strtoi(bin, base = 2) + 1,
+      out = alg[idx]
+    ) |> 
+    
+    # Compress back down into matrix format
+    pull(out) |> 
+    matrix(nrow = nrow(mtx) - 2, byrow = TRUE)
+  
+  # Determine the new value of the infinite grid
+  inf_out <- alg[strtoi(str_flatten(rep(inf, 9), ""), base = 2) + 1]
+  
+  lst(mtx = mtx_out, inf = inf_out)
+}
+
+```
+
+Define a function that enhances the image a given number of times:
+
+```{r}
+
+enhance_n <- function(img, n) {
+  lst(mtx = img, inf = 0) |> 
+    reduce(1:n, .f = ~ do.call(what = enhance, args = .x), .init = _) |> 
+    pluck("mtx")
+}
+
+```
+
+Enhance the image twice, then count how many pixels are lit in the result:
+
+```{r}
+
+result <- enhance_n(img, n = 2)
+
+sum(result)
+
+```
+
+```{r}
+
+print_img(result)
+
+```
+
+
+
+## Part 2
+
+Enhance the image 50 times:
+
+```{r}
+
+result <- enhance_n(img, n = 50)
+
+sum(result)
+
+```
+
+
+```{r}
+
+print_img(result)
+
+```
+

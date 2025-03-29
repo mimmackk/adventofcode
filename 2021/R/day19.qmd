@@ -1,0 +1,167 @@
+---
+title: "Day 19"
+date: 2021-12-19
+author:
+  name: https://adventofcode.com/2021/day/19
+  url: https://adventofcode.com/2021/day/19
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read input from file:
+
+```{r}
+
+input <- read_lines("../input/day19.txt")
+
+```
+
+Convert plaintext input into sets of numeric coordinates by scanner:
+
+```{r}
+
+df <- input |> 
+  unglue_data(
+    patterns = c("--- scanner {scanner} ---", "{x},{y},{z}"),
+    convert = TRUE
+  ) |> 
+  mutate(across(c(x, y, z), as.numeric)) |> 
+  fill(scanner, .direction = "down") |> 
+  drop_na() |> 
+  mutate(id = row_number(), .before = everything())
+
+```
+
+## Part 1
+
+Define the set of all rotation matrices around the x/y/z axes in 90 degree increments:
+
+```{r}
+
+xrot <- \(x) matrix(c(1, 0, 0, 0, cos(x), sin(x), 0, -sin(x), cos(x)), nrow = 3)
+yrot <- \(x) matrix(c(cos(x), 0, -sin(x), 0, 1, 0, sin(x), 0, cos(x)), nrow = 3)
+zrot <- \(x) matrix(c(cos(x), sin(x), 0, -sin(x), cos(x), 0, 0, 0, 1), nrow = 3)
+
+```
+
+Convert each combination of unique x/y/z rotations (e.g., 90 degrees around the x axis then 180 degrees around the z axis) into a single rotation matrix:
+
+```{r}
+
+rot <- lst(x = xrot, y = yrot, z = zrot) |> 
+  map(\(f) map(0:3, ~ round(f(.x * pi / 2)))) |> 
+  do.call(what = expand_grid) |> 
+  pmap(~ ..1 %*% ..2 %*% ..3) |> 
+  unique()
+
+```
+
+Convert x/y/z coordinate sets from the input into a matrix of coordinate values for each scanner:
+
+```{r}
+
+mtx <- df |>
+  select(scanner, x, y, z) |> 
+  nest(beacons = c(x, y, z)) |> 
+  mutate(beacons = map(beacons, ~ t(as.matrix(.x))))
+
+```
+
+Determine which scanners have overlapping beacons and define matrix transformations to translate points between various scanner coordinates: 
+
+```{r}
+
+translation <- mtx |> 
+  
+  # Create pairwise combinations of all scanners
+  cross_join(mtx, suffix = c(".src", ".out")) |> 
+  filter(scanner.src != scanner.out) |> 
+  
+  # Apply all possible sets of rotations to the source beacons
+  expand_grid(rotate = rot) |> 
+  
+  # Find a translation for each pair of scanners that aligns at least 12 beacons
+  mutate(
+    beacons.src = map2(rotate, beacons.src, \(A, x) A %*% x),
+    shift = map2(beacons.src, beacons.out, \(src, out) {
+      expand_grid(src = split(src, col(src)), out = split(out, col(out))) |> 
+        mutate(shift = map2(src, out, \(src, out) out - src)) |> 
+        mutate(n = n(), .by = shift) |> 
+        slice_max(n)
+    }),
+    n = map_int(shift, ~ max(.x$n)),
+  ) |> 
+  filter(n >= 12) |> 
+  
+  # Convert rotation and translation to a single function that transforms a vec 
+  mutate(
+    shift = list_flatten(map(shift, ~ unique(.x$shift))),
+    shift = map(shift, ~ diag(4) + cbind(matrix(0, 4, 3), c(.x, 0))),
+    f = map2(rotate, shift, \(A, S) function(x) {
+      head(S %*% rbind(A %*% x, matrix(1, 1, ncol(x))), -1)
+    })
+  ) |> 
+  select(scanner.src, scanner.out, f)
+
+```
+
+Define a function that re-orients a scanner's beacons into the coordinate system of the zero scanner:
+
+```{r}
+
+reorient <- function(vecs, path) {
+  if (tail(path, 1) == 0)
+    return(vecs)
+  
+  translation |> 
+    filter(scanner.src == tail(path, 1) & !(scanner.out %in% path)) |> 
+    pmap(\(scanner.out, f, ...) reorient(f(vecs), c(path, scanner.out))) |> 
+    compact() |> 
+    pluck(1)
+}
+
+```
+
+For each scanner in the input, convert all coordinates to the zero-scanner system and count the unique resulting beacons:
+
+```{r}
+
+map2(mtx$beacons, mtx$scanner, reorient) |> 
+  map(~split(.x, col(.x))) |> 
+  list_flatten() |> 
+  unique() |> 
+  length()
+
+```
+
+## Part 2
+
+Convert each scanner's coordinates, which are each centered at (0, 0, 0) in their own coordinate system, to the zero-scanner's system:
+
+```{r}
+
+scanners <- map(mtx$scanner, ~ reorient(matrix(0, 3, 1), .x))
+
+```
+
+Compute the greatest manhattan distance between any two pairs of scanners:
+
+```{r}
+
+expand_grid(x = scanners, y = scanners) |> 
+  mutate(dist = map2_dbl(x, y, ~ sum(abs(.x - .y)))) |> 
+  pull(dist) |> 
+  max()
+
+```
+
+

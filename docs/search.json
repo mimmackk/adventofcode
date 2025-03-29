@@ -44,47 +44,91 @@
     ]
   },
   {
-    "objectID": "2021/R/day18.html",
-    "href": "2021/R/day18.html",
-    "title": "Day 18",
+    "objectID": "2021/R/day08.html",
+    "href": "2021/R/day08.html",
+    "title": "Day 8",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(file = \"../input/day18.txt\")\n\nConvert JSON-like input to “snailfish number” format: a flat, named vector whose names give the depth of the nesting:\n\nnested_to_sn &lt;- function(nested, depth = 0) {\n  if (is.integer(nested))\n    set_names(nested, depth)\n  else\n    map(nested, \\(lst) nested_to_sn(lst, depth + 1)) |&gt; \n      list_c()\n}\n\nsn &lt;- input |&gt; \n  map(~ jsonlite::fromJSON(.x, simplifyVector = FALSE)) |&gt; \n  map(nested_to_sn)",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_delim(\n  file = \"../input/day08.txt\", \n  delim = \" | \",\n  col_names = c(\"signal\", \"output\"),\n  show_col_types = FALSE\n) |&gt; \n  mutate(across(everything(), ~ str_split(.x, \" \")))",
     "crumbs": [
       "2021",
-      "Day 18"
+      "Day 8"
     ]
   },
   {
-    "objectID": "2021/R/day18.html#setup",
-    "href": "2021/R/day18.html#setup",
-    "title": "Day 18",
+    "objectID": "2021/R/day08.html#setup",
+    "href": "2021/R/day08.html#setup",
+    "title": "Day 8",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(file = \"../input/day18.txt\")\n\nConvert JSON-like input to “snailfish number” format: a flat, named vector whose names give the depth of the nesting:\n\nnested_to_sn &lt;- function(nested, depth = 0) {\n  if (is.integer(nested))\n    set_names(nested, depth)\n  else\n    map(nested, \\(lst) nested_to_sn(lst, depth + 1)) |&gt; \n      list_c()\n}\n\nsn &lt;- input |&gt; \n  map(~ jsonlite::fromJSON(.x, simplifyVector = FALSE)) |&gt; \n  map(nested_to_sn)",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_delim(\n  file = \"../input/day08.txt\", \n  delim = \" | \",\n  col_names = c(\"signal\", \"output\"),\n  show_col_types = FALSE\n) |&gt; \n  mutate(across(everything(), ~ str_split(.x, \" \")))",
     "crumbs": [
       "2021",
-      "Day 18"
+      "Day 8"
     ]
   },
   {
-    "objectID": "2021/R/day18.html#part-1",
-    "href": "2021/R/day18.html#part-1",
-    "title": "Day 18",
+    "objectID": "2021/R/day08.html#part-1",
+    "href": "2021/R/day08.html#part-1",
+    "title": "Day 8",
     "section": "Part 1",
-    "text": "Part 1\nDefine a function to explode the first applicable pair in a snailfish number:\n\nexplode_sn &lt;- function(x) {\n  \n  idx &lt;- which((names(x) == lead(names(x))) & names(x) &gt; 4) |&gt; head(1)\n  \n  # Return as-is if there are no numbers to explode\n  if (length(idx) == 0) return(x)\n  \n  # Add the values of the exploding pair outward to the left and right\n  1:length(x) |&gt; \n    case_match(\n      idx - 1 ~ x + lead(x),\n      idx + 2 ~ x + lag(x),\n      .default = x\n    ) |&gt; \n    \n    # Replace the exploded pair with 0 and reduce its depth\n    discard_at(idx) |&gt; \n    modify_at(idx, ~ 0) |&gt; \n    set_names(\\(nm) {\n      case_match(\n        1:length(nm), \n        idx ~ as.character(as.numeric(nm) - 1), \n        .default = nm\n      )\n    })\n}\n\nDefine a function to split the first applicable pair in a snailfish number:\n\nsplit_sn &lt;- function(x) {\n  idx &lt;- detect_index(x, ~ .x &gt;= 10)\n  val &lt;- keep_at(x, idx)\n\n  # Return as-is if there are no numbers to split\n  if (idx == 0) return(x)\n  \n  # Convert the value to a new pair at 1 level greater depth\n  pair &lt;- c(floor(val / 2), ceiling(val / 2)) |&gt; \n    set_names(\\(nm) as.character(as.numeric(nm) + 1))\n  \n  # Replace the old value with the new pair\n  c(head(x, idx - 1), pair, tail(x, -idx))\n}\n\nDefine a function to reduce a snailfish number by iteravely exploding and splitting its contents:\n\nreduce_sn &lt;- function(x) {\n  prv &lt;- x\n\n  repeat {\n    x &lt;- explode_sn(x)\n    if (identical(x, prv)) {\n      x &lt;- split_sn(x)\n      if (identical(x, prv)) return(x)\n    }\n    prv &lt;- x\n  }\n}\n\nDefine a function that adds two snailfish numbers by combining them as a new pair and then reducing them:\n\nadd_sn &lt;- \\(x, y) {\n  c(x, y) |&gt; \n    set_names(\\(nm) as.character(as.numeric(nm) + 1)) |&gt; \n    reduce_sn()\n}\n\nDefine a function to compute the magnitude of a snailfish number:\n\nmagnitude &lt;- function(x) {\n  \n  # Iteratively replace the deepest pair with its magnitude\n  while (length(x) &gt; 1) {\n    idx &lt;- which(as.numeric(names(x)) == max(as.numeric(names(x)))) |&gt; head(1)\n    mag &lt;- (x[idx] * 3 + x[idx + 1] * 2) |&gt; \n      set_names(\\(nm) as.character(as.numeric(nm) - 1))\n    x &lt;- c(head(x, idx - 1), mag, tail(x, -(idx + 1)))\n  }\n  \n  unname(x)\n}\n\nAdd together all numbers from the input in order:\n\nfinal_sn &lt;- reduce(sn, add_sn)\n\nCompute the magnitude of the result:\n\nmagnitude(final_sn)\n\n[1] 4480",
+    "text": "Part 1\nCount the total number of digits 1, 4, 7, and 8 in each output by counting the number of output values with length 2, 3, 4, or 7:\n\ninput |&gt; \n  pull(output) |&gt; \n  list_c() |&gt; \n  str_length() |&gt; \n  keep(~ .x %in% c(2, 3, 4, 7)) |&gt; \n  length()\n\n[1] 245",
     "crumbs": [
       "2021",
-      "Day 18"
+      "Day 8"
     ]
   },
   {
-    "objectID": "2021/R/day18.html#part-2",
-    "href": "2021/R/day18.html#part-2",
-    "title": "Day 18",
+    "objectID": "2021/R/day08.html#part-2",
+    "href": "2021/R/day08.html#part-2",
+    "title": "Day 8",
     "section": "Part 2",
-    "text": "Part 2\nProduce all pairs of values from the input:\n\ndf &lt;- sn |&gt;\n  as_tibble_col(column_name = \"sn1\") |&gt;\n  mutate(id1 = row_number())\n\npairs &lt;- df |&gt;\n  cross_join(rename(df, sn2 = sn1, id2 = id1)) |&gt;\n  filter(id2 != id1)\n\nCompute the maximum magnitude across all summed pairs:\n\npairs |&gt;\n  pmap_dbl(\\(sn1, sn2, ...) magnitude(add_sn(sn1, sn2))) |&gt;\n  max()\n\n[1] 4676",
+    "text": "Part 2\nBy visual examination, we have the following rules:\n\nDigits 1, 4, 7, and 8 are identifiable by length alone.\nDigits 0, 6, 9 all have the same length:\n\n9 is the only superset of 4\nOnce 9 is identified, 0 is the only remaining superset of 1\n6 is the last remaining value.\n\nDigits 2, 3, 5 all have the same length.\n\n3 is the only superset of 1\n5 is the only subset of 6\n2 is the remainder\n\n\nUsing these rules, we can quickly identify which signals correspond to which digits. First, we define a helper function needed to fill null values in a single-value list:\n\nlst_fill &lt;- function(x) {\n  x |&gt; \n    discard(is.null) |&gt; \n    unique() |&gt; \n    rep(length(x))\n}\n\nNext, prepare our input by splitting and sorting the characters in each code:\n\ndf &lt;- input |&gt; \n  mutate(entry_id = row_number()) |&gt; \n  pivot_longer(c(signal, output), names_to = \"type\", values_to = \"code\") |&gt; \n  unnest_longer(code) |&gt; \n  mutate(\n    code = map(code, ~ sort(str_split_1(.x, \"\"))),\n    length = map_int(code, length)\n  )\n\nIdentify the digit corresponding to each code:\n\nresult &lt;- df |&gt; \n  mutate(\n    \n    # Identify digits 1, 4, 7, 8 by length only\n    digit = case_match(length, 2 ~ 1, 4 ~ 4, 3 ~ 7, 7 ~ 8),\n    \n    # Identify digits 0, 6, 9 by whether they have 1/4 as a subset\n    four = lst_fill(case_when(digit == 4 ~ code)),\n    one  = lst_fill(case_when(digit == 1 ~ code)),\n    digit = case_when(\n      length == 6 & map2_lgl(code, four, ~ all(.y %in% .x)) ~ 9,\n      length == 6 & map2_lgl(code, one,  ~ all(.y %in% .x)) ~ 0,\n      length == 6 ~ 6,\n      .default = digit\n    ),\n    \n    # Identify digits 2, 3, 5 by whether they have 1/6 as a subset/superset\n    six = lst_fill(case_when(digit == 6 ~ code)),\n    digit = case_when(\n      length == 5 & map2_lgl(code, one, ~ all(.y %in% .x)) ~ 3,\n      length == 5 & map2_lgl(code, six, ~ all(.x %in% .y)) ~ 5,\n      length == 5 ~ 2,\n      .default = digit\n    ),\n    \n    .by = entry_id\n  ) |&gt; \n  select(entry_id, type, digit, code)\n\nDetermine the output value for each entry and take the sum for the final result:\n\nresult |&gt; \n  filter(type == \"output\") |&gt; \n  summarize(\n    value = parse_number(str_c(digit, collapse = \"\")), \n    .by = entry_id\n  ) |&gt; \n  pull(value) |&gt; \n  sum()\n\n[1] 983026",
     "crumbs": [
       "2021",
-      "Day 18"
+      "Day 8"
+    ]
+  },
+  {
+    "objectID": "2021/R/day19.html",
+    "href": "2021/R/day19.html",
+    "title": "Day 19",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day19.txt\")\n\nConvert plaintext input into sets of numeric coordinates by scanner:\n\ndf &lt;- input |&gt; \n  unglue_data(\n    patterns = c(\"--- scanner {scanner} ---\", \"{x},{y},{z}\"),\n    convert = TRUE\n  ) |&gt; \n  mutate(across(c(x, y, z), as.numeric)) |&gt; \n  fill(scanner, .direction = \"down\") |&gt; \n  drop_na() |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "crumbs": [
+      "2021",
+      "Day 19"
+    ]
+  },
+  {
+    "objectID": "2021/R/day19.html#setup",
+    "href": "2021/R/day19.html#setup",
+    "title": "Day 19",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead input from file:\n\ninput &lt;- read_lines(\"../input/day19.txt\")\n\nConvert plaintext input into sets of numeric coordinates by scanner:\n\ndf &lt;- input |&gt; \n  unglue_data(\n    patterns = c(\"--- scanner {scanner} ---\", \"{x},{y},{z}\"),\n    convert = TRUE\n  ) |&gt; \n  mutate(across(c(x, y, z), as.numeric)) |&gt; \n  fill(scanner, .direction = \"down\") |&gt; \n  drop_na() |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "crumbs": [
+      "2021",
+      "Day 19"
+    ]
+  },
+  {
+    "objectID": "2021/R/day19.html#part-1",
+    "href": "2021/R/day19.html#part-1",
+    "title": "Day 19",
+    "section": "Part 1",
+    "text": "Part 1\nDefine the set of all rotation matrices around the x/y/z axes in 90 degree increments:\n\nxrot &lt;- \\(x) matrix(c(1, 0, 0, 0, cos(x), sin(x), 0, -sin(x), cos(x)), nrow = 3)\nyrot &lt;- \\(x) matrix(c(cos(x), 0, -sin(x), 0, 1, 0, sin(x), 0, cos(x)), nrow = 3)\nzrot &lt;- \\(x) matrix(c(cos(x), sin(x), 0, -sin(x), cos(x), 0, 0, 0, 1), nrow = 3)\n\nConvert each combination of unique x/y/z rotations (e.g., 90 degrees around the x axis then 180 degrees around the z axis) into a single rotation matrix:\n\nrot &lt;- lst(x = xrot, y = yrot, z = zrot) |&gt; \n  map(\\(f) map(0:3, ~ round(f(.x * pi / 2)))) |&gt; \n  do.call(what = expand_grid) |&gt; \n  pmap(~ ..1 %*% ..2 %*% ..3) |&gt; \n  unique()\n\nConvert x/y/z coordinate sets from the input into a matrix of coordinate values for each scanner:\n\nmtx &lt;- df |&gt;\n  select(scanner, x, y, z) |&gt; \n  nest(beacons = c(x, y, z)) |&gt; \n  mutate(beacons = map(beacons, ~ t(as.matrix(.x))))\n\nDetermine which scanners have overlapping beacons and define matrix transformations to translate points between various scanner coordinates:\n\ntranslation &lt;- mtx |&gt; \n  \n  # Create pairwise combinations of all scanners\n  cross_join(mtx, suffix = c(\".src\", \".out\")) |&gt; \n  filter(scanner.src != scanner.out) |&gt; \n  \n  # Apply all possible sets of rotations to the source beacons\n  expand_grid(rotate = rot) |&gt; \n  \n  # Find a translation for each pair of scanners that aligns at least 12 beacons\n  mutate(\n    beacons.src = map2(rotate, beacons.src, \\(A, x) A %*% x),\n    shift = map2(beacons.src, beacons.out, \\(src, out) {\n      expand_grid(src = split(src, col(src)), out = split(out, col(out))) |&gt; \n        mutate(shift = map2(src, out, \\(src, out) out - src)) |&gt; \n        mutate(n = n(), .by = shift) |&gt; \n        slice_max(n)\n    }),\n    n = map_int(shift, ~ max(.x$n)),\n  ) |&gt; \n  filter(n &gt;= 12) |&gt; \n  \n  # Convert rotation and translation to a single function that transforms a vec \n  mutate(\n    shift = list_flatten(map(shift, ~ unique(.x$shift))),\n    shift = map(shift, ~ diag(4) + cbind(matrix(0, 4, 3), c(.x, 0))),\n    f = map2(rotate, shift, \\(A, S) function(x) {\n      head(S %*% rbind(A %*% x, matrix(1, 1, ncol(x))), -1)\n    })\n  ) |&gt; \n  select(scanner.src, scanner.out, f)\n\nDefine a function that re-orients a scanner’s beacons into the coordinate system of the zero scanner:\n\nreorient &lt;- function(vecs, path) {\n  if (tail(path, 1) == 0)\n    return(vecs)\n  \n  translation |&gt; \n    filter(scanner.src == tail(path, 1) & !(scanner.out %in% path)) |&gt; \n    pmap(\\(scanner.out, f, ...) reorient(f(vecs), c(path, scanner.out))) |&gt; \n    compact() |&gt; \n    pluck(1)\n}\n\nFor each scanner in the input, convert all coordinates to the zero-scanner system and count the unique resulting beacons:\n\nmap2(mtx$beacons, mtx$scanner, reorient) |&gt; \n  map(~split(.x, col(.x))) |&gt; \n  list_flatten() |&gt; \n  unique() |&gt; \n  length()\n\n[1] 394",
+    "crumbs": [
+      "2021",
+      "Day 19"
+    ]
+  },
+  {
+    "objectID": "2021/R/day19.html#part-2",
+    "href": "2021/R/day19.html#part-2",
+    "title": "Day 19",
+    "section": "Part 2",
+    "text": "Part 2\nConvert each scanner’s coordinates, which are each centered at (0, 0, 0) in their own coordinate system, to the zero-scanner’s system:\n\nscanners &lt;- map(mtx$scanner, ~ reorient(matrix(0, 3, 1), .x))\n\nCompute the greatest manhattan distance between any two pairs of scanners:\n\nexpand_grid(x = scanners, y = scanners) |&gt; \n  mutate(dist = map2_dbl(x, y, ~ sum(abs(.x - .y)))) |&gt; \n  pull(dist) |&gt; \n  max()\n\n[1] 12304",
+    "crumbs": [
+      "2021",
+      "Day 19"
     ]
   },
   {
@@ -4000,47 +4044,91 @@
     ]
   },
   {
-    "objectID": "2021/R/day08.html",
-    "href": "2021/R/day08.html",
-    "title": "Day 8",
+    "objectID": "2021/R/day18.html",
+    "href": "2021/R/day18.html",
+    "title": "Day 18",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_delim(\n  file = \"../input/day08.txt\", \n  delim = \" | \",\n  col_names = c(\"signal\", \"output\"),\n  show_col_types = FALSE\n) |&gt; \n  mutate(across(everything(), ~ str_split(.x, \" \")))",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(file = \"../input/day18.txt\")\n\nConvert JSON-like input to “snailfish number” format: a flat, named vector whose names give the depth of the nesting:\n\nnested_to_sn &lt;- function(nested, depth = 0) {\n  if (is.integer(nested))\n    set_names(nested, depth)\n  else\n    map(nested, \\(lst) nested_to_sn(lst, depth + 1)) |&gt; \n      list_c()\n}\n\nsn &lt;- input |&gt; \n  map(~ jsonlite::fromJSON(.x, simplifyVector = FALSE)) |&gt; \n  map(nested_to_sn)",
     "crumbs": [
       "2021",
-      "Day 8"
+      "Day 18"
     ]
   },
   {
-    "objectID": "2021/R/day08.html#setup",
-    "href": "2021/R/day08.html#setup",
-    "title": "Day 8",
+    "objectID": "2021/R/day18.html#setup",
+    "href": "2021/R/day18.html#setup",
+    "title": "Day 18",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_delim(\n  file = \"../input/day08.txt\", \n  delim = \" | \",\n  col_names = c(\"signal\", \"output\"),\n  show_col_types = FALSE\n) |&gt; \n  mutate(across(everything(), ~ str_split(.x, \" \")))",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file:\n\ninput &lt;- read_lines(file = \"../input/day18.txt\")\n\nConvert JSON-like input to “snailfish number” format: a flat, named vector whose names give the depth of the nesting:\n\nnested_to_sn &lt;- function(nested, depth = 0) {\n  if (is.integer(nested))\n    set_names(nested, depth)\n  else\n    map(nested, \\(lst) nested_to_sn(lst, depth + 1)) |&gt; \n      list_c()\n}\n\nsn &lt;- input |&gt; \n  map(~ jsonlite::fromJSON(.x, simplifyVector = FALSE)) |&gt; \n  map(nested_to_sn)",
     "crumbs": [
       "2021",
-      "Day 8"
+      "Day 18"
     ]
   },
   {
-    "objectID": "2021/R/day08.html#part-1",
-    "href": "2021/R/day08.html#part-1",
-    "title": "Day 8",
+    "objectID": "2021/R/day18.html#part-1",
+    "href": "2021/R/day18.html#part-1",
+    "title": "Day 18",
     "section": "Part 1",
-    "text": "Part 1\nCount the total number of digits 1, 4, 7, and 8 in each output by counting the number of output values with length 2, 3, 4, or 7:\n\ninput |&gt; \n  pull(output) |&gt; \n  list_c() |&gt; \n  str_length() |&gt; \n  keep(~ .x %in% c(2, 3, 4, 7)) |&gt; \n  length()\n\n[1] 245",
+    "text": "Part 1\nDefine a function to explode the first applicable pair in a snailfish number:\n\nexplode_sn &lt;- function(x) {\n  \n  idx &lt;- which((names(x) == lead(names(x))) & names(x) &gt; 4) |&gt; head(1)\n  \n  # Return as-is if there are no numbers to explode\n  if (length(idx) == 0) return(x)\n  \n  # Add the values of the exploding pair outward to the left and right\n  1:length(x) |&gt; \n    case_match(\n      idx - 1 ~ x + lead(x),\n      idx + 2 ~ x + lag(x),\n      .default = x\n    ) |&gt; \n    \n    # Replace the exploded pair with 0 and reduce its depth\n    discard_at(idx) |&gt; \n    modify_at(idx, ~ 0) |&gt; \n    set_names(\\(nm) {\n      case_match(\n        1:length(nm), \n        idx ~ as.character(as.numeric(nm) - 1), \n        .default = nm\n      )\n    })\n}\n\nDefine a function to split the first applicable pair in a snailfish number:\n\nsplit_sn &lt;- function(x) {\n  idx &lt;- detect_index(x, ~ .x &gt;= 10)\n  val &lt;- keep_at(x, idx)\n\n  # Return as-is if there are no numbers to split\n  if (idx == 0) return(x)\n  \n  # Convert the value to a new pair at 1 level greater depth\n  pair &lt;- c(floor(val / 2), ceiling(val / 2)) |&gt; \n    set_names(\\(nm) as.character(as.numeric(nm) + 1))\n  \n  # Replace the old value with the new pair\n  c(head(x, idx - 1), pair, tail(x, -idx))\n}\n\nDefine a function to reduce a snailfish number by iteravely exploding and splitting its contents:\n\nreduce_sn &lt;- function(x) {\n  prv &lt;- x\n\n  repeat {\n    x &lt;- explode_sn(x)\n    if (identical(x, prv)) {\n      x &lt;- split_sn(x)\n      if (identical(x, prv)) return(x)\n    }\n    prv &lt;- x\n  }\n}\n\nDefine a function that adds two snailfish numbers by combining them as a new pair and then reducing them:\n\nadd_sn &lt;- \\(x, y) {\n  c(x, y) |&gt; \n    set_names(\\(nm) as.character(as.numeric(nm) + 1)) |&gt; \n    reduce_sn()\n}\n\nDefine a function to compute the magnitude of a snailfish number:\n\nmagnitude &lt;- function(x) {\n  \n  # Iteratively replace the deepest pair with its magnitude\n  while (length(x) &gt; 1) {\n    idx &lt;- which(as.numeric(names(x)) == max(as.numeric(names(x)))) |&gt; head(1)\n    mag &lt;- (x[idx] * 3 + x[idx + 1] * 2) |&gt; \n      set_names(\\(nm) as.character(as.numeric(nm) - 1))\n    x &lt;- c(head(x, idx - 1), mag, tail(x, -(idx + 1)))\n  }\n  \n  unname(x)\n}\n\nAdd together all numbers from the input in order:\n\nfinal_sn &lt;- reduce(sn, add_sn)\n\nCompute the magnitude of the result:\n\nmagnitude(final_sn)\n\n[1] 4480",
     "crumbs": [
       "2021",
-      "Day 8"
+      "Day 18"
     ]
   },
   {
-    "objectID": "2021/R/day08.html#part-2",
-    "href": "2021/R/day08.html#part-2",
-    "title": "Day 8",
+    "objectID": "2021/R/day18.html#part-2",
+    "href": "2021/R/day18.html#part-2",
+    "title": "Day 18",
     "section": "Part 2",
-    "text": "Part 2\nBy visual examination, we have the following rules:\n\nDigits 1, 4, 7, and 8 are identifiable by length alone.\nDigits 0, 6, 9 all have the same length:\n\n9 is the only superset of 4\nOnce 9 is identified, 0 is the only remaining superset of 1\n6 is the last remaining value.\n\nDigits 2, 3, 5 all have the same length.\n\n3 is the only superset of 1\n5 is the only subset of 6\n2 is the remainder\n\n\nUsing these rules, we can quickly identify which signals correspond to which digits. First, we define a helper function needed to fill null values in a single-value list:\n\nlst_fill &lt;- function(x) {\n  x |&gt; \n    discard(is.null) |&gt; \n    unique() |&gt; \n    rep(length(x))\n}\n\nNext, prepare our input by splitting and sorting the characters in each code:\n\ndf &lt;- input |&gt; \n  mutate(entry_id = row_number()) |&gt; \n  pivot_longer(c(signal, output), names_to = \"type\", values_to = \"code\") |&gt; \n  unnest_longer(code) |&gt; \n  mutate(\n    code = map(code, ~ sort(str_split_1(.x, \"\"))),\n    length = map_int(code, length)\n  )\n\nIdentify the digit corresponding to each code:\n\nresult &lt;- df |&gt; \n  mutate(\n    \n    # Identify digits 1, 4, 7, 8 by length only\n    digit = case_match(length, 2 ~ 1, 4 ~ 4, 3 ~ 7, 7 ~ 8),\n    \n    # Identify digits 0, 6, 9 by whether they have 1/4 as a subset\n    four = lst_fill(case_when(digit == 4 ~ code)),\n    one  = lst_fill(case_when(digit == 1 ~ code)),\n    digit = case_when(\n      length == 6 & map2_lgl(code, four, ~ all(.y %in% .x)) ~ 9,\n      length == 6 & map2_lgl(code, one,  ~ all(.y %in% .x)) ~ 0,\n      length == 6 ~ 6,\n      .default = digit\n    ),\n    \n    # Identify digits 2, 3, 5 by whether they have 1/6 as a subset/superset\n    six = lst_fill(case_when(digit == 6 ~ code)),\n    digit = case_when(\n      length == 5 & map2_lgl(code, one, ~ all(.y %in% .x)) ~ 3,\n      length == 5 & map2_lgl(code, six, ~ all(.x %in% .y)) ~ 5,\n      length == 5 ~ 2,\n      .default = digit\n    ),\n    \n    .by = entry_id\n  ) |&gt; \n  select(entry_id, type, digit, code)\n\nDetermine the output value for each entry and take the sum for the final result:\n\nresult |&gt; \n  filter(type == \"output\") |&gt; \n  summarize(\n    value = parse_number(str_c(digit, collapse = \"\")), \n    .by = entry_id\n  ) |&gt; \n  pull(value) |&gt; \n  sum()\n\n[1] 983026",
+    "text": "Part 2\nProduce all pairs of values from the input:\n\ndf &lt;- sn |&gt;\n  as_tibble_col(column_name = \"sn1\") |&gt;\n  mutate(id1 = row_number())\n\npairs &lt;- df |&gt;\n  cross_join(rename(df, sn2 = sn1, id2 = id1)) |&gt;\n  filter(id2 != id1)\n\nCompute the maximum magnitude across all summed pairs:\n\npairs |&gt;\n  pmap_dbl(\\(sn1, sn2, ...) magnitude(add_sn(sn1, sn2))) |&gt;\n  max()\n\n[1] 4676",
     "crumbs": [
       "2021",
-      "Day 8"
+      "Day 18"
+    ]
+  },
+  {
+    "objectID": "2021/R/day20.html",
+    "href": "2021/R/day20.html",
+    "title": "Day 20",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file, converting “#”/“.” characters to 1/0 integers:\n\ninput &lt;- read_lines(\"../input/day20.txt\", skip_empty_rows = TRUE) |&gt; \n  str_split(\"\") |&gt; \n  map(~ case_match(.x, \".\" ~ 0, \"#\" ~ 1))\n\nSeparate the input into the algorithm sequence and image matrix:\n\nalg &lt;- pluck(input, 1)\nimg &lt;- tail(input, -1) |&gt; do.call(what = rbind)",
+    "crumbs": [
+      "2021",
+      "Day 20"
+    ]
+  },
+  {
+    "objectID": "2021/R/day20.html#setup",
+    "href": "2021/R/day20.html#setup",
+    "title": "Day 20",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead input from file, converting “#”/“.” characters to 1/0 integers:\n\ninput &lt;- read_lines(\"../input/day20.txt\", skip_empty_rows = TRUE) |&gt; \n  str_split(\"\") |&gt; \n  map(~ case_match(.x, \".\" ~ 0, \"#\" ~ 1))\n\nSeparate the input into the algorithm sequence and image matrix:\n\nalg &lt;- pluck(input, 1)\nimg &lt;- tail(input, -1) |&gt; do.call(what = rbind)",
+    "crumbs": [
+      "2021",
+      "Day 20"
+    ]
+  },
+  {
+    "objectID": "2021/R/day20.html#part-1",
+    "href": "2021/R/day20.html#part-1",
+    "title": "Day 20",
+    "section": "Part 1",
+    "text": "Part 1\nPrint the starting image:\n\nprint_img &lt;- \\(img) {\n  image(\n    t(img)[, nrow(img):1],\n    col = c(\"black\", \"white\"), \n    asp = nrow(img) / ncol(img),\n    axes = FALSE\n  )\n}\n\nprint_img(img)\n\n\n\n\n\n\n\n\nDefine a function to enhance the given image. Since the character representing the infinte expansion in all directions can change from enhancement to enhancement, we track its current value in the inf argument.\n\nenhance &lt;- function(mtx, inf = 0) {\n  \n  # Expand the borders of the image so that all 3x3 subsets are accessible\n  mtx &lt;- rbind(inf, inf, cbind(inf, inf, mtx, inf, inf), inf, inf)\n  \n  # Generate the full set of output coords\n  mtx_out &lt;- expand_grid(\n    row = 1:(nrow(mtx) - 2),\n    col = 1:(ncol(mtx) - 2) \n  ) |&gt; \n    \n    # Convert output coords to 3x3 ranges of the input and get the output value\n    mutate(\n      bin = map2_chr(row, col, ~ str_flatten(t(mtx[.x + 0:2, .y + 0:2]), \"\")),\n      idx = strtoi(bin, base = 2) + 1,\n      out = alg[idx]\n    ) |&gt; \n    \n    # Compress back down into matrix format\n    pull(out) |&gt; \n    matrix(nrow = nrow(mtx) - 2, byrow = TRUE)\n  \n  # Determine the new value of the infinite grid\n  inf_out &lt;- alg[strtoi(str_flatten(rep(inf, 9), \"\"), base = 2) + 1]\n  \n  lst(mtx = mtx_out, inf = inf_out)\n}\n\nDefine a function that enhances the image a given number of times:\n\nenhance_n &lt;- function(img, n) {\n  lst(mtx = img, inf = 0) |&gt; \n    reduce(1:n, .f = ~ do.call(what = enhance, args = .x), .init = _) |&gt; \n    pluck(\"mtx\")\n}\n\nEnhance the image twice, then count how many pixels are lit in the result:\n\nresult &lt;- enhance_n(img, n = 2)\n\nsum(result)\n\n[1] 5179\n\n\n\nprint_img(result)",
+    "crumbs": [
+      "2021",
+      "Day 20"
+    ]
+  },
+  {
+    "objectID": "2021/R/day20.html#part-2",
+    "href": "2021/R/day20.html#part-2",
+    "title": "Day 20",
+    "section": "Part 2",
+    "text": "Part 2\nEnhance the image 50 times:\n\nresult &lt;- enhance_n(img, n = 50)\n\nsum(result)\n\n[1] 16112\n\n\n\nprint_img(result)",
+    "crumbs": [
+      "2021",
+      "Day 20"
     ]
   }
 ]
