@@ -1,0 +1,126 @@
+---
+title: "Day 21"
+date: 2021-12-21
+author:
+  name: https://adventofcode.com/2021/day/21
+  url: https://adventofcode.com/2021/day/21
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+library(memoise)
+
+```
+
+Disable scientific formatting when displaying large numbers:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+Read and parse text input from file:
+
+```{r}
+
+input <- read_lines("../input/day21.txt") |> 
+  unglue_vec("Player {x} starting position: {y}", var = 2, convert = TRUE)
+
+```
+
+## Part 1
+
+Define a helper function to perform modulo operations using R's start-at-one indexing:
+
+```{r}
+
+rmod <- \(x, n) rep_len(1:n, max(x))[x]
+
+```
+
+Since all actions are deterministic, all scores can be determined with modulo arithmetic. If we assume a worst-case scenario where each player's score increments by only 1 each round, we calculate the scores of the first 1000 rounds for each player, then determine which won.
+
+
+```{r}
+
+# Generate the scores for the first 1000 turns in the game for each player
+game <- tibble(roll = 1:(1000 * 3 * 2)) |> 
+  mutate(
+    dice = rmod(roll, 100),
+    turn = ceiling(roll / 3),
+    player = rmod(turn, 2)
+  ) |> 
+  summarize(move = sum(dice), .by = c(player, turn)) |> 
+  mutate(
+    space = rmod(cumsum(move) + input[player], 10), 
+    score = cumsum(space),
+    nrolls = turn * 3,
+    won = score >= 1000,
+    .by = player
+  ) |> 
+  
+  # Keep only the turns up until a player wins the game
+  filter(lag(cumsum(won) == 0, default = TRUE))
+
+```
+
+Multiply the score of the losing player by total dice rolls until the game was won:
+
+```{r}
+
+rev(game$score)[2] * max(game$nrolls)
+
+```
+
+## Part 2
+
+The sum of each set of 3 quantum rolls can be equivalently interpreted as moves 3-9 with a corresponding number of universes:
+
+```{r}
+
+nquant <- expand_grid(r1 = 1:3, r2 = 1:3, r3 = 1:3) |> 
+  pmap_int(sum) |> 
+  table()
+
+```
+
+Define a function that simulates the set of all possible moves at each turn. Once any player reaches 21 points, the game ends and the total universes possible arrive at that state are summed.
+
+Memoization is leveraged for performance.
+
+```{r}
+
+dirac <- function(player = 1, pos = input, score = c(0, 0)) {
+  if (any(score >= 21))
+    return(modify_at(c(0, 0), rmod(player + 1, 2), ~ 1))
+
+  map2(3:9, nquant, \(roll, universes) {
+    new_space <- rmod(pos[player] + roll, 10)
+    universes * dirac(
+      player = rmod(player + 1, 2),
+      pos = modify_at(pos, player, ~ new_space),
+      score = modify_at(score, player, ~ .x + new_space)
+    )
+  }) |> 
+    reduce(`+`)
+}
+
+dirac <- memoise(dirac)
+
+```
+
+Run the simulation on the puzzle input and find the count of total universes associated with the winning player:
+
+```{r}
+
+max(dirac())
+
+```
+
