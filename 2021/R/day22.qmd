@@ -1,0 +1,197 @@
+---
+title: "Day 22"
+date: 2021-12-22
+author:
+  name: https://adventofcode.com/2021/day/22
+  url: https://adventofcode.com/2021/day/22
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+library(sets)
+
+```
+
+Disable scientific formatting when displaying large numbers:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+Read and parse text input from file:
+
+```{r}
+
+input <- read_lines("../input/day22.txt") |> 
+  unglue_data(
+    "{state} x={xmin}..{xmax},y={ymin}..{ymax},z={zmin}..{zmax}",
+    convert = TRUE
+  ) |> 
+  mutate(
+    id = row_number(), 
+    state = case_match(state, "on" ~ 1, "off" ~ 0), 
+    .before = everything()
+  )
+
+```
+
+## Part 1
+
+This part of the problem has a small enough total area that it runs with a simple approach.
+
+Initialize the cuboid to a 101x101x101 array (representing x/z/y values from -50 to 50) where all values are "off" (zero):
+
+```{r}
+
+cuboid <- array(rep(0, 101^3), c(101, 101, 101))
+
+```
+
+Define a function to modify a cuboid at the given coordinates:
+
+```{r}
+
+modify_cuboid <- function(cuboid, x, y, z, state) {
+  cuboid[x, y, z] <- state
+  cuboid
+}
+
+```
+
+For each step in the input, turn the designated cubes on/off:
+
+```{r}
+
+input |> 
+  
+  # Bound the input indices between -50 and 50, then translate to R indices
+  mutate(
+    across(ends_with("min"), ~ pmax(.x, -50)),
+    across(ends_with("max"), ~ pmin(.x,  50)),
+    across(ends_with(c("min", "max")), ~ .x + 51)
+  ) |> 
+  
+  # Remove any out-of-bounds indices
+  filter((xmin <= xmax) & (ymin <= ymax) & (zmin <= zmax)) |> 
+  
+  # Apply steps to the cuboid
+  pmap(\(id, state, xmin, xmax, ymin, ymax, zmin, zmax) {
+    list(state = state, x = xmin:xmax, y = ymin:ymax, z = zmin:zmax)
+  }) |> 
+  reduce(
+    .f = ~ do.call(what = modify_cuboid, args = c(.y, cuboid = list(.x))),
+    .init = cuboid
+  ) |> 
+  sum()
+
+```
+
+## Part 2
+
+The full region of interest is now too large. We now use set intervals to store our cuboids rather than storing each voxel individually.
+
+Nudge from the Reddit daily megathread: rather than storing the state of the full cuboid at each step, compute the change in volume at each step instead, and work in reverse order.
+
+With this approach, every new 'on' step in reverse order adds the total volume of any 'on' cuboid, minus any intersection with any 'off' or 'on' cuboid later in the step sequence. When an 'off' cuboid is encountered, it can be ignored.
+
+Define a helper function to subtract one cuboid from another, breaking down to up to six non-overlapping sub-cuboids if necessary:
+
+```{r}
+
+cuboid_difference <- function(a, b) {
+  diff <- map2(a, b, ~ as.list(interval_complement(.y, .x)))
+  intr <- map2(a, b, interval_intersection)
+  c(
+    map(diff$z, \(z) lst(x = a$x, y = a$y,    z = z)),
+    map(diff$y, \(y) lst(x = a$x, y = y,      z = intr$z)),
+    map(diff$x, \(x) lst(x = x,   y = intr$y, z = intr$z))
+  )
+}
+
+```
+
+Define a helper function to compute the volume of a cuboid: 
+
+```{r}
+
+cuboid_size <- function(cuboid) {
+  if (any(map_lgl(cuboid, interval_is_empty)))
+    return(0)
+  cuboid |> 
+    map_dbl(~ max(.x) - min(.x) + 1) |> 
+    prod()
+}
+
+```
+
+Conver the input cuboids into a set of integer intervals for each step:
+
+```{r}
+
+steps <- input |> 
+  mutate(
+    x = map2(xmin, xmax, integers),
+    y = map2(ymin, ymax, integers),
+    z = map2(zmin, zmax, integers),
+    cuboid = pmap(lst(x, y, z), lst)
+  ) |>
+  select(id, state, cuboid)
+
+```
+
+For each 'on' cuboid, compute the regions of intersection with any later-step cuboid:
+
+```{r}
+
+to_rm <- inner_join(steps, steps, join_by(x$id < y$id)) |>
+  filter(state.x == 1) |> 
+  mutate(
+    overlap = map2(cuboid.x, cuboid.y, ~ map2(.x, .y, interval_intersection)),
+    empty = map_lgl(overlap, \(cuboid) any(map_lgl(cuboid, interval_is_empty))),
+    id = id.x
+  ) |> 
+  filter(!empty) |> 
+  summarize(overlap = list(overlap), .by = id)
+
+```
+
+Remove the overlapping regions from the step's original cuboid:
+
+```{r}
+
+res <- steps |> 
+  inner_join(to_rm, join_by(id)) |> 
+  mutate(
+    new = map2(cuboid, overlap, \(base, intr) {
+      reduce(intr, .init = list(base), \(acc, nxt) {
+        list_flatten(map(acc, ~ cuboid_difference(.x, nxt)))
+      })
+    })
+  )
+
+```
+
+Compute the volume of each final 'on' cuboid, and sum to get the final result:
+
+```{r}
+
+steps |> 
+  filter(state == 1) |> 
+  left_join(select(res, id, new), join_by(id)) |> 
+  mutate(
+    uniq = map2(new, cuboid, ~ if (is.null(.x)) list(.y) else .x),
+    size = map_dbl(uniq, \(cuboid_set) sum(map_dbl(cuboid_set, cuboid_size)))
+  ) |> 
+  pull(size) |> 
+  sum()
+
+```
+
