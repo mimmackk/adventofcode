@@ -4,6 +4,8 @@ date: 2022-12-15
 author:
   name: https://adventofcode.com/2022/day/15
   url: https://adventofcode.com/2022/day/15
+execute:
+  eval: true
 ---
 
 ## Setup
@@ -74,6 +76,7 @@ poly_union <- st_union(poly)
 Visualize:
 
 ```{r}
+#| output: true
 
 # Overlapping regions
 ggplot() + 

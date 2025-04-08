@@ -2,10 +2,8 @@
   "hash": "2deb8fca7a35d5f4e542d4fb228fe443",
   "result": {
     "engine": "knitr",
-    "markdown": "---\ntitle: \"Day 1\"\ndate: 2021-12-01\nauthor:\n  name: https://adventofcode.com/2021/day/01\n  url: https://adventofcode.com/2021/day/01\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\n```\n:::\n\n\n\n\nRead input from file:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day01.txt\") |> as.integer()\n```\n:::\n\n\n\n\n## Part 1\n\nDefine a function to count the number of increasing values in a sequence:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncount_incr <- \\(x) sum(x - lag(x) > 0, na.rm = TRUE)\n```\n:::\n\n\n\n\nRun on input:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncount_incr(input)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 1581\n```\n\n\n:::\n:::\n\n\n\n\n## Part 2\n\nCount increases for 3-measurement windows:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncount_incr(input + lead(input) + lead(input, 2))\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 1618\n```\n\n\n:::\n:::\n",
-    "supporting": [
-      "day01_files"
-    ],
+    "markdown": "---\ntitle: \"Day 1\"\ndate: 2021-12-01\nauthor:\n  name: https://adventofcode.com/2021/day/01\n  url: https://adventofcode.com/2021/day/01\n---\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\n```\n:::\n\n\n\nRead input from file:\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day01.txt\") |> as.integer()\n```\n:::\n\n\n\n## Part 1\n\nDefine a function to count the number of increasing values in a sequence:\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncount_incr <- \\(x) sum(x - lag(x) > 0, na.rm = TRUE)\n```\n:::\n\n\n\nRun on input:\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncount_incr(input)\n```\n:::\n\n\n\n## Part 2\n\nCount increases for 3-measurement windows:\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncount_incr(input + lead(input) + lead(input, 2))\n```\n:::\n",
+    "supporting": [],
     "filters": [
       "rmarkdown/pagebreak.lua"
     ],

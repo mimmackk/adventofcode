@@ -4,6 +4,8 @@ date: 2023-12-23
 author:
   name: https://adventofcode.com/2023/day/23
   url: https://adventofcode.com/2023/day/23
+execute:
+  eval: true
 ---
 
 ## Setup
@@ -138,6 +140,7 @@ View a plot of the resulting simplified graph:
 ```{r}
 #| fig-height: 9
 #| fig-width: 10
+#| output: true
 
 vtx_labels <- g_new |> 
   V() |> 

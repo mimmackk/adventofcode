@@ -759,6 +759,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Day 22</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../2021/R/day23.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Day 23</span></a>
+  </div>
+</li>
       </ul>
   </li>
     </ul>
@@ -858,39 +864,36 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Compute the polygon’s area:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">st_area</span>(polygon)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 53844</code></pre>
-</div>
 </div>
 </section>
 <section id="part-2" class="level2">
 <h2 class="anchored" data-anchor-id="part-2">Part 2</h2>
 <p>Convert the hex codes to new trench instructions:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>trench <span class="ot">&lt;-</span> input <span class="sc">|&gt;</span> </span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">meters =</span> <span class="fu">strtoi</span>(<span class="fu">str_sub</span>(color, <span class="dv">2</span>L, <span class="sc">-</span><span class="dv">2</span>L), <span class="at">base =</span> <span class="dv">16</span>L),</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">dir =</span> <span class="fu">case_match</span>(</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_sub</span>(color, <span class="at">start =</span> <span class="sc">-</span><span class="dv">1</span>L),</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>      <span class="st">'0'</span> <span class="sc">~</span> <span class="st">'R'</span>, <span class="st">'1'</span> <span class="sc">~</span> <span class="st">'D'</span>, <span class="st">'2'</span> <span class="sc">~</span> <span class="st">'L'</span>, <span class="st">'3'</span> <span class="sc">~</span> <span class="st">'U'</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">case_match</span>(dir, <span class="fu">c</span>(<span class="st">'U'</span>, <span class="st">'D'</span>) <span class="sc">~</span> <span class="dv">0</span>, <span class="st">'L'</span> <span class="sc">~</span> <span class="sc">-</span><span class="dv">1</span>, <span class="st">'R'</span> <span class="sc">~</span> <span class="dv">1</span>) <span class="sc">*</span> meters,</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="fu">case_match</span>(dir, <span class="fu">c</span>(<span class="st">'L'</span>, <span class="st">'R'</span>) <span class="sc">~</span> <span class="dv">0</span>, <span class="st">'D'</span> <span class="sc">~</span> <span class="sc">-</span><span class="dv">1</span>, <span class="st">'U'</span> <span class="sc">~</span> <span class="dv">1</span>) <span class="sc">*</span> meters</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pmap</span>(\(x, y, ...) <span class="fu">c</span>(<span class="at">x =</span> x, <span class="at">y =</span> y)) <span class="sc">|&gt;</span> </span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">accumulate</span>(<span class="st">`</span><span class="at">+</span><span class="st">`</span>, <span class="at">.init =</span> <span class="fu">c</span>(<span class="at">x =</span> <span class="dv">0</span>, <span class="at">y =</span> <span class="dv">0</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>trench <span class="ot">&lt;-</span> input <span class="sc">|&gt;</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">meters =</span> <span class="fu">strtoi</span>(<span class="fu">str_sub</span>(color, <span class="dv">2</span>L, <span class="sc">-</span><span class="dv">2</span>L), <span class="at">base =</span> <span class="dv">16</span>L),</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">dir =</span> <span class="fu">case_match</span>(</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_sub</span>(color, <span class="at">start =</span> <span class="sc">-</span><span class="dv">1</span>L),</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>      <span class="st">'0'</span> <span class="sc">~</span> <span class="st">'R'</span>, <span class="st">'1'</span> <span class="sc">~</span> <span class="st">'D'</span>, <span class="st">'2'</span> <span class="sc">~</span> <span class="st">'L'</span>, <span class="st">'3'</span> <span class="sc">~</span> <span class="st">'U'</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">case_match</span>(dir, <span class="fu">c</span>(<span class="st">'U'</span>, <span class="st">'D'</span>) <span class="sc">~</span> <span class="dv">0</span>, <span class="st">'L'</span> <span class="sc">~</span> <span class="sc">-</span><span class="dv">1</span>, <span class="st">'R'</span> <span class="sc">~</span> <span class="dv">1</span>) <span class="sc">*</span> meters,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="fu">case_match</span>(dir, <span class="fu">c</span>(<span class="st">'L'</span>, <span class="st">'R'</span>) <span class="sc">~</span> <span class="dv">0</span>, <span class="st">'D'</span> <span class="sc">~</span> <span class="sc">-</span><span class="dv">1</span>, <span class="st">'U'</span> <span class="sc">~</span> <span class="dv">1</span>) <span class="sc">*</span> meters</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pmap</span>(\(x, y, ...) <span class="fu">c</span>(<span class="at">x =</span> x, <span class="at">y =</span> y)) <span class="sc">|&gt;</span> </span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">accumulate</span>(<span class="st">`</span><span class="at">+</span><span class="st">`</span>, <span class="at">.init =</span> <span class="fu">c</span>(<span class="at">x =</span> <span class="dv">0</span>, <span class="at">y =</span> <span class="dv">0</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Convert to a new polygon:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>polygon <span class="ot">&lt;-</span> trench <span class="sc">|&gt;</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">reduce</span>(rbind) <span class="sc">|&gt;</span> </span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_polygon</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_buffer</span>(<span class="at">dist =</span> <span class="fl">0.5</span>, <span class="at">joinStyle =</span> <span class="st">'MITRE'</span>, <span class="at">mitreLimit =</span> <span class="fu">sqrt</span>(<span class="dv">2</span>))</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(polygon) <span class="sc">+</span> </span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>() <span class="sc">+</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>polygon <span class="ot">&lt;-</span> trench <span class="sc">|&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">reduce</span>(rbind) <span class="sc">|&gt;</span> </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_polygon</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_buffer</span>(<span class="at">dist =</span> <span class="fl">0.5</span>, <span class="at">joinStyle =</span> <span class="st">'MITRE'</span>, <span class="at">mitreLimit =</span> <span class="fu">sqrt</span>(<span class="dv">2</span>))</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(polygon) <span class="sc">+</span> </span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>() <span class="sc">+</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -901,11 +904,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>Compute the polygon’s area:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">st_area</span>(polygon) <span class="sc">|&gt;</span> </span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">format</span>(<span class="at">scientific =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "42708339569950"</code></pre>
-</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">st_area</span>(polygon) <span class="sc">|&gt;</span> </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">format</span>(<span class="at">scientific =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
 

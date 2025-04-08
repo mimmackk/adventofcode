@@ -4,6 +4,8 @@ date: 2021-12-20
 author:
   name: https://adventofcode.com/2021/day/20
   url: https://adventofcode.com/2021/day/20
+execute:
+  eval: true
 ---
 
 ## Setup
@@ -40,6 +42,7 @@ img <- tail(input, -1) |> do.call(what = rbind)
 Print the starting image:
 
 ```{r}
+#| output: true
 
 print_img <- \(img) {
   image(
@@ -111,6 +114,7 @@ sum(result)
 ```
 
 ```{r}
+#| output: true
 
 print_img(result)
 
@@ -132,6 +136,7 @@ sum(result)
 
 
 ```{r}
+#| output: true
 
 print_img(result)
 

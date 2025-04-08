@@ -759,6 +759,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Day 22</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../2021/R/day23.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Day 23</span></a>
+  </div>
+</li>
       </ul>
   </li>
     </ul>
@@ -870,47 +876,41 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">score_matrices</span>(mtx)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 30575</code></pre>
-</div>
 </div>
 </section>
 <section id="part-2" class="level2">
 <h2 class="anchored" data-anchor-id="part-2">Part 2</h2>
 <p>Define a function that finds the row or column index of the single smudge for a given matrix:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>smudge_idx <span class="ot">&lt;-</span> <span class="cf">function</span>(mtx, <span class="at">dim =</span> <span class="fu">c</span>(<span class="st">"row"</span>, <span class="st">"col"</span>)) {</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  vecs <span class="ot">&lt;-</span> <span class="fu">split</span>(mtx, <span class="fu">get</span>(<span class="fu">case_match</span>(dim, <span class="st">"row"</span> <span class="sc">~</span> <span class="st">"col"</span>, <span class="st">"col"</span> <span class="sc">~</span> <span class="st">"row"</span>))(mtx))</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  len  <span class="ot">&lt;-</span> <span class="fu">get</span>(<span class="fu">str_c</span>(<span class="st">"n"</span>, dim))(mtx)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (idx <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>(len <span class="sc">-</span> <span class="dv">1</span>)) {</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    n_trim <span class="ot">&lt;-</span> <span class="fu">min</span>(idx, len <span class="sc">-</span> idx)</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    noteq <span class="ot">&lt;-</span> vecs <span class="sc">|&gt;</span> </span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">map</span>(\(vec) {</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        h1 <span class="ot">&lt;-</span> <span class="fu">rev</span>(vec[<span class="dv">1</span><span class="sc">:</span>idx])[<span class="dv">1</span><span class="sc">:</span>n_trim]</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        h2 <span class="ot">&lt;-</span> vec[(idx <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">:</span>(idx <span class="sc">+</span> n_trim)]</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        <span class="fu">which</span>(h1 <span class="sc">!=</span> h2)</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>      })</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">length</span>(<span class="fu">unlist</span>(noteq)) <span class="sc">==</span> <span class="dv">1</span>) <span class="fu">return</span>(idx)</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="dv">0</span>)</span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>smudge_idx <span class="ot">&lt;-</span> <span class="cf">function</span>(mtx, <span class="at">dim =</span> <span class="fu">c</span>(<span class="st">"row"</span>, <span class="st">"col"</span>)) {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  vecs <span class="ot">&lt;-</span> <span class="fu">split</span>(mtx, <span class="fu">get</span>(<span class="fu">case_match</span>(dim, <span class="st">"row"</span> <span class="sc">~</span> <span class="st">"col"</span>, <span class="st">"col"</span> <span class="sc">~</span> <span class="st">"row"</span>))(mtx))</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  len  <span class="ot">&lt;-</span> <span class="fu">get</span>(<span class="fu">str_c</span>(<span class="st">"n"</span>, dim))(mtx)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (idx <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>(len <span class="sc">-</span> <span class="dv">1</span>)) {</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    n_trim <span class="ot">&lt;-</span> <span class="fu">min</span>(idx, len <span class="sc">-</span> idx)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    noteq <span class="ot">&lt;-</span> vecs <span class="sc">|&gt;</span> </span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">map</span>(\(vec) {</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        h1 <span class="ot">&lt;-</span> <span class="fu">rev</span>(vec[<span class="dv">1</span><span class="sc">:</span>idx])[<span class="dv">1</span><span class="sc">:</span>n_trim]</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        h2 <span class="ot">&lt;-</span> vec[(idx <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">:</span>(idx <span class="sc">+</span> n_trim)]</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>        <span class="fu">which</span>(h1 <span class="sc">!=</span> h2)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>      })</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">length</span>(<span class="fu">unlist</span>(noteq)) <span class="sc">==</span> <span class="dv">1</span>) <span class="fu">return</span>(idx)</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="dv">0</span>)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Re-score the input:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>score_unsmudged <span class="ot">&lt;-</span> <span class="cf">function</span>(mtx_list) {</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  mtx_list <span class="sc">|&gt;</span> </span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">map_dbl</span>(<span class="sc">~</span> <span class="fu">sum</span>(<span class="fu">smudge_idx</span>(.x, <span class="st">"col"</span>)) <span class="sc">+</span> <span class="fu">sum</span>(<span class="fu">smudge_idx</span>(.x, <span class="st">"row"</span>) <span class="sc">*</span> <span class="dv">100</span>)) <span class="sc">|&gt;</span> </span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sum</span>()</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="fu">score_unsmudged</span>(mtx)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 37478</code></pre>
-</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>score_unsmudged <span class="ot">&lt;-</span> <span class="cf">function</span>(mtx_list) {</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  mtx_list <span class="sc">|&gt;</span> </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">map_dbl</span>(<span class="sc">~</span> <span class="fu">sum</span>(<span class="fu">smudge_idx</span>(.x, <span class="st">"col"</span>)) <span class="sc">+</span> <span class="fu">sum</span>(<span class="fu">smudge_idx</span>(.x, <span class="st">"row"</span>) <span class="sc">*</span> <span class="dv">100</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sum</span>()</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="fu">score_unsmudged</span>(mtx)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
 

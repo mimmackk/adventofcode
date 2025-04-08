@@ -759,6 +759,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Day 22</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../2021/R/day23.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Day 23</span></a>
+  </div>
+</li>
       </ul>
   </li>
     </ul>
@@ -876,61 +882,55 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">keep</span>(parts, <span class="fu">map_lgl</span>(parts, rate)) <span class="sc">|&gt;</span> </span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unlist</span>() <span class="sc">|&gt;</span> </span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 397643</code></pre>
-</div>
 </div>
 </section>
 <section id="part-2" class="level2">
 <h2 class="anchored" data-anchor-id="part-2">Part 2</h2>
 <p>Define a function to cut the valid set of inputs into a set of intervals. Looping through our rules, trim down the intervals for x, m, a, and s until we have the final set of valid inputs:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>keys  <span class="ot">&lt;-</span> <span class="fu">set_names</span>(<span class="fu">c</span>(<span class="st">"x"</span>, <span class="st">"m"</span>, <span class="st">"a"</span>, <span class="st">"s"</span>))</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>empty <span class="ot">&lt;-</span> <span class="fu">map</span>(keys, <span class="sc">~</span> <span class="fu">interval</span>(<span class="at">domain =</span> <span class="st">'Z'</span>))</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>init  <span class="ot">&lt;-</span> <span class="fu">map</span>(keys, <span class="sc">~</span> <span class="fu">interval</span>(<span class="at">l =</span> <span class="dv">1</span>, <span class="at">r =</span> <span class="dv">4000</span>, <span class="at">domain =</span> <span class="st">'Z'</span>))</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>rate_range <span class="ot">&lt;-</span> <span class="cf">function</span>(cur_range, <span class="at">workflow =</span> <span class="st">"in"</span>) {</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (workflow <span class="sc">==</span> <span class="st">'A'</span>) </span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(cur_range))</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (workflow <span class="sc">==</span> <span class="st">'R'</span>)</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>())</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  workflow <span class="ot">&lt;-</span> rules[[workflow]]</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  accepted <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (rule <span class="cf">in</span> workflow) {</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">is.na</span>(rule<span class="sc">$</span>var)) {</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>      accepted <span class="ot">&lt;-</span> <span class="fu">c</span>(accepted, <span class="fu">rate_range</span>(cur_range, rule<span class="sc">$</span>goto))</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span>(accepted)</span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    rule_range <span class="ot">&lt;-</span> sets<span class="sc">::</span><span class="fu">interval</span>(</span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>      <span class="at">l =</span> <span class="fu">case_match</span>(rule<span class="sc">$</span>eq, <span class="st">'&lt;'</span> <span class="sc">~</span> <span class="dv">1</span>,            <span class="st">'&gt;'</span> <span class="sc">~</span> rule<span class="sc">$</span>val <span class="sc">+</span> <span class="dv">1</span>),</span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>      <span class="at">r =</span> <span class="fu">case_match</span>(rule<span class="sc">$</span>eq, <span class="st">'&lt;'</span> <span class="sc">~</span> rule<span class="sc">$</span>val <span class="sc">-</span> <span class="dv">1</span>, <span class="st">'&gt;'</span> <span class="sc">~</span> <span class="dv">4000</span>),</span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>      <span class="at">domain =</span> <span class="st">'Z'</span></span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>    rule_pass <span class="ot">&lt;-</span> cur_range <span class="sc">|&gt;</span></span>
-<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>      <span class="fu">modify_at</span>(rule<span class="sc">$</span>var, <span class="sc">~</span> <span class="fu">interval_intersection</span>(.x, rule_range))</span>
-<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>    rule_fail <span class="ot">&lt;-</span> cur_range <span class="sc">|&gt;</span></span>
-<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>      <span class="fu">modify_at</span>(rule<span class="sc">$</span>var, <span class="sc">~</span> <span class="fu">interval_complement</span>(rule_range, .x))</span>
-<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>    accepted <span class="ot">&lt;-</span> <span class="fu">c</span>(accepted, <span class="fu">rate_range</span>(rule_pass, rule<span class="sc">$</span>goto))</span>
-<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>    cur_range <span class="ot">&lt;-</span> rule_fail</span>
-<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>keys  <span class="ot">&lt;-</span> <span class="fu">set_names</span>(<span class="fu">c</span>(<span class="st">"x"</span>, <span class="st">"m"</span>, <span class="st">"a"</span>, <span class="st">"s"</span>))</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>empty <span class="ot">&lt;-</span> <span class="fu">map</span>(keys, <span class="sc">~</span> <span class="fu">interval</span>(<span class="at">domain =</span> <span class="st">'Z'</span>))</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>init  <span class="ot">&lt;-</span> <span class="fu">map</span>(keys, <span class="sc">~</span> <span class="fu">interval</span>(<span class="at">l =</span> <span class="dv">1</span>, <span class="at">r =</span> <span class="dv">4000</span>, <span class="at">domain =</span> <span class="st">'Z'</span>))</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>rate_range <span class="ot">&lt;-</span> <span class="cf">function</span>(cur_range, <span class="at">workflow =</span> <span class="st">"in"</span>) {</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (workflow <span class="sc">==</span> <span class="st">'A'</span>) </span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(cur_range))</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (workflow <span class="sc">==</span> <span class="st">'R'</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>())</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  workflow <span class="ot">&lt;-</span> rules[[workflow]]</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  accepted <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (rule <span class="cf">in</span> workflow) {</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">is.na</span>(rule<span class="sc">$</span>var)) {</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>      accepted <span class="ot">&lt;-</span> <span class="fu">c</span>(accepted, <span class="fu">rate_range</span>(cur_range, rule<span class="sc">$</span>goto))</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span>(accepted)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    rule_range <span class="ot">&lt;-</span> sets<span class="sc">::</span><span class="fu">interval</span>(</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>      <span class="at">l =</span> <span class="fu">case_match</span>(rule<span class="sc">$</span>eq, <span class="st">'&lt;'</span> <span class="sc">~</span> <span class="dv">1</span>,            <span class="st">'&gt;'</span> <span class="sc">~</span> rule<span class="sc">$</span>val <span class="sc">+</span> <span class="dv">1</span>),</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>      <span class="at">r =</span> <span class="fu">case_match</span>(rule<span class="sc">$</span>eq, <span class="st">'&lt;'</span> <span class="sc">~</span> rule<span class="sc">$</span>val <span class="sc">-</span> <span class="dv">1</span>, <span class="st">'&gt;'</span> <span class="sc">~</span> <span class="dv">4000</span>),</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>      <span class="at">domain =</span> <span class="st">'Z'</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    rule_pass <span class="ot">&lt;-</span> cur_range <span class="sc">|&gt;</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>      <span class="fu">modify_at</span>(rule<span class="sc">$</span>var, <span class="sc">~</span> <span class="fu">interval_intersection</span>(.x, rule_range))</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    rule_fail <span class="ot">&lt;-</span> cur_range <span class="sc">|&gt;</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>      <span class="fu">modify_at</span>(rule<span class="sc">$</span>var, <span class="sc">~</span> <span class="fu">interval_complement</span>(rule_range, .x))</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>    accepted <span class="ot">&lt;-</span> <span class="fu">c</span>(accepted, <span class="fu">rate_range</span>(rule_pass, rule<span class="sc">$</span>goto))</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>    cur_range <span class="ot">&lt;-</span> rule_fail</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Run and compute the number of total valid combinations:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rate_range</span>(init) <span class="sc">|&gt;</span> </span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(\(intrvl) <span class="fu">map_dbl</span>(intrvl, <span class="sc">~</span> <span class="fu">length</span>(<span class="fu">as.set</span>(.x)))) <span class="sc">|&gt;</span> </span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map_dbl</span>(prod) <span class="sc">|&gt;</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">format</span>(<span class="at">scientific =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "132392981697081"</code></pre>
-</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rate_range</span>(init) <span class="sc">|&gt;</span> </span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(\(intrvl) <span class="fu">map_dbl</span>(intrvl, <span class="sc">~</span> <span class="fu">length</span>(<span class="fu">as.set</span>(.x)))) <span class="sc">|&gt;</span> </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map_dbl</span>(prod) <span class="sc">|&gt;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">format</span>(<span class="at">scientific =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
 

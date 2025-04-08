@@ -1,0 +1,252 @@
+---
+title: "Day 23"
+date: 2021-12-23
+author:
+  name: https://adventofcode.com/2021/day/23
+  url: https://adventofcode.com/2021/day/23
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(igraph)
+library(memoise)
+
+```
+
+Read and parse text input from file:
+
+```{r}
+
+input <- read_lines("../input/day23.txt", skip = 2, n_max = 2) |> 
+  str_extract_all("[A-Z]") |> 
+  pmap(~ c(..1, ..2))
+
+```
+
+## Part 1
+
+We represent every state of the board as a string, which allows us to concisely store board and to leverage regex in our computations.
+
+```{r}
+
+halls <- str_flatten(c(' ', rep(c(' ', '#'), 4), '  '))
+rooms <- map_chr(input, str_flatten)
+board <- str_c(halls, str_flatten(rooms, collapse = ","), sep = ":")
+
+```
+
+For a given arrangement of free & blocked spaces in the hallway (irrelavant of the occupants of the blocked spaces and the status of the rooms), determine the set of legal moves from each room to a space in the hall:
+
+```{r}
+
+# Extract the free spaces around each room and convert to a list of indices:
+.room_moves <- function(halls) {
+  halls |> 
+    str_locate_all('( *# *)+') |> 
+    pluck(1) |> 
+    as_tibble() |> 
+    transmute(
+      room_idx = map2(start, end, \(start, end) {
+        keep(c(0, 0, 1, 0, 2, 0, 3, 0, 4, 0, 0)[start:end], ~ .x > 0)
+      }),
+      hall_idx = map2(start, end, \(start, end) {
+        keep(c(1, 2, 0, 4, 0, 6, 0, 8, 0, 10, 11)[start:end], ~ .x > 0)
+      })
+    ) |> 
+    unnest_longer(room_idx) |> 
+    pull(hall_idx)
+}
+
+# Memoize for performance: only 128 configurations in total (7 choose k)
+.room_moves <- memoize(.room_moves)
+room_moves <- \(x) .room_moves(str_replace_all(x, "[A-Z]", "X"))
+
+```
+
+The list of unblocked moves from the hall to a room is narrower, since an amphipod can only move into its final room:
+
+```{r}
+
+hall_moves <- function(halls) {
+  map(1:4, \(room_num) {
+    str_l <- str_sub(halls, 1L, 2 * room_num)
+    str_r <- str_sub(halls, 2 * room_num + 2, -1L)
+    
+    idx_l <- str_locate(str_l, str_c(LETTERS[room_num], "[# ]*$"))[,"start"]
+    idx_r <- str_locate(str_r, str_c("^[# ]*", LETTERS[room_num]))[,"end"]
+    idx_r <- idx_r + 2 * room_num + 1
+    
+    unname(discard(c(idx_l, idx_r), is.na))
+  })
+}
+
+hall_moves <- memoize(hall_moves)
+
+```
+
+Define helper functions to compute the cost of moving between two locations on board:
+
+```{r}
+
+num_spaces <- function(hall, room, room_size) {
+  n <- room_size + 1
+  
+  room_entry <- ceiling((room - 12) / n) * 2 + 1
+  room_depth <- (room - 13) %% n + 1
+  abs(hall - room_entry) + room_depth
+}
+
+num_spaces <- memoize(num_spaces)
+
+cost <- function(from, to, chr, room_size) {
+  idx <- match(chr, LETTERS) 
+  10^(idx - 1) * num_spaces(min(from, to), max(from, to), room_size)
+}
+
+cost <- memoize(cost)
+
+```
+
+Define a helper function to convert a nested list of room indices and hall indices along with information about the current board state into to a new board configuration (as a string):
+
+```{r}
+
+to_board <- function(moves, spaces, vec, room_size, dir = c("in", "out")) {
+  
+  n <- which(c("in", "out") == dir)
+  
+  map2(
+    moves,
+    (0:3 * (room_size + 1) + 11) + spaces + n,
+    \(hall_set, room_idx) {
+      map_chr(hall_set, \(hall_idx) {
+        to   <- c(room_idx, hall_idx)[n]
+        from <- c(room_idx, hall_idx)[-n]
+        str_c(
+          str_flatten(replace(vec, c(from, to), c(" ", vec[from]))),
+          cost(from, to, vec[from], room_size),
+          sep = ";"
+        )
+      })
+    }
+  ) |> 
+    unlist()
+  
+}
+
+```
+
+From a given hall/room configuration, get a list of valid next moves:
+
+```{r}
+
+room_spaces <- \(x) str_count(x, " ")
+room_has_invalid <- \(x) str_detect(x, c("[BCD]", "[ACD]", "[ABD]", "[ABC]"))
+
+next_moves <- function(board, room_size) {
+  vec <- str_split_1(board, "")
+  board <- str_split_1(board, ":")
+  halls <- board[1]
+  rooms <- board[2] |> str_split_1(",")
+  
+  # Determine which amphipods can move OUT of their room in the next step:
+  room_spaces <- room_spaces(rooms)
+  room_has_invalid <- room_has_invalid(rooms)
+  
+  # Get all valid hall-to-room moves first, then room-to-hall if none available.
+  hall_to_room <- hall_moves(halls)
+  hall_to_room[room_has_invalid] <- list(numeric(0))
+  
+  # If there are any hall-to-room moves, that's the only path we should take.
+  if (any(map_int(hall_to_room, length) > 0)) {
+    to_board(hall_to_room, room_spaces, vec, room_size, "in")
+  } else {
+    room_to_hall <- room_moves(halls)
+    room_to_hall[!room_has_invalid] <- list(numeric(0))
+    to_board(room_to_hall, room_spaces, vec, room_size, "out")
+  }
+}
+
+```
+
+Create a queue to explore every board state. Once the connections between all board states has been established, convert to a graph and find the shortest distance between the start and end, weighted by movement cost:
+
+```{r}
+
+get_dist <- function(start, end) {
+  
+  room_size <- start |> 
+    str_split_1(":") |> 
+    pluck(2) |> 
+    str_split_1(",") |> 
+    pluck(1) |> 
+    str_length()
+  
+  queue <- start
+  steps <- list()
+  
+  i <- 1
+  
+  while(i <= length(queue)) {
+    cur <- queue[i]
+    nxt <- next_moves(cur, room_size)
+    steps[cur] <- list(nxt)
+    nxt <- nxt |> str_split(';') |> map_chr(~ .x[1])
+    queue <- c(queue, setdiff(nxt, queue))
+    i <- i + 1
+  }
+  
+  g <- steps |>
+    enframe(name = "V1") |> 
+    unnest_longer(value) |> 
+    separate_wider_delim(value, delim = ";", names = c("V2", "weight")) |> 
+    mutate(weight = as.numeric(weight)) |> 
+    graph_from_data_frame(directed = TRUE)
+  
+  distances(g, v = start, to = end)[1, 1]
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+get_dist(board, "  # # # #  :AA,BB,CC,DD")
+
+```
+
+## Part 2
+
+Manually insert the new lines:
+
+```
+#D#C#B#A#
+#D#B#A#C#
+```
+
+```{r}
+
+rooms <- map2(
+  rooms,
+  c("DD", "CB", "BA", "AC"),
+  ~ str_split_1(.x, "") |> 
+    str_flatten(collapse = .y)
+)
+
+board <- str_c(halls, str_flatten(rooms, collapse = ","), sep = ":")
+
+```
+
+Re-run on the new input to get the new distance:
+
+```{r}
+
+get_dist(board, "  # # # #  :AAAA,BBBB,CCCC,DDDD")
+
+```

@@ -4,6 +4,8 @@ date: 2023-12-25
 author:
   name: https://adventofcode.com/2023/day/25
   url: https://adventofcode.com/2023/day/25
+execute:
+  eval: true
 ---
 
 ## Setup
@@ -58,6 +60,7 @@ idx <- scores |>
 Plot for visual confirmation:
 
 ```{r}
+#| output: true
 
 edge_colors <- E(g) |> 
   as.numeric() |> 

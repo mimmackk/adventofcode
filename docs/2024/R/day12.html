@@ -759,6 +759,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Day 22</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../2021/R/day23.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Day 23</span></a>
+  </div>
+</li>
       </ul>
   </li>
     </ul>
@@ -873,9 +879,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    perim <span class="sc">*</span> area</span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  }) <span class="sc">|&gt;</span> </span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 1433460</code></pre>
-</div>
 </div>
 </section>
 <section id="part-2" class="level2">
@@ -887,51 +890,48 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>A cell has a concave corner if it has two adjacent cells of its same group, but its diagonal cell between the two has a different group.</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get original row/column input and join on the group output from the graph</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>groups <span class="ot">&lt;-</span> <span class="fu">left_join</span>(</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  input,</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">imap_dfr</span>(dg, \(g, grp_idx) <span class="fu">tibble</span>(<span class="at">grp =</span> grp_idx, <span class="at">idx =</span> <span class="fu">V</span>(g)<span class="sc">$</span>name)),</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">join_by</span>(idx)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> </span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(idx, grp, row, col)</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co"># For each of a cell's neighbors, flag if they're in the same group</span></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>neighbors <span class="ot">&lt;-</span> groups <span class="sc">|&gt;</span> </span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Get group number of each adjacent cell (N/S/E/W)</span></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">transmute</span>(groups, <span class="at">n =</span> grp, <span class="at">row =</span> row <span class="sc">+</span> <span class="dv">1</span>, col), <span class="fu">join_by</span>(row, col)) <span class="sc">|&gt;</span> </span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">transmute</span>(groups, <span class="at">w =</span> grp, <span class="at">col =</span> col <span class="sc">+</span> <span class="dv">1</span>, row), <span class="fu">join_by</span>(row, col)) <span class="sc">|&gt;</span> </span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">transmute</span>(groups, <span class="at">s =</span> grp, <span class="at">row =</span> row <span class="sc">-</span> <span class="dv">1</span>, col), <span class="fu">join_by</span>(row, col)) <span class="sc">|&gt;</span> </span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">transmute</span>(groups, <span class="at">e =</span> grp, <span class="at">col =</span> col <span class="sc">-</span> <span class="dv">1</span>, row), <span class="fu">join_by</span>(row, col)) <span class="sc">|&gt;</span> </span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Get group number of each diagonal cell (NW/NE/SW/SE)</span></span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">transmute</span>(groups, <span class="at">nw =</span> grp, <span class="at">row =</span> row <span class="sc">+</span> <span class="dv">1</span>, <span class="at">col =</span> col <span class="sc">+</span> <span class="dv">1</span>), <span class="fu">join_by</span>(row, col)) <span class="sc">|&gt;</span> </span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">transmute</span>(groups, <span class="at">ne =</span> grp, <span class="at">row =</span> row <span class="sc">+</span> <span class="dv">1</span>, <span class="at">col =</span> col <span class="sc">-</span> <span class="dv">1</span>), <span class="fu">join_by</span>(row, col)) <span class="sc">|&gt;</span> </span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">transmute</span>(groups, <span class="at">sw =</span> grp, <span class="at">row =</span> row <span class="sc">-</span> <span class="dv">1</span>, <span class="at">col =</span> col <span class="sc">+</span> <span class="dv">1</span>), <span class="fu">join_by</span>(row, col)) <span class="sc">|&gt;</span> </span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">transmute</span>(groups, <span class="at">se =</span> grp, <span class="at">row =</span> row <span class="sc">-</span> <span class="dv">1</span>, <span class="at">col =</span> col <span class="sc">-</span> <span class="dv">1</span>), <span class="fu">join_by</span>(row, col)) <span class="sc">|&gt;</span> </span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(row, col)) <span class="sc">|&gt;</span> </span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Compare group numbers of adjacent/diagonal cells to the current cell</span></span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">c</span>(n, w, s, e, nw, ne, sw, se), <span class="sc">~</span> <span class="fu">replace_na</span>(.x <span class="sc">==</span> grp, <span class="cn">FALSE</span>)))</span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute total number of concave/convex corners for each cell</span></span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>corners <span class="ot">&lt;-</span> neighbors <span class="sc">|&gt;</span> </span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">convex =</span> (<span class="sc">!</span>n <span class="sc">&amp;</span> <span class="sc">!</span>w) <span class="sc">+</span> (<span class="sc">!</span>s <span class="sc">&amp;</span> <span class="sc">!</span>w) <span class="sc">+</span> (<span class="sc">!</span>s <span class="sc">&amp;</span> <span class="sc">!</span>e) <span class="sc">+</span> (<span class="sc">!</span>n <span class="sc">&amp;</span> <span class="sc">!</span>e),</span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">concave =</span> (n <span class="sc">&amp;</span> w <span class="sc">&amp;</span> <span class="sc">!</span>nw) <span class="sc">+</span> (s <span class="sc">&amp;</span> w <span class="sc">&amp;</span> <span class="sc">!</span>sw) <span class="sc">+</span> (s <span class="sc">&amp;</span> e <span class="sc">&amp;</span> <span class="sc">!</span>se) <span class="sc">+</span> (n <span class="sc">&amp;</span> e <span class="sc">&amp;</span> <span class="sc">!</span>ne)</span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get original row/column input and join on the group output from the graph</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>groups <span class="ot">&lt;-</span> <span class="fu">left_join</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  input,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">imap_dfr</span>(dg, \(g, grp_idx) <span class="fu">tibble</span>(<span class="at">grp =</span> grp_idx, <span class="at">idx =</span> <span class="fu">V</span>(g)<span class="sc">$</span>name)),</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">join_by</span>(idx)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> </span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(idx, grp, row, col)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co"># For each of a cell's neighbors, flag if they're in the same group</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>neighbors <span class="ot">&lt;-</span> groups <span class="sc">|&gt;</span> </span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Get group number of each adjacent cell (N/S/E/W)</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">transmute</span>(groups, <span class="at">n =</span> grp, <span class="at">row =</span> row <span class="sc">+</span> <span class="dv">1</span>, col), <span class="fu">join_by</span>(row, col)) <span class="sc">|&gt;</span> </span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">transmute</span>(groups, <span class="at">w =</span> grp, <span class="at">col =</span> col <span class="sc">+</span> <span class="dv">1</span>, row), <span class="fu">join_by</span>(row, col)) <span class="sc">|&gt;</span> </span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">transmute</span>(groups, <span class="at">s =</span> grp, <span class="at">row =</span> row <span class="sc">-</span> <span class="dv">1</span>, col), <span class="fu">join_by</span>(row, col)) <span class="sc">|&gt;</span> </span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">transmute</span>(groups, <span class="at">e =</span> grp, <span class="at">col =</span> col <span class="sc">-</span> <span class="dv">1</span>, row), <span class="fu">join_by</span>(row, col)) <span class="sc">|&gt;</span> </span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Get group number of each diagonal cell (NW/NE/SW/SE)</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">transmute</span>(groups, <span class="at">nw =</span> grp, <span class="at">row =</span> row <span class="sc">+</span> <span class="dv">1</span>, <span class="at">col =</span> col <span class="sc">+</span> <span class="dv">1</span>), <span class="fu">join_by</span>(row, col)) <span class="sc">|&gt;</span> </span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">transmute</span>(groups, <span class="at">ne =</span> grp, <span class="at">row =</span> row <span class="sc">+</span> <span class="dv">1</span>, <span class="at">col =</span> col <span class="sc">-</span> <span class="dv">1</span>), <span class="fu">join_by</span>(row, col)) <span class="sc">|&gt;</span> </span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">transmute</span>(groups, <span class="at">sw =</span> grp, <span class="at">row =</span> row <span class="sc">-</span> <span class="dv">1</span>, <span class="at">col =</span> col <span class="sc">+</span> <span class="dv">1</span>), <span class="fu">join_by</span>(row, col)) <span class="sc">|&gt;</span> </span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">transmute</span>(groups, <span class="at">se =</span> grp, <span class="at">row =</span> row <span class="sc">-</span> <span class="dv">1</span>, <span class="at">col =</span> col <span class="sc">-</span> <span class="dv">1</span>), <span class="fu">join_by</span>(row, col)) <span class="sc">|&gt;</span> </span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(row, col)) <span class="sc">|&gt;</span> </span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Compare group numbers of adjacent/diagonal cells to the current cell</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">c</span>(n, w, s, e, nw, ne, sw, se), <span class="sc">~</span> <span class="fu">replace_na</span>(.x <span class="sc">==</span> grp, <span class="cn">FALSE</span>)))</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute total number of concave/convex corners for each cell</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>corners <span class="ot">&lt;-</span> neighbors <span class="sc">|&gt;</span> </span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">convex =</span> (<span class="sc">!</span>n <span class="sc">&amp;</span> <span class="sc">!</span>w) <span class="sc">+</span> (<span class="sc">!</span>s <span class="sc">&amp;</span> <span class="sc">!</span>w) <span class="sc">+</span> (<span class="sc">!</span>s <span class="sc">&amp;</span> <span class="sc">!</span>e) <span class="sc">+</span> (<span class="sc">!</span>n <span class="sc">&amp;</span> <span class="sc">!</span>e),</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">concave =</span> (n <span class="sc">&amp;</span> w <span class="sc">&amp;</span> <span class="sc">!</span>nw) <span class="sc">+</span> (s <span class="sc">&amp;</span> w <span class="sc">&amp;</span> <span class="sc">!</span>sw) <span class="sc">+</span> (s <span class="sc">&amp;</span> e <span class="sc">&amp;</span> <span class="sc">!</span>se) <span class="sc">+</span> (n <span class="sc">&amp;</span> e <span class="sc">&amp;</span> <span class="sc">!</span>ne)</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Total the number of corners per group and multiply by the group’s area to get the total cost:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>corners <span class="sc">|&gt;</span> </span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">area =</span> <span class="fu">n</span>(),</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_sides =</span> <span class="fu">sum</span>(convex <span class="sc">+</span> concave), </span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">.by =</span> grp</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">cost =</span> area <span class="sc">*</span> num_sides) <span class="sc">|&gt;</span> </span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(cost) <span class="sc">|&gt;</span> </span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 855082</code></pre>
-</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>corners <span class="sc">|&gt;</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">area =</span> <span class="fu">n</span>(),</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_sides =</span> <span class="fu">sum</span>(convex <span class="sc">+</span> concave), </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">.by =</span> grp</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">cost =</span> area <span class="sc">*</span> num_sides) <span class="sc">|&gt;</span> </span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(cost) <span class="sc">|&gt;</span> </span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
 

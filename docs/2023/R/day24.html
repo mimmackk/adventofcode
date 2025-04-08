@@ -788,6 +788,12 @@ window.Quarto = {
  <span class="menu-text">Day 22</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../2021/R/day23.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Day 23</span></a>
+  </div>
+</li>
       </ul>
   </li>
     </ul>
@@ -916,9 +922,6 @@ window.Quarto = {
 <span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>pairs <span class="sc">|&gt;</span> </span>
 <span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(flag) <span class="sc">|&gt;</span> </span>
 <span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 24627</code></pre>
-</div>
 </div>
 </section>
 <section id="part-2" class="level2">
@@ -960,31 +963,28 @@ A_i = \begin{bmatrix}[\vec v_i]_\times^\intercal &amp; [\vec p_i]_\times\end{bma
 \begin{bmatrix}A_1 - A_2\\A_2 - A_3\end{bmatrix}\vec x = \begin{bmatrix}\vec b_1 - \vec b_2\\ \vec b_2 - \vec b_3\end{bmatrix}
 \]</span></p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define a function to compute the skeq symmetric matrix [a]_x</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>skewsym <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">0</span>, x[[<span class="dv">3</span>]], <span class="sc">-</span>x[[<span class="dv">2</span>]], <span class="sc">-</span>x[[<span class="dv">3</span>]], <span class="dv">0</span>, x[[<span class="dv">1</span>]], x[[<span class="dv">2</span>]], <span class="sc">-</span>x[[<span class="dv">1</span>]], <span class="dv">0</span>), <span class="at">ncol =</span> <span class="dv">3</span>)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># For the first three vectors in our list, compute their A and b values</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>lineqs <span class="ot">&lt;-</span> vecs_3d <span class="sc">|&gt;</span> </span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">3</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">A =</span> <span class="fu">map2</span>(p, v, \(p, v) <span class="fu">cbind</span>(<span class="fu">t</span>(<span class="fu">skewsym</span>(v)), <span class="fu">skewsym</span>(p))),</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">b =</span> <span class="fu">map2</span>(p, v, \(p, v) pracma<span class="sc">::</span><span class="fu">cross</span>(p, v))</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine the 3 linear equations into a single system &amp; solve</span></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>A <span class="ot">&lt;-</span> <span class="fu">rbind</span>(lineqs<span class="sc">$</span>A[[<span class="dv">1</span>]] <span class="sc">-</span> lineqs<span class="sc">$</span>A[[<span class="dv">2</span>]], lineqs<span class="sc">$</span>A[[<span class="dv">2</span>]] <span class="sc">-</span> lineqs<span class="sc">$</span>A[[<span class="dv">3</span>]])</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="fu">rbind</span>(lineqs<span class="sc">$</span>b[[<span class="dv">1</span>]] <span class="sc">-</span> lineqs<span class="sc">$</span>b[[<span class="dv">2</span>]], lineqs<span class="sc">$</span>b[[<span class="dv">2</span>]] <span class="sc">-</span> lineqs<span class="sc">$</span>b[[<span class="dv">3</span>]])</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">solve</span>(A, b)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define a function to compute the skeq symmetric matrix [a]_x</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>skewsym <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">0</span>, x[[<span class="dv">3</span>]], <span class="sc">-</span>x[[<span class="dv">2</span>]], <span class="sc">-</span>x[[<span class="dv">3</span>]], <span class="dv">0</span>, x[[<span class="dv">1</span>]], x[[<span class="dv">2</span>]], <span class="sc">-</span>x[[<span class="dv">1</span>]], <span class="dv">0</span>), <span class="at">ncol =</span> <span class="dv">3</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># For the first three vectors in our list, compute their A and b values</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>lineqs <span class="ot">&lt;-</span> vecs_3d <span class="sc">|&gt;</span> </span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">3</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">A =</span> <span class="fu">map2</span>(p, v, \(p, v) <span class="fu">cbind</span>(<span class="fu">t</span>(<span class="fu">skewsym</span>(v)), <span class="fu">skewsym</span>(p))),</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">b =</span> <span class="fu">map2</span>(p, v, \(p, v) pracma<span class="sc">::</span><span class="fu">cross</span>(p, v))</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine the 3 linear equations into a single system &amp; solve</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>A <span class="ot">&lt;-</span> <span class="fu">rbind</span>(lineqs<span class="sc">$</span>A[[<span class="dv">1</span>]] <span class="sc">-</span> lineqs<span class="sc">$</span>A[[<span class="dv">2</span>]], lineqs<span class="sc">$</span>A[[<span class="dv">2</span>]] <span class="sc">-</span> lineqs<span class="sc">$</span>A[[<span class="dv">3</span>]])</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="fu">rbind</span>(lineqs<span class="sc">$</span>b[[<span class="dv">1</span>]] <span class="sc">-</span> lineqs<span class="sc">$</span>b[[<span class="dv">2</span>]], lineqs<span class="sc">$</span>b[[<span class="dv">2</span>]] <span class="sc">-</span> lineqs<span class="sc">$</span>b[[<span class="dv">3</span>]])</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">solve</span>(A, b)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Finally, add together the three px, py, and pz coordinates for the initial position:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(x[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>]) <span class="sc">|&gt;</span> </span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">format</span>(<span class="at">scientific =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "527310134398221"</code></pre>
-</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(x[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>]) <span class="sc">|&gt;</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">format</span>(<span class="at">scientific =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
 

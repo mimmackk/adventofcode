@@ -759,6 +759,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Day 22</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../2021/R/day23.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Day 23</span></a>
+  </div>
+</li>
       </ul>
   </li>
     </ul>
@@ -874,9 +880,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="fu">num_plots</span>(<span class="fu">match</span>(<span class="st">'S'</span>, vertices), <span class="dv">64</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 3532</code></pre>
-</div>
 </div>
 </section>
 <section id="part-2" class="level2">
@@ -884,55 +887,55 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Since there are no obstacles in the center row or column (where the starting position is), we can easily compute how quickly it takes to enter a given “box” (repeat of the map) and from which direction we enter.</p>
 <p>First, we compute the number of steps it takes for a given box to enter a periodic cycle, depending on whether its starting location is from the center starting point, the middle of an edge, or a corner:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>find_cycle <span class="ot">&lt;-</span> <span class="cf">function</span>(start_vtx) {</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  locs_prv <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  locs_cur <span class="ot">&lt;-</span> start_vtx</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  i <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">repeat</span> {</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    locs_new <span class="ot">&lt;-</span> neighbors <span class="sc">|&gt;</span> </span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>      <span class="fu">keep_at</span>(locs_cur) <span class="sc">|&gt;</span> </span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">unlist</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">unique</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">sort</span>()</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">identical</span>(locs_prv, locs_new)) </span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span>(i <span class="sc">-</span> <span class="dv">1</span>)</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    locs_prv <span class="ot">&lt;-</span> locs_cur</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    locs_cur <span class="ot">&lt;-</span> locs_new</span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    i <span class="ot">&lt;-</span> i <span class="sc">+</span> <span class="dv">1</span></span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>w_max <span class="ot">&lt;-</span> <span class="fu">max</span>(df<span class="sc">$</span>col)</span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>w_mid <span class="ot">&lt;-</span> <span class="fu">ceiling</span>(w_max <span class="sc">/</span> <span class="dv">2</span>)</span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>starting_points <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span> </span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">name =</span> <span class="fu">case_when</span>(</span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    value <span class="sc">==</span> <span class="st">'S'</span> <span class="sc">~</span> <span class="st">'center'</span>,</span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    col <span class="sc">==</span> w_mid <span class="sc">&amp;</span> row <span class="sc">==</span> <span class="dv">1</span>     <span class="sc">~</span> <span class="st">'n'</span>,</span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    col <span class="sc">==</span> w_mid <span class="sc">&amp;</span> row <span class="sc">==</span> w_max <span class="sc">~</span> <span class="st">'s'</span>,</span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>    row <span class="sc">==</span> w_mid <span class="sc">&amp;</span> col <span class="sc">==</span> <span class="dv">1</span>     <span class="sc">~</span> <span class="st">'w'</span>,</span>
-<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>    row <span class="sc">==</span> w_mid <span class="sc">&amp;</span> col <span class="sc">==</span> w_max <span class="sc">~</span> <span class="st">'e'</span>,</span>
-<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>    col <span class="sc">==</span> <span class="dv">1</span>     <span class="sc">&amp;</span> row <span class="sc">==</span> <span class="dv">1</span>     <span class="sc">~</span> <span class="st">'nw'</span>,</span>
-<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>    col <span class="sc">==</span> w_max <span class="sc">&amp;</span> row <span class="sc">==</span> <span class="dv">1</span>     <span class="sc">~</span> <span class="st">'ne'</span>,</span>
-<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>    col <span class="sc">==</span> <span class="dv">1</span>     <span class="sc">&amp;</span> row <span class="sc">==</span> w_max <span class="sc">~</span> <span class="st">'sw'</span>,</span>
-<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>    col <span class="sc">==</span> w_max <span class="sc">&amp;</span> row <span class="sc">==</span> w_max <span class="sc">~</span> <span class="st">'se'</span></span>
-<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">|&gt;</span> </span>
-<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(name)) <span class="sc">|&gt;</span> </span>
-<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, id) <span class="sc">|&gt;</span> </span>
-<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">deframe</span>()</span>
-<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a><span class="co"># Determine when a cycle first occurs for the center, mid-edge, and corner pieces</span></span>
-<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>cycles <span class="ot">&lt;-</span> <span class="fu">map</span>(</span>
-<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(</span>
-<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">corner   =</span> starting_points[[<span class="st">"nw"</span>]],</span>
-<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>    <span class="at">mid_edge =</span> starting_points[[<span class="st">"n"</span>]],</span>
-<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>    <span class="at">center   =</span> starting_points[[<span class="st">"center"</span>]]</span>
-<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>  ), </span>
-<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>  find_cycle</span>
-<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>find_cycle <span class="ot">&lt;-</span> <span class="cf">function</span>(start_vtx) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  locs_prv <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  locs_cur <span class="ot">&lt;-</span> start_vtx</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  i <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">repeat</span> {</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    locs_new <span class="ot">&lt;-</span> neighbors <span class="sc">|&gt;</span> </span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>      <span class="fu">keep_at</span>(locs_cur) <span class="sc">|&gt;</span> </span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">unlist</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">unique</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">sort</span>()</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">identical</span>(locs_prv, locs_new)) </span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span>(i <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    locs_prv <span class="ot">&lt;-</span> locs_cur</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    locs_cur <span class="ot">&lt;-</span> locs_new</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    i <span class="ot">&lt;-</span> i <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>w_max <span class="ot">&lt;-</span> <span class="fu">max</span>(df<span class="sc">$</span>col)</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>w_mid <span class="ot">&lt;-</span> <span class="fu">ceiling</span>(w_max <span class="sc">/</span> <span class="dv">2</span>)</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>starting_points <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span> </span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">name =</span> <span class="fu">case_when</span>(</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>    value <span class="sc">==</span> <span class="st">'S'</span> <span class="sc">~</span> <span class="st">'center'</span>,</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>    col <span class="sc">==</span> w_mid <span class="sc">&amp;</span> row <span class="sc">==</span> <span class="dv">1</span>     <span class="sc">~</span> <span class="st">'n'</span>,</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    col <span class="sc">==</span> w_mid <span class="sc">&amp;</span> row <span class="sc">==</span> w_max <span class="sc">~</span> <span class="st">'s'</span>,</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>    row <span class="sc">==</span> w_mid <span class="sc">&amp;</span> col <span class="sc">==</span> <span class="dv">1</span>     <span class="sc">~</span> <span class="st">'w'</span>,</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>    row <span class="sc">==</span> w_mid <span class="sc">&amp;</span> col <span class="sc">==</span> w_max <span class="sc">~</span> <span class="st">'e'</span>,</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>    col <span class="sc">==</span> <span class="dv">1</span>     <span class="sc">&amp;</span> row <span class="sc">==</span> <span class="dv">1</span>     <span class="sc">~</span> <span class="st">'nw'</span>,</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>    col <span class="sc">==</span> w_max <span class="sc">&amp;</span> row <span class="sc">==</span> <span class="dv">1</span>     <span class="sc">~</span> <span class="st">'ne'</span>,</span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>    col <span class="sc">==</span> <span class="dv">1</span>     <span class="sc">&amp;</span> row <span class="sc">==</span> w_max <span class="sc">~</span> <span class="st">'sw'</span>,</span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>    col <span class="sc">==</span> w_max <span class="sc">&amp;</span> row <span class="sc">==</span> w_max <span class="sc">~</span> <span class="st">'se'</span></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">|&gt;</span> </span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(name)) <span class="sc">|&gt;</span> </span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, id) <span class="sc">|&gt;</span> </span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">deframe</span>()</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a><span class="co"># Determine when a cycle first occurs for the center, mid-edge, and corner pieces</span></span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>cycles <span class="ot">&lt;-</span> <span class="fu">map</span>(</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(</span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">corner   =</span> starting_points[[<span class="st">"nw"</span>]],</span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>    <span class="at">mid_edge =</span> starting_points[[<span class="st">"n"</span>]],</span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>    <span class="at">center   =</span> starting_points[[<span class="st">"center"</span>]]</span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>  ), </span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>  find_cycle</span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Next, we split our total map into different box types. Boxes along the same horizontal/vertical lines as the initial starting point will always be entered from a mid-edge plot. All other boxes – those along the diagonal/off-diagonal – will be entered from the corner closest to the origin.</p>
 <p>We can map the non-straight-line boxes as concentric rings indicating their Manhattan distance from the origin:</p>
@@ -948,96 +951,93 @@ XXX.XXX
 <p>The number of plots in a cycling box are straightforward to compute. However, when a box is entered near the last of the steps and doesn’t have enough time to enter a cycle, we have to compute its current number of plots separately at the time the simulation ends.</p>
 <p>We begin with the diagonal/off-diagonal boxes:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">26501365</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>rings_reached     <span class="ot">&lt;-</span> <span class="fu">ceiling</span>(n <span class="sc">/</span> w_max <span class="sc">-</span> <span class="dv">1</span>)</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>rings_cycling     <span class="ot">&lt;-</span> <span class="fu">ceiling</span>((n <span class="sc">-</span> cycles<span class="sc">$</span>corner) <span class="sc">/</span> w_max <span class="sc">-</span> <span class="dv">1</span>)</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>rings_in_progress <span class="ot">&lt;-</span> (rings_cycling <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">:</span>rings_reached</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the current value for the non-cycling diags</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>plots_in_progress <span class="ot">&lt;-</span> starting_points <span class="sc">|&gt;</span> </span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep_at</span>(<span class="fu">c</span>(<span class="st">"nw"</span>, <span class="st">"ne"</span>, <span class="st">"sw"</span>, <span class="st">"se"</span>)) <span class="sc">|&gt;</span> </span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(\(init_idx) {</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    rings_in_progress <span class="sc">|&gt;</span> </span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Compute the step when each ring was entered from its corner</span></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>      <span class="fu">map_dbl</span>(<span class="sc">~</span> w_max <span class="sc">*</span> .x <span class="sc">+</span> <span class="dv">1</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Compute how many steps into the cycle each box currently is</span></span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>      <span class="fu">map_dbl</span>(<span class="sc">~</span> n <span class="sc">-</span> .x) <span class="sc">|&gt;</span> </span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>      <span class="fu">map_dbl</span>(<span class="sc">~</span> <span class="fu">num_plots</span>(init_idx, .x))</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>  }) <span class="sc">|&gt;</span> </span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(<span class="sc">~</span> .x <span class="sc">*</span> rings_in_progress) <span class="sc">|&gt;</span> </span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map_dbl</span>(sum)</span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the current value for the cycling diags</span></span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>cycling_a <span class="ot">&lt;-</span> (<span class="dv">1</span><span class="sc">:</span>rings_cycling) <span class="sc">|&gt;</span> </span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep</span>(<span class="sc">~</span> .x <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>()</span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>cycling_b <span class="ot">&lt;-</span> (<span class="dv">1</span><span class="sc">:</span>rings_cycling) <span class="sc">|&gt;</span> </span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep</span>(<span class="sc">~</span> .x <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">1</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>()</span>
-<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>cycle_steps_even <span class="ot">&lt;-</span> cycles<span class="sc">$</span>corner <span class="sc">+</span> <span class="fu">if_else</span>(cycles<span class="sc">$</span>corner <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>)</span>
-<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>cycle_steps_odd  <span class="ot">&lt;-</span> cycles<span class="sc">$</span>corner <span class="sc">+</span> <span class="fu">if_else</span>(cycles<span class="sc">$</span>corner <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
-<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>plots_a <span class="ot">&lt;-</span> cycling_a <span class="sc">*</span> <span class="fu">num_plots</span>(<span class="dv">1</span>, cycle_steps_even)</span>
-<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>plots_b <span class="ot">&lt;-</span> cycling_b <span class="sc">*</span> <span class="fu">num_plots</span>(<span class="dv">1</span>, cycle_steps_odd)</span>
-<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>plots_cycling <span class="ot">&lt;-</span> plots_a <span class="sc">+</span> plots_b</span>
-<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute total value of all diagonal boxes</span></span>
-<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>plots_diag <span class="ot">&lt;-</span> <span class="dv">4</span> <span class="sc">*</span> plots_cycling <span class="sc">+</span> <span class="fu">sum</span>(plots_in_progress)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">26501365</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>rings_reached     <span class="ot">&lt;-</span> <span class="fu">ceiling</span>(n <span class="sc">/</span> w_max <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>rings_cycling     <span class="ot">&lt;-</span> <span class="fu">ceiling</span>((n <span class="sc">-</span> cycles<span class="sc">$</span>corner) <span class="sc">/</span> w_max <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>rings_in_progress <span class="ot">&lt;-</span> (rings_cycling <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">:</span>rings_reached</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the current value for the non-cycling diags</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>plots_in_progress <span class="ot">&lt;-</span> starting_points <span class="sc">|&gt;</span> </span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep_at</span>(<span class="fu">c</span>(<span class="st">"nw"</span>, <span class="st">"ne"</span>, <span class="st">"sw"</span>, <span class="st">"se"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(\(init_idx) {</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    rings_in_progress <span class="sc">|&gt;</span> </span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Compute the step when each ring was entered from its corner</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>      <span class="fu">map_dbl</span>(<span class="sc">~</span> w_max <span class="sc">*</span> .x <span class="sc">+</span> <span class="dv">1</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Compute how many steps into the cycle each box currently is</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>      <span class="fu">map_dbl</span>(<span class="sc">~</span> n <span class="sc">-</span> .x) <span class="sc">|&gt;</span> </span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>      <span class="fu">map_dbl</span>(<span class="sc">~</span> <span class="fu">num_plots</span>(init_idx, .x))</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>  }) <span class="sc">|&gt;</span> </span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(<span class="sc">~</span> .x <span class="sc">*</span> rings_in_progress) <span class="sc">|&gt;</span> </span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map_dbl</span>(sum)</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the current value for the cycling diags</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>cycling_a <span class="ot">&lt;-</span> (<span class="dv">1</span><span class="sc">:</span>rings_cycling) <span class="sc">|&gt;</span> </span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep</span>(<span class="sc">~</span> .x <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>()</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>cycling_b <span class="ot">&lt;-</span> (<span class="dv">1</span><span class="sc">:</span>rings_cycling) <span class="sc">|&gt;</span> </span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep</span>(<span class="sc">~</span> .x <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">1</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>()</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>cycle_steps_even <span class="ot">&lt;-</span> cycles<span class="sc">$</span>corner <span class="sc">+</span> <span class="fu">if_else</span>(cycles<span class="sc">$</span>corner <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>cycle_steps_odd  <span class="ot">&lt;-</span> cycles<span class="sc">$</span>corner <span class="sc">+</span> <span class="fu">if_else</span>(cycles<span class="sc">$</span>corner <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>plots_a <span class="ot">&lt;-</span> cycling_a <span class="sc">*</span> <span class="fu">num_plots</span>(<span class="dv">1</span>, cycle_steps_even)</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>plots_b <span class="ot">&lt;-</span> cycling_b <span class="sc">*</span> <span class="fu">num_plots</span>(<span class="dv">1</span>, cycle_steps_odd)</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>plots_cycling <span class="ot">&lt;-</span> plots_a <span class="sc">+</span> plots_b</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute total value of all diagonal boxes</span></span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>plots_diag <span class="ot">&lt;-</span> <span class="dv">4</span> <span class="sc">*</span> plots_cycling <span class="sc">+</span> <span class="fu">sum</span>(plots_in_progress)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Now repeat for the straight-line boxes:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>straights_reached     <span class="ot">&lt;-</span> <span class="fu">ceiling</span>((n <span class="sc">+</span> w_mid) <span class="sc">/</span> w_max <span class="sc">-</span> <span class="dv">1</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>straights_cycling     <span class="ot">&lt;-</span> <span class="fu">ceiling</span>((n <span class="sc">+</span> w_mid <span class="sc">-</span> cycles<span class="sc">$</span>mid_edge) <span class="sc">/</span> w_max <span class="sc">-</span> <span class="dv">1</span>)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>straights_in_progress <span class="ot">&lt;-</span> (straights_cycling <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">:</span>straights_reached</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the current value for the non-cycling straights</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>plots_in_progress <span class="ot">&lt;-</span> starting_points <span class="sc">|&gt;</span> </span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep_at</span>(<span class="fu">c</span>(<span class="st">"n"</span>, <span class="st">"s"</span>, <span class="st">"w"</span>, <span class="st">"e"</span>)) <span class="sc">|&gt;</span> </span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map_dbl</span>(\(init_idx) {</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    straights_in_progress <span class="sc">|&gt;</span> </span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Compute the step number when each box was entered from the edge</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">map_dbl</span>(<span class="sc">~</span> w_max <span class="sc">*</span> .x <span class="sc">-</span> w_mid <span class="sc">+</span> <span class="dv">1</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Compute how many steps into the cycle each box currently is</span></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>      <span class="fu">map_dbl</span>(<span class="sc">~</span> n <span class="sc">-</span> .x) <span class="sc">|&gt;</span> </span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>      <span class="fu">map_dbl</span>(<span class="sc">~</span> <span class="fu">num_plots</span>(init_idx, .x)) <span class="sc">|&gt;</span> </span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>      <span class="fu">sum</span>()</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  })</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the current value for the cycling straights</span></span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>cycling_a <span class="ot">&lt;-</span> (<span class="dv">1</span><span class="sc">:</span>straights_cycling) <span class="sc">|&gt;</span> </span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep</span>(<span class="sc">~</span> .x <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">length</span>()</span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>cycling_b <span class="ot">&lt;-</span> (<span class="dv">1</span><span class="sc">:</span>straights_cycling) <span class="sc">|&gt;</span> </span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep</span>(<span class="sc">~</span> .x <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">1</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">length</span>()</span>
-<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>cycle_steps_even <span class="ot">&lt;-</span> cycles<span class="sc">$</span>mid_edge <span class="sc">+</span> <span class="fu">if_else</span>(cycles<span class="sc">$</span>mid_edge <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>)</span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>cycle_steps_odd  <span class="ot">&lt;-</span> cycles<span class="sc">$</span>mid_edge <span class="sc">+</span> <span class="fu">if_else</span>(cycles<span class="sc">$</span>mid_edge <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
-<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>plots_a <span class="ot">&lt;-</span> cycling_a <span class="sc">*</span> <span class="fu">num_plots</span>(w_mid, cycle_steps_even)</span>
-<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>plots_b <span class="ot">&lt;-</span> cycling_b <span class="sc">*</span> <span class="fu">num_plots</span>(w_mid, cycle_steps_odd)</span>
-<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>plots_cycling  <span class="ot">&lt;-</span> plots_a <span class="sc">+</span> plots_b</span>
-<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute total value of all straight-line boxes</span></span>
-<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>plots_straight <span class="ot">&lt;-</span> <span class="dv">4</span> <span class="sc">*</span> plots_cycling <span class="sc">+</span> <span class="fu">sum</span>(plots_in_progress)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>straights_reached     <span class="ot">&lt;-</span> <span class="fu">ceiling</span>((n <span class="sc">+</span> w_mid) <span class="sc">/</span> w_max <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>straights_cycling     <span class="ot">&lt;-</span> <span class="fu">ceiling</span>((n <span class="sc">+</span> w_mid <span class="sc">-</span> cycles<span class="sc">$</span>mid_edge) <span class="sc">/</span> w_max <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>straights_in_progress <span class="ot">&lt;-</span> (straights_cycling <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">:</span>straights_reached</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the current value for the non-cycling straights</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>plots_in_progress <span class="ot">&lt;-</span> starting_points <span class="sc">|&gt;</span> </span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep_at</span>(<span class="fu">c</span>(<span class="st">"n"</span>, <span class="st">"s"</span>, <span class="st">"w"</span>, <span class="st">"e"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map_dbl</span>(\(init_idx) {</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    straights_in_progress <span class="sc">|&gt;</span> </span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Compute the step number when each box was entered from the edge</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">map_dbl</span>(<span class="sc">~</span> w_max <span class="sc">*</span> .x <span class="sc">-</span> w_mid <span class="sc">+</span> <span class="dv">1</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Compute how many steps into the cycle each box currently is</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>      <span class="fu">map_dbl</span>(<span class="sc">~</span> n <span class="sc">-</span> .x) <span class="sc">|&gt;</span> </span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>      <span class="fu">map_dbl</span>(<span class="sc">~</span> <span class="fu">num_plots</span>(init_idx, .x)) <span class="sc">|&gt;</span> </span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>      <span class="fu">sum</span>()</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the current value for the cycling straights</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>cycling_a <span class="ot">&lt;-</span> (<span class="dv">1</span><span class="sc">:</span>straights_cycling) <span class="sc">|&gt;</span> </span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep</span>(<span class="sc">~</span> .x <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">length</span>()</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>cycling_b <span class="ot">&lt;-</span> (<span class="dv">1</span><span class="sc">:</span>straights_cycling) <span class="sc">|&gt;</span> </span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep</span>(<span class="sc">~</span> .x <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">1</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">length</span>()</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>cycle_steps_even <span class="ot">&lt;-</span> cycles<span class="sc">$</span>mid_edge <span class="sc">+</span> <span class="fu">if_else</span>(cycles<span class="sc">$</span>mid_edge <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>cycle_steps_odd  <span class="ot">&lt;-</span> cycles<span class="sc">$</span>mid_edge <span class="sc">+</span> <span class="fu">if_else</span>(cycles<span class="sc">$</span>mid_edge <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>plots_a <span class="ot">&lt;-</span> cycling_a <span class="sc">*</span> <span class="fu">num_plots</span>(w_mid, cycle_steps_even)</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>plots_b <span class="ot">&lt;-</span> cycling_b <span class="sc">*</span> <span class="fu">num_plots</span>(w_mid, cycle_steps_odd)</span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>plots_cycling  <span class="ot">&lt;-</span> plots_a <span class="sc">+</span> plots_b</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute total value of all straight-line boxes</span></span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>plots_straight <span class="ot">&lt;-</span> <span class="dv">4</span> <span class="sc">*</span> plots_cycling <span class="sc">+</span> <span class="fu">sum</span>(plots_in_progress)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Finally, compute the value for the center box:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>cycle_steps_odd <span class="ot">&lt;-</span> <span class="fu">if_else</span>(cycles<span class="sc">$</span>center <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>) <span class="sc">+</span> cycles<span class="sc">$</span>center</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>plots_center <span class="ot">&lt;-</span> <span class="fu">num_plots</span>(<span class="fu">match</span>(<span class="st">'S'</span>, vertices), cycle_steps_odd)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>cycle_steps_odd <span class="ot">&lt;-</span> <span class="fu">if_else</span>(cycles<span class="sc">$</span>center <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>) <span class="sc">+</span> cycles<span class="sc">$</span>center</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>plots_center <span class="ot">&lt;-</span> <span class="fu">num_plots</span>(<span class="fu">match</span>(<span class="st">'S'</span>, vertices), cycle_steps_odd)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Sum to get the final result:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">format</span>(plots_center <span class="sc">+</span> plots_straight <span class="sc">+</span> plots_diag, <span class="at">scientific =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "590104708070703"</code></pre>
-</div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">format</span>(plots_center <span class="sc">+</span> plots_straight <span class="sc">+</span> plots_diag, <span class="at">scientific =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
 

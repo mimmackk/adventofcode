@@ -4,6 +4,8 @@ date: 2023-12-18
 author:
   name: https://adventofcode.com/2023/day/18
   url: https://adventofcode.com/2023/day/18
+execute:
+  eval: true
 ---
 
 ## Setup
@@ -39,6 +41,7 @@ trench <- input |>
 Convert the polygon's boundary to a spatial object using SF:
 
 ```{r}
+#| output: true
 
 polygon <- trench |>
   reduce(rbind) |> 
@@ -84,6 +87,7 @@ trench <- input |>
 Convert to a new polygon:
 
 ```{r}
+#| output: true
 
 polygon <- trench |>
   reduce(rbind) |> 
