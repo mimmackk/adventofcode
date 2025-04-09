@@ -6,10 +6,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="https://adventofcode.com/2021/day/14">
-<meta name="dcterms.date" content="2021-12-14">
+<meta name="author" content="https://adventofcode.com/2021/day/24">
+<meta name="dcterms.date" content="2021-12-24">
 
-<title>Day 14 – Advent of Code: Worked Solutions</title>
+<title>Day 24 – Advent of Code: Worked Solutions</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -66,8 +66,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../../">
-<link href="../../2021/R/day15.html" rel="next">
-<link href="../../2021/R/day13.html" rel="prev">
+<link href="../../2021/R/day23.html" rel="prev">
 <script src="../../site_libs/quarto-html/quarto.js"></script>
 <script src="../../site_libs/quarto-html/popper.min.js"></script>
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -119,7 +118,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
         <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
-          <h1 class="quarto-secondary-nav-title">Day 14</h1>
+          <h1 class="quarto-secondary-nav-title">Day 24</h1>
         </a>     
     </div>
   </nav>
@@ -707,7 +706,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../2021/R/day14.html" class="sidebar-item-text sidebar-link active">
+  <a href="../../2021/R/day14.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Day 14</span></a>
   </div>
 </li>
@@ -767,7 +766,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../2021/R/day24.html" class="sidebar-item-text sidebar-link">
+  <a href="../../2021/R/day24.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Day 24</span></a>
   </div>
 </li>
@@ -787,14 +786,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#part-1" id="toc-part-1" class="nav-link" data-scroll-target="#part-1">Part 1</a></li>
   <li><a href="#part-2" id="toc-part-2" class="nav-link" data-scroll-target="#part-2">Part 2</a></li>
   </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/mimmackk/adventofcode/blob/main/2021/R/day14.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li></ul></div></nav>
+<div class="toc-actions"><ul><li><a href="https://github.com/mimmackk/adventofcode/blob/main/2021/R/day24.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li></ul></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title d-none d-lg-block">Day 14</h1>
+<h1 class="title d-none d-lg-block">Day 24</h1>
 <p class="subtitle lead">Advent of Code: Worked Solutions</p>
 </div>
 
@@ -805,14 +804,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">About</div>
     <div class="quarto-title-meta-contents">
-             <p><a href="https://adventofcode.com/2021/day/14">https://adventofcode.com/2021/day/14</a> </p>
+             <p><a href="https://adventofcode.com/2021/day/24">https://adventofcode.com/2021/day/24</a> </p>
           </div>
   </div>
     
     <div>
     <div class="quarto-title-meta-heading">Date</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">December 14, 2021</p>
+      <p class="date">December 24, 2021</p>
     </div>
   </div>
   
@@ -831,87 +830,186 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(unglue)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Read input from file:</p>
+<p>Read and parse text input from file:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>input <span class="ot">&lt;-</span> <span class="fu">read_lines</span>(<span class="st">"../input/day14.txt"</span>, <span class="at">skip_empty_rows =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>Convert input to a starting sequence and a list of pair insertion rules:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>template <span class="ot">&lt;-</span> <span class="fu">head</span>(input, <span class="dv">1</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>rules <span class="ot">&lt;-</span> <span class="fu">tail</span>(input, <span class="sc">-</span><span class="dv">1</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unglue_data</span>(<span class="st">"{pair} -&gt; {output}"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>Disable scientific formatting when displaying large numbers:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">scipen =</span> <span class="dv">999</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>input <span class="ot">&lt;-</span> <span class="fu">read_lines</span>(<span class="st">"../input/day24.txt"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unglue_data</span>(<span class="at">patterns =</span> <span class="fu">c</span>(<span class="st">"{f=...} {a=.}"</span>, <span class="st">"{f} {a=.} {b}"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="part-1" class="level2">
 <h2 class="anchored" data-anchor-id="part-1">Part 1</h2>
-<p>Define a function to grow the polymer <code>n</code> times, then take the count of the most common character in the string and subtract the count of the least common character:</p>
+<p>By visual inspection, the instructions are all minor variations on the same repeated set of instructions. Block 1 is interpreted below:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Instruction</th>
+<th>Description</th>
+<th>Output Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>inp w</td>
+<td>Read a new digit into w</td>
+<td>w = {1:9}</td>
+</tr>
+<tr class="even">
+<td>mul x 0</td>
+<td>Zero out x</td>
+<td>x = 0</td>
+</tr>
+<tr class="odd">
+<td>add x z</td>
+<td>Set x equal to z</td>
+<td>x = 0</td>
+</tr>
+<tr class="even">
+<td>mod x 26</td>
+<td>Modulo x by 26 (0)</td>
+<td>x = 0</td>
+</tr>
+<tr class="odd">
+<td>div z 1</td>
+<td>Divide z by 1 (no effect)</td>
+<td>z = 0</td>
+</tr>
+<tr class="even">
+<td>add x 14</td>
+<td>Add 14 to x (14)</td>
+<td>x = 14</td>
+</tr>
+<tr class="odd">
+<td>eql x w</td>
+<td>Check if x equals w</td>
+<td>x = 0</td>
+</tr>
+<tr class="even">
+<td>eql x 0</td>
+<td>Check if above is true</td>
+<td>x = 1</td>
+</tr>
+<tr class="odd">
+<td>mul y 0</td>
+<td>Zero out y</td>
+<td>y = 0</td>
+</tr>
+<tr class="even">
+<td>add y 25</td>
+<td>Set y to 25</td>
+<td>y = 25</td>
+</tr>
+<tr class="odd">
+<td>mul y x</td>
+<td>Multiply y by x (either 1 or 0)</td>
+<td>y = 25</td>
+</tr>
+<tr class="even">
+<td>add y 1</td>
+<td>Add 1 to y</td>
+<td>y = 26</td>
+</tr>
+<tr class="odd">
+<td>mul z y</td>
+<td>Multiply z by y</td>
+<td>z = 0</td>
+</tr>
+<tr class="even">
+<td>mul y 0</td>
+<td>Zero out y</td>
+<td>y = 0</td>
+</tr>
+<tr class="odd">
+<td>add y w</td>
+<td>Set y to w</td>
+<td>y = w</td>
+</tr>
+<tr class="even">
+<td>add y 12</td>
+<td>Add 12 to y</td>
+<td>y = w + 12</td>
+</tr>
+<tr class="odd">
+<td>mul y x</td>
+<td>Multiply y by x (either 1 or 0)</td>
+<td>y = w + 12</td>
+</tr>
+<tr class="even">
+<td>add z y</td>
+<td>Add y to z</td>
+<td>z = w + 12</td>
+</tr>
+</tbody>
+</table>
+<p>If we represent the set of 3 integers that vary from block to block as “c1[i]”, “c2[i]”, and “c3[i]”, with i indicating the block number ranging from 1:14, this series of instructions is equivalent to the following code:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>grow_n <span class="ot">&lt;-</span> <span class="cf">function</span>(polymer, n) {</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Save the first and last letter for later reference</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  letter_start <span class="ot">&lt;-</span> <span class="fu">str_sub</span>(polymer,  <span class="dv">1</span>L,  <span class="dv">1</span>L)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  letter_final <span class="ot">&lt;-</span> <span class="fu">str_sub</span>(polymer, <span class="sc">-</span><span class="dv">1</span>L, <span class="sc">-</span><span class="dv">1</span>L)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Reformat the initial string as a dataframe of pairs and counts</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  polymer <span class="ot">&lt;-</span> <span class="fu">map2_dfr</span>(</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">.x =</span> <span class="fu">head</span>(<span class="fu">str_split_1</span>(polymer, <span class="st">""</span>), <span class="sc">-</span><span class="dv">1</span>),</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">.y =</span> <span class="fu">tail</span>(<span class="fu">str_split_1</span>(polymer, <span class="st">""</span>), <span class="sc">-</span><span class="dv">1</span>),</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">tibble</span>(<span class="at">pair =</span> <span class="fu">str_c</span>(.x, .y))</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarize</span>(<span class="at">n =</span> <span class="fu">n</span>(), <span class="at">.by =</span> pair)</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Grow the polymer N times, tracking its growth as compact counts of pairs</span></span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n) {</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    polymer <span class="ot">&lt;-</span> polymer <span class="sc">|&gt;</span> </span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>      <span class="fu">left_join</span>(rules, <span class="fu">join_by</span>(pair)) <span class="sc">|&gt;</span> </span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(</span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>        <span class="at">pair1 =</span> <span class="fu">str_replace</span>(pair, <span class="st">".$"</span>, output),</span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>        <span class="at">pair2 =</span> <span class="fu">str_replace</span>(pair, <span class="st">"^."</span>, output),</span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>        <span class="at">pair3 =</span> <span class="fu">case_when</span>(<span class="fu">is.na</span>(output) <span class="sc">~</span> pair)</span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>      ) <span class="sc">|&gt;</span> </span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span>(n, pair1, pair2, pair3) <span class="sc">|&gt;</span> </span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pivot_longer</span>(</span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>        <span class="fu">starts_with</span>(<span class="st">"pair"</span>), </span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>        <span class="at">values_to =</span> <span class="st">"pair"</span>, </span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>        <span class="at">names_to =</span> <span class="cn">NULL</span>, </span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>        <span class="at">values_drop_na =</span> <span class="cn">TRUE</span></span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>      ) <span class="sc">|&gt;</span> </span>
-<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>      <span class="fu">summarize</span>(<span class="at">n =</span> <span class="fu">sum</span>(n), <span class="at">.by =</span> pair)</span>
-<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Count final letters and de-duplicate</span></span>
-<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>  counts <span class="ot">&lt;-</span> polymer <span class="sc">|&gt;</span> </span>
-<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">letters =</span> <span class="fu">str_split</span>(pair, <span class="st">""</span>)) <span class="sc">|&gt;</span> </span>
-<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>    <span class="fu">unnest_longer</span>(letters) <span class="sc">|&gt;</span> </span>
-<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarize</span>(<span class="at">n =</span> <span class="fu">sum</span>(n), <span class="at">.by =</span> letters) <span class="sc">|&gt;</span> </span>
-<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Initial and final letters were not duplicated, so return +1 to them</span></span>
-<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
-<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>      <span class="at">n =</span> <span class="fu">case_when</span>(letters <span class="sc">==</span> letter_start <span class="sc">~</span> n <span class="sc">+</span> <span class="dv">1</span>, <span class="at">.default =</span> n),</span>
-<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>      <span class="at">n =</span> <span class="fu">case_when</span>(letters <span class="sc">==</span> letter_final <span class="sc">~</span> n <span class="sc">+</span> <span class="dv">1</span>, <span class="at">.default =</span> n),</span>
-<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>      <span class="at">n =</span> n <span class="sc">/</span> <span class="dv">2</span></span>
-<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span> </span>
-<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pull</span>(n)</span>
-<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Return the range of greatest - least letter counts</span></span>
-<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>  <span class="fu">max</span>(counts) <span class="sc">-</span> <span class="fu">min</span>(counts)</span>
-<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Example 14-digit number</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>w <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>)  </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>z <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(w)) {</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (z <span class="sc">%%</span> <span class="dv">26</span> <span class="sc">+</span> c2[i] <span class="sc">==</span> w[i]) </span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    z <span class="ot">&lt;-</span> <span class="fu">floor</span>(z <span class="sc">/</span> c1[i]) </span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span> </span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    z <span class="ot">&lt;-</span> <span class="fu">floor</span>(z <span class="sc">/</span> c1[i]) <span class="sc">*</span> <span class="dv">26</span> <span class="sc">+</span> w[i] <span class="sc">+</span> c3[i]</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Run for 10 steps on puzzle input:</p>
+<p>Extract the c1, c2, and c3 values from the input:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grow_n</span>(template, <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>const <span class="ot">&lt;-</span> input <span class="sc">|&gt;</span> </span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">grp =</span> <span class="fu">cumsum</span>(f <span class="sc">==</span> <span class="st">"inp"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">row =</span> <span class="fu">row_number</span>(), <span class="at">.by =</span> grp) <span class="sc">|&gt;</span> </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">b =</span> <span class="fu">list</span>(b), <span class="at">.by =</span> row) <span class="sc">|&gt;</span> </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(b) <span class="sc">|&gt;</span> </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">keep_at</span>(<span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">16</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(parse_number)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>c1 <span class="ot">&lt;-</span> const[[<span class="dv">1</span>]]</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>c2 <span class="ot">&lt;-</span> const[[<span class="dv">2</span>]]</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>c3 <span class="ot">&lt;-</span> const[[<span class="dv">3</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Below, we define the set of code blocks as a recursive function to loop through possible input values and find one that ends on zero.</p>
+<p>To improve performance, we prune branches early on if they can never reach zero in the remaining rounds: - Each round, the best-case scenario for a large z to shrink toward zero is for the if-else statement to be true, which would result in z becoming floor(z / c1[i]). - If z is greater than or equal to the product of the remaining c1 values, it can’t be reduced to zero by the last round. - Example: as a test case, imagine that c1 = 2 in every round. - When there’s 1 round remaining, the final output is 0 if the input z is no greater than 0 or 1. - When there’s 2 rounds remaining, the round’s output can be 0/1 if the input z is no greater than 0/1/2/3. - When there’s 3 rounds remaining, the round’s output can be 0/1/2/3 if the input z is no greater than 0/1/2/3/4/5/6/7, i.e., if the input z &lt; 2^3. - Generalizing, in the 14th round, the input z must be less than c1[14]. In the 13th round, the input z must be less than c1[14] * c1[13], etc.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>zmax <span class="ot">&lt;-</span> <span class="fu">accumulate</span>(c1, prod, <span class="at">.dir =</span> <span class="st">"backward"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Define our recursive search funtion as described above:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">z =</span> <span class="dv">0</span>, <span class="at">vec =</span> <span class="fu">c</span>(), <span class="at">i =</span> <span class="dv">1</span>, digits) {</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Check if the last round has been reached. Return success if z is 0.</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (i <span class="sc">==</span> <span class="dv">15</span>) {</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (z <span class="sc">==</span> <span class="dv">0</span>) </span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span>(vec) </span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> </span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span>()</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Abort early if z is too large and can never reach 0 by the end</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (z <span class="sc">&gt;=</span> zmax[i])</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>()</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Loop through possible input values (in increasing or decreasing order)</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (w <span class="cf">in</span> digits) {</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (z <span class="sc">%%</span> <span class="dv">26</span> <span class="sc">+</span> c2[i] <span class="sc">==</span> w)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>      result <span class="ot">&lt;-</span> <span class="fu">f</span>(<span class="fu">floor</span>(z <span class="sc">/</span> c1[i]), <span class="fu">c</span>(vec, w), i <span class="sc">+</span> <span class="dv">1</span>, digits)</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> </span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>      result <span class="ot">&lt;-</span> <span class="fu">f</span>(<span class="fu">floor</span>(z <span class="sc">/</span> c1[i]) <span class="sc">*</span> <span class="dv">26</span> <span class="sc">+</span> w <span class="sc">+</span> c3[i], <span class="fu">c</span>(vec, w), i <span class="sc">+</span> <span class="dv">1</span>, digits)</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(result))</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span>(result)</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Search in order from highest to lowest input values:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">f</span>(<span class="at">digits =</span> <span class="dv">9</span><span class="sc">:</span><span class="dv">1</span>), <span class="at">sep =</span> <span class="st">""</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="part-2" class="level2">
 <h2 class="anchored" data-anchor-id="part-2">Part 2</h2>
-<p>Run for 40 steps on puzzle input:</p>
+<p>Reverse the search vector from 9:1 to 1:9 to search from lowest to highest values, and re-run:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grow_n</span>(template, <span class="dv">40</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">f</span>(<span class="at">digits =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">9</span>), <span class="at">sep =</span> <span class="st">""</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
 
@@ -1337,14 +1435,11 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="../../2021/R/day13.html" class="pagination-link" aria-label="Day 13">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Day 13</span>
+      <a href="../../2021/R/day23.html" class="pagination-link" aria-label="Day 23">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Day 23</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../../2021/R/day15.html" class="pagination-link" aria-label="Day 15">
-        <span class="nav-page-text">Day 15</span> <i class="bi bi-arrow-right-short"></i>
-      </a>
   </div>
 </nav>
 </div> <!-- /content -->
@@ -1352,4 +1447,4 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 
 
 
-<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/mimmackk/adventofcode/blob/main/2021/R/day14.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li></ul></div></div></div></footer></body></html>
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/mimmackk/adventofcode/blob/main/2021/R/day24.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li></ul></div></div></div></footer></body></html>
