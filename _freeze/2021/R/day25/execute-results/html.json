@@ -1,0 +1,15 @@
+{
+  "hash": "3fd5f735cf847d07432a947f19667f46",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 25\"\ndate: 2021-12-25\nauthor:\n  name: https://adventofcode.com/2021/day/25\n  url: https://adventofcode.com/2021/day/25\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\n```\n:::\n\n\n\n\nRead and parse text input from file:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day25.txt\")\n```\n:::\n\n\n\n\n## Part 1\n\nConvert input to a matrix. Represent N/S-facing values as imaginary numbers and W/E-facing values as real numbers.\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nmtx <- input |> \n  str_split(\"\") |> \n  reduce(rbind) |> \n  unname()\n\nh <- nrow(mtx)\nw <- ncol(mtx)\n```\n:::\n\n\n\n\nDefine functions to check if the value ahead of the current one to the south or east are blocked:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nis_blocked_s <- \\(x) unname(rbind(tail(x, -1), head(x, 1))) != \".\"\nis_blocked_e <- \\(x) t(is_blocked_s(t(x)))\n```\n:::\n\n\n\n\nDefine functions to shift the matrix values to the south or east\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nmove_s <- function(mtx) {\n  blocked <- is_blocked_s(mtx)\n  active  <- mtx == \"v\"\n  \n  old_pos <- which(active & !blocked, arr.ind = TRUE)\n  \n  new_pos <- old_pos\n  new_pos[, \"row\"] <- (new_pos[, \"row\"] %% h) + 1\n  \n  mtx[new_pos] <- \"v\"\n  mtx[old_pos] <- \".\"\n  mtx\n}\n\nmove_e <- function(mtx) {\n  blocked <- is_blocked_e(mtx)\n  active  <- mtx == \">\"\n  \n  old_pos <- which(active & !blocked, arr.ind = TRUE)\n  \n  new_pos <- old_pos\n  new_pos[, \"col\"] <- (new_pos[, \"col\"] %% w) + 1\n  \n  mtx[new_pos] <- \">\"\n  mtx[old_pos] <- \".\"\n  mtx\n}\n\nmove <- \\(x) move_s(move_e(x))\n```\n:::\n\n\n\n\nLoop until we don't see any difference between the previous and current steps:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nn_steps <- function(mtx) {\n  n <- 1\n  prv <- mtx\n  \n  repeat {\n    cur <- move(prv)\n    \n    if (all(cur == prv))\n      return(n)\n    \n    prv <- cur\n    n <- n + 1\n  }\n}\n\nn_steps(mtx)\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

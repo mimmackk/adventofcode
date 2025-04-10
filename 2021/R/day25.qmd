@@ -1,0 +1,111 @@
+---
+title: "Day 25"
+date: 2021-12-25
+author:
+  name: https://adventofcode.com/2021/day/25
+  url: https://adventofcode.com/2021/day/25
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read and parse text input from file:
+
+```{r}
+
+input <- read_lines("../input/day25.txt")
+
+```
+
+## Part 1
+
+Convert input to a matrix. Represent N/S-facing values as imaginary numbers and W/E-facing values as real numbers.
+
+```{r}
+
+mtx <- input |> 
+  str_split("") |> 
+  reduce(rbind) |> 
+  unname()
+
+h <- nrow(mtx)
+w <- ncol(mtx)
+
+```
+
+Define functions to check if the value ahead of the current one to the south or east are blocked:
+
+```{r}
+
+is_blocked_s <- \(x) unname(rbind(tail(x, -1), head(x, 1))) != "."
+is_blocked_e <- \(x) t(is_blocked_s(t(x)))
+
+```
+
+Define functions to shift the matrix values to the south or east
+
+```{r}
+
+move_s <- function(mtx) {
+  blocked <- is_blocked_s(mtx)
+  active  <- mtx == "v"
+  
+  old_pos <- which(active & !blocked, arr.ind = TRUE)
+  
+  new_pos <- old_pos
+  new_pos[, "row"] <- (new_pos[, "row"] %% h) + 1
+  
+  mtx[new_pos] <- "v"
+  mtx[old_pos] <- "."
+  mtx
+}
+
+move_e <- function(mtx) {
+  blocked <- is_blocked_e(mtx)
+  active  <- mtx == ">"
+  
+  old_pos <- which(active & !blocked, arr.ind = TRUE)
+  
+  new_pos <- old_pos
+  new_pos[, "col"] <- (new_pos[, "col"] %% w) + 1
+  
+  mtx[new_pos] <- ">"
+  mtx[old_pos] <- "."
+  mtx
+}
+
+move <- \(x) move_s(move_e(x))
+
+```
+
+Loop until we don't see any difference between the previous and current steps:
+
+```{r}
+
+n_steps <- function(mtx) {
+  n <- 1
+  prv <- mtx
+  
+  repeat {
+    cur <- move(prv)
+    
+    if (all(cur == prv))
+      return(n)
+    
+    prv <- cur
+    n <- n + 1
+  }
+}
+
+n_steps(mtx)
+
+```
+
+
