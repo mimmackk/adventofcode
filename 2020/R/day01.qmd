@@ -1,0 +1,52 @@
+---
+title: "Day 1"
+date: 2020-12-01
+author:
+  name: https://adventofcode.com/2020/day/1
+  url: https://adventofcode.com/2020/day/1
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read and parse text input from file:
+
+```{r}
+
+input <- scan("../input/day01.txt")
+
+```
+
+## Part 1
+
+Create every combination of numbers, determine which sum to 2020, and take their product:
+
+```{r}
+
+combn(input, m = 2, simplify = FALSE) |> 
+  keep(~ sum(.x) == 2020) |> 
+  map_dbl(prod)
+
+```
+
+## Part 2
+
+Repeat as above, but take combinations 3 at a time:
+
+```{r}
+
+combn(input, m = 3, simplify = FALSE) |> 
+  keep(~ sum(.x) == 2020) |> 
+  map_dbl(prod)
+
+```
+
+
+

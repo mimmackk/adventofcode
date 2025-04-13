@@ -1,0 +1,15 @@
+{
+  "hash": "13b6d74322d04f67be84594d5516f557",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 3\"\ndate: 2020-12-03\nauthor:\n  name: https://adventofcode.com/2020/day/3\n  url: https://adventofcode.com/2020/day/3\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\n```\n:::\n\n\n\n\nRead text input from file:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day03.txt\")\n```\n:::\n\n\n\n\nParse character strings and convert into a 1/0 matrix:\n \n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nmtx <- input |> \n  str_split(\"\") |> \n  map(~ case_match(.x, \".\" ~ 0, \"#\" ~ 1)) |> \n  reduce(rbind) |> \n  unname()\n```\n:::\n\n\n\n\n## Part 1\n\nDefine a function that converts a slope to indices:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nslope_to_idx <- function(mtx, right, down) {\n  rows <- seq.int(1, nrow(mtx), by = down)\n  cols <- ((1:length(rows) - 1) * right) %% ncol(mtx) + 1\n  \n  array(c(rows, cols), dim = c(length(rows), 2))\n}\n```\n:::\n\n\n\n\nDefine a function to count the encountered trees, given a slope:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncount_trees <- function(mtx, right, down) {\n  sum(mtx[slope_to_idx(mtx, right, down)])\n}\n```\n:::\n\n\n\n\nCount the encountered trees for a slope of right 3, down 1:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncount_trees(mtx, 3, 1)\n```\n:::\n\n\n\n\n## Part 2\n\nCompare the encountered trees when using the following slopes and take their product:\n\n```\nRight 1, down 1\nRight 3, down 1\nRight 5, down 1\nRight 7, down 1\nRight 1, down 2\n```\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nright <- c(1, 3, 5, 7, 1)\ndown  <- c(1, 1, 1, 1, 2)\n\nmap2_dbl(right, down, \\(right, down) count_trees(mtx, right, down)) |> \n  prod()\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

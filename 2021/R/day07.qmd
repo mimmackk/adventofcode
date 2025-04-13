@@ -2,8 +2,8 @@
 title: "Day 7"
 date: 2021-12-07
 author:
-  name: https://adventofcode.com/2021/day/07
-  url: https://adventofcode.com/2021/day/07
+  name: https://adventofcode.com/2021/day/7
+  url: https://adventofcode.com/2021/day/7
 ---
 
 ## Setup

@@ -1,0 +1,15 @@
+{
+  "hash": "53780e8e8bc3f8a06d3fd12e6b92430b",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 6\"\ndate: 2020-12-06\nauthor:\n  name: https://adventofcode.com/2020/day/6\n  url: https://adventofcode.com/2020/day/6\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\n```\n:::\n\n\n\n\nRead text input from file:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day06.txt\")\n```\n:::\n\n\n\n\nSplit input into separate groups of character sets wherever we encounter an empty newline:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ngroups <- input |> \n  split(cumsum(input == \"\")) |> \n  map(\\(vec) {\n    vec |> \n      discard(~ .x == \"\") |> \n      str_split(\"\")\n  })\n```\n:::\n\n\n\n\n\n## Part 1\n\nCount the total unique characters in every group and sum the result:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ngroups |> \n  map_int(\n    ~ .x |> \n      unlist() |> \n      unique() |> \n      length()\n  ) |> \n  sum()\n```\n:::\n\n\n\n\n## Part 2\n\nIn each group, count the number of characters in common over every line in the group. Sum the result.\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ngroups |> \n  map_int(\n    ~ .x |> \n      reduce(intersect) |> \n      length()\n  ) |> \n  sum()\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

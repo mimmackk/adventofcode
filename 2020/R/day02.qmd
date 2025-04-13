@@ -1,0 +1,58 @@
+---
+title: "Day 2"
+date: 2020-12-02
+author:
+  name: https://adventofcode.com/2020/day/2
+  url: https://adventofcode.com/2020/day/2
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read and parse text input from file:
+
+```{r}
+
+input <- read_lines("../input/day02.txt") |> 
+  unglue_data("{min}-{max} {chr}: {pwd}", convert = TRUE)
+
+```
+
+## Part 1
+
+Count the occurrences of the designated character in each password and determine whether it falls within the bounds. Count how many passwords are valid.
+
+```{r}
+
+input |> 
+  mutate(count = str_count(pwd, chr)) |> 
+  filter(between(count, min, max)) |> 
+  nrow()
+
+```
+
+## Part 2
+
+Extract the characters at the indicated indices of each password, and count how many passwords have exactly 1 one of those positions equal to the desired character:
+
+```{r}
+
+input |> 
+  mutate(
+    idx = map2(min, max, c),
+    str = str_sub_all(pwd, start = idx, end = idx),
+    is_valid = map2_int(str, chr, ~ sum(.x == .y)) == 1
+  ) |> 
+  filter(is_valid) |> 
+  nrow()
+
+```
+

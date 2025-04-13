@@ -1,0 +1,15 @@
+{
+  "hash": "53d29a455036e4d00660dd23c796f13d",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 4\"\ndate: 2020-12-04\nauthor:\n  name: https://adventofcode.com/2020/day/4\n  url: https://adventofcode.com/2020/day/4\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\nlibrary(unglue)\n```\n:::\n\n\n\n\nRead text input from file and separate into lists of key-value pairs:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day04.txt\")\n```\n:::\n\n\n\n\n## Part 1\n\nConvert text input to a data frame of key value-pairs, enumerated according to the blank lines, and determine whether each passport has all requied fields (ignoring \"cid\"):\n\n```\nbyr (Birth Year)\niyr (Issue Year)\neyr (Expiration Year)\nhgt (Height)\nhcl (Hair Color)\necl (Eye Color)\npid (Passport ID)\ncid (Country ID)\n```\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nrequired_keys <- c(\"byr\", \"iyr\", \"eyr\", \"hgt\", \"hcl\", \"ecl\", \"pid\")\n\ndf <- input |> \n  \n  # Convert text lines to data frame\n  str_flatten(collapse = \"\\n\") |> \n  str_split_1(\"\\n\\n\") |> \n  str_split(\"\\\\s\") |> \n  imap_dfr(\\(str, idx) {\n    str |> \n      unglue_data(\"{key}:{value}\") |> \n      mutate(idx = idx)\n  }) |> \n  \n  # Flag whether each passpord is valid or not\n  mutate(\n    is_valid = sum(key %in% required_keys) == 7, \n    .by = idx\n  )\n```\n:::\n\n\n\n\nCount the total valid passpords:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndf |> \n  filter(is_valid) |> \n  distinct(idx) |> \n  nrow()\n```\n:::\n\n\n\n\n## Part 2\n\nFilter to the passports with all required fields, validate those fields, and count the final number of valid results:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndf |> \n  filter(is_valid & key %in% required_keys) |> \n  mutate(\n    is_valid = (\n      (\n        key == \"byr\" \n          & str_length(value) == 4 \n          & between(parse_number(value), 1920, 2002)\n      ) | (\n        key == \"iyr\" \n          & str_length(value) == 4 \n          & between(parse_number(value), 2010, 2020)\n      ) | (\n        key == \"eyr\" \n          & str_length(value) == 4 \n          & between(parse_number(value), 2020, 2030)\n      ) | (\n        key == \"hgt\" \n          & str_detect(value, \"^\\\\d+cm$\")\n          & between(parse_number(value), 150, 193)\n      ) | (\n        key == \"hgt\" \n          & str_detect(value, \"^\\\\d+in$\")\n          & between(parse_number(value), 59, 76)\n      ) | (\n        key == \"hcl\" \n          & str_detect(value, \"^#[0-9a-f]{6}$\")\n      ) | (\n        key == \"ecl\" \n          & value %in% c(\"amb\", \"blu\", \"brn\", \"gry\", \"grn\", \"hzl\", \"oth\")\n      ) | (\n        key == \"pid\" \n          & str_detect(value, \"^\\\\d{9}$\")\n      )\n    )\n  ) |> \n  filter(all(is_valid), .by = idx) |> \n  distinct(idx) |> \n  nrow()\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "hash": "3e12afe5007d869aecf5840eb54a6a9a",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 5\"\ndate: 2020-12-05\nauthor:\n  name: https://adventofcode.com/2020/day/5\n  url: https://adventofcode.com/2020/day/5\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\nlibrary(unglue)\n```\n:::\n\n\n\n\nRead text input from file and separate the row segment of each string from the column seegment:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day05.txt\") |> \n  unglue_data(\"{row=[FB]+}{col=[LR]+}\")\n```\n:::\n\n\n\n\n## Part 1\n\nEach F/B or R/L pair can be treated as a binary string. Replace F and L with 0, replace B and R with 1, and compute the result:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nbin <- c(\"F\" = \"0\", \"B\" = \"1\", \"L\" = \"0\", \"R\" = \"1\")\n\ndf <- input |> \n  mutate(\n    across(everything(), ~ strtoi(str_replace_all(.x, bin), base = 2L)),\n    seat_id = row * 8 + col\n  )\n```\n:::\n\n\n\n\nGet the maximum seat ID:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nmax(df$seat_id)\n```\n:::\n\n\n\n\n## Part 2\n\nFind the missing value within the range of all seat IDs:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nsetdiff(min(df$seat_id):max(df$seat_id), df$seat_id)\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

@@ -1,0 +1,127 @@
+---
+title: "Day 4"
+date: 2020-12-04
+author:
+  name: https://adventofcode.com/2020/day/4
+  url: https://adventofcode.com/2020/day/4
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read text input from file and separate into lists of key-value pairs:
+
+```{r}
+
+input <- read_lines("../input/day04.txt")
+
+```
+
+## Part 1
+
+Convert text input to a data frame of key value-pairs, enumerated according to the blank lines, and determine whether each passport has all requied fields (ignoring "cid"):
+
+```
+byr (Birth Year)
+iyr (Issue Year)
+eyr (Expiration Year)
+hgt (Height)
+hcl (Hair Color)
+ecl (Eye Color)
+pid (Passport ID)
+cid (Country ID)
+```
+
+```{r}
+
+required_keys <- c("byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid")
+
+df <- input |> 
+  
+  # Convert text lines to data frame
+  str_flatten(collapse = "\n") |> 
+  str_split_1("\n\n") |> 
+  str_split("\\s") |> 
+  imap_dfr(\(str, idx) {
+    str |> 
+      unglue_data("{key}:{value}") |> 
+      mutate(idx = idx)
+  }) |> 
+  
+  # Flag whether each passpord is valid or not
+  mutate(
+    is_valid = sum(key %in% required_keys) == 7, 
+    .by = idx
+  )
+
+```
+
+Count the total valid passpords:
+
+```{r}
+
+df |> 
+  filter(is_valid) |> 
+  distinct(idx) |> 
+  nrow()
+
+```
+
+## Part 2
+
+Filter to the passports with all required fields, validate those fields, and count the final number of valid results:
+
+```{r}
+#| warning: false
+
+df |> 
+  filter(is_valid & key %in% required_keys) |> 
+  mutate(
+    is_valid = (
+      (
+        key == "byr" 
+          & str_length(value) == 4 
+          & between(parse_number(value), 1920, 2002)
+      ) | (
+        key == "iyr" 
+          & str_length(value) == 4 
+          & between(parse_number(value), 2010, 2020)
+      ) | (
+        key == "eyr" 
+          & str_length(value) == 4 
+          & between(parse_number(value), 2020, 2030)
+      ) | (
+        key == "hgt" 
+          & str_detect(value, "^\\d+cm$")
+          & between(parse_number(value), 150, 193)
+      ) | (
+        key == "hgt" 
+          & str_detect(value, "^\\d+in$")
+          & between(parse_number(value), 59, 76)
+      ) | (
+        key == "hcl" 
+          & str_detect(value, "^#[0-9a-f]{6}$")
+      ) | (
+        key == "ecl" 
+          & value %in% c("amb", "blu", "brn", "gry", "grn", "hzl", "oth")
+      ) | (
+        key == "pid" 
+          & str_detect(value, "^\\d{9}$")
+      )
+    )
+  ) |> 
+  filter(all(is_valid), .by = idx) |> 
+  distinct(idx) |> 
+  nrow()
+
+```
+
+

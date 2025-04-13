@@ -1,0 +1,63 @@
+---
+title: "Day 5"
+date: 2020-12-05
+author:
+  name: https://adventofcode.com/2020/day/5
+  url: https://adventofcode.com/2020/day/5
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read text input from file and separate the row segment of each string from the column seegment:
+
+```{r}
+
+input <- read_lines("../input/day05.txt") |> 
+  unglue_data("{row=[FB]+}{col=[LR]+}")
+
+```
+
+## Part 1
+
+Each F/B or R/L pair can be treated as a binary string. Replace F and L with 0, replace B and R with 1, and compute the result:
+
+```{r}
+
+bin <- c("F" = "0", "B" = "1", "L" = "0", "R" = "1")
+
+df <- input |> 
+  mutate(
+    across(everything(), ~ strtoi(str_replace_all(.x, bin), base = 2L)),
+    seat_id = row * 8 + col
+  )
+
+```
+
+Get the maximum seat ID:
+
+```{r}
+
+max(df$seat_id)
+
+```
+
+## Part 2
+
+Find the missing value within the range of all seat IDs:
+
+```{r}
+
+setdiff(min(df$seat_id):max(df$seat_id), df$seat_id)
+
+```
+
+

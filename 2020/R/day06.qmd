@@ -1,0 +1,75 @@
+---
+title: "Day 6"
+date: 2020-12-06
+author:
+  name: https://adventofcode.com/2020/day/6
+  url: https://adventofcode.com/2020/day/6
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read text input from file:
+
+```{r}
+
+input <- read_lines("../input/day06.txt")
+
+```
+
+Split input into separate groups of character sets wherever we encounter an empty newline:
+
+```{r}
+
+groups <- input |> 
+  split(cumsum(input == "")) |> 
+  map(\(vec) {
+    vec |> 
+      discard(~ .x == "") |> 
+      str_split("")
+  })
+
+```
+
+
+## Part 1
+
+Count the total unique characters in every group and sum the result:
+
+```{r}
+
+groups |> 
+  map_int(
+    ~ .x |> 
+      unlist() |> 
+      unique() |> 
+      length()
+  ) |> 
+  sum()
+
+```
+
+## Part 2
+
+In each group, count the number of characters in common over every line in the group. Sum the result.
+
+```{r}
+
+groups |> 
+  map_int(
+    ~ .x |> 
+      reduce(intersect) |> 
+      length()
+  ) |> 
+  sum()
+
+```
+
+

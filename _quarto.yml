@@ -22,6 +22,8 @@ website:
       contents: 2022/R/*
     - section: "2021"
       contents: 2021/R/*
+    - section: "2020"
+      contents: 2020/R/*
   page-navigation: true
   bread-crumbs: false
   repo-url: https://github.com/mimmackk/adventofcode

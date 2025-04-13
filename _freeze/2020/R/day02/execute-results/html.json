@@ -1,0 +1,15 @@
+{
+  "hash": "fe4c7c8a8aa2765cb4071aef3cce6dee",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 2\"\ndate: 2020-12-02\nauthor:\n  name: https://adventofcode.com/2020/day/2\n  url: https://adventofcode.com/2020/day/2\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\nlibrary(unglue)\n```\n:::\n\n\n\n\nRead and parse text input from file:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day02.txt\") |> \n  unglue_data(\"{min}-{max} {chr}: {pwd}\", convert = TRUE)\n```\n:::\n\n\n\n\n## Part 1\n\nCount the occurrences of the designated character in each password and determine whether it falls within the bounds. Count how many passwords are valid.\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput |> \n  mutate(count = str_count(pwd, chr)) |> \n  filter(between(count, min, max)) |> \n  nrow()\n```\n:::\n\n\n\n\n## Part 2\n\nExtract the characters at the indicated indices of each password, and count how many passwords have exactly 1 one of those positions equal to the desired character:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput |> \n  mutate(\n    idx = map2(min, max, c),\n    str = str_sub_all(pwd, start = idx, end = idx),\n    is_valid = map2_int(str, chr, ~ sum(.x == .y)) == 1\n  ) |> \n  filter(is_valid) |> \n  nrow()\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

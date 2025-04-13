@@ -1,0 +1,144 @@
+---
+title: "Day 7"
+date: 2020-12-07
+author:
+  name: https://adventofcode.com/2020/day/7
+  url: https://adventofcode.com/2020/day/7
+execute:
+  eval: true
+  output: false
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+library(igraph)
+library(tidygraph)
+library(ggraph)
+
+```
+
+Read text input from file:
+
+```{r}
+
+input <- read_lines("../input/day07.txt")
+
+```
+
+Convert text input into an igraph/tidygraph object. Bags that contain other bags are represented as a directed edge between two vertices, where the weight of the edge is the number of contained bags.
+
+```{r}
+
+g <- input |> 
+  unglue_data("{outer_color} bags contain {contains}.") |> 
+  mutate(contains = str_split(contains, ", ")) |> 
+  unnest_longer(contains) |> 
+  unglue_unnest(
+    contains, 
+    "{num=\\d+} {inner_color} bag{=s?}", 
+    convert = TRUE
+  ) |> 
+  select(outer_color, inner_color, weight = num) |> 
+  drop_na() |> 
+  graph_from_data_frame() |> 
+  as_tbl_graph()
+
+```
+
+Plot the graph of the example input:
+
+```{r}
+#| fig.height: 8
+#| fig.width: 10
+#| echo: false
+#| output: true
+
+g |> 
+  ggraph(layout = "sugiyama") +
+  geom_edge_link(
+    aes(label = weight),
+    arrow = arrow(length = unit(2.5, 'mm'), type = "closed"),
+    angle_calc = 'along',
+    label_dodge = unit(3, 'mm'),
+    label_push = unit(c(-2, -13, -2, -2, 13, -20, 20, -2, -2, 0, 0, 0, 0), 'mm'),
+    label_size = 5,
+    fontface = "bold",
+    edge_width = 0.5,
+    end_cap = circle(13, 'mm')
+  ) +
+  geom_node_point(size = 30, color = "grey20") +
+  geom_node_text(
+    aes(label = str_replace(toupper(name), " ", "\n")),
+    color = "white",
+    size = 4,
+    fontface = "bold"
+  ) +
+  theme_graph(background = "white", base_family = "Helvetica") +
+  theme(plot.margin = margin(1, 1, 1, 1, "cm")) +
+  coord_fixed(ratio = 0.75, clip = "off")
+
+```
+
+## Part 1
+
+Identify how many bag colors can eventually contain a "shiny gold" bag by counting the upstream ancestors of that vertex:
+
+```{r}
+
+g |> 
+  activate(nodes) |> 
+  mutate(n_ancestors = local_size(order = graph_order(), mode = "in") - 1) |> 
+  as_tibble() |>
+  deframe() |> 
+  pluck("shiny gold")
+
+```
+
+## Part 2
+
+First, get the list of all vertices downstream from "shiny gold":
+
+```{r}
+
+src <- as.numeric(V(g)["shiny gold"])
+
+downstream <- g |> 
+  activate(nodes) |>
+  mutate(neighbors = local_members(order = Inf, mindist = 1, mode = "out")) |>
+  as_tibble() |> 
+  deframe() |> 
+  pluck("shiny gold")
+
+```
+
+For each vertex downstream from "shiny gold", get the list of ALL paths from the "shiny gold" vertex to the downstream vertex, and convert to an order list of the weights:
+
+```{r}
+
+path_weights <- map(downstream, ~ all_simple_paths(g, src, to = .x)) |> 
+  list_flatten() |> 
+  map(\(path) {
+    map_int(2:length(path), \(id) {
+      get_edge_ids(g, path[c(id - 1, id)])
+    })
+  }) |> 
+  map(\(edge_set) E(g)$weight[edge_set]) 
+
+```
+
+Compute the product of the weights in each path, then sum up the result from all paths. For example: if bag A contains 2 of bag B, and bag B contains 3 of bag C, then the final count of bag B is 2 and bag C is 6 (= 2 * 3).
+
+```{r}
+
+path_weights |> 
+  map_int(prod) |> 
+  sum()
+
+```
+

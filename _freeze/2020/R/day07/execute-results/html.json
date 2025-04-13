@@ -1,0 +1,17 @@
+{
+  "hash": "386e67ba5206263749e9a60f4eb2204a",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 7\"\ndate: 2020-12-07\nauthor:\n  name: https://adventofcode.com/2020/day/7\n  url: https://adventofcode.com/2020/day/7\nexecute:\n  eval: true\n  output: false\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(igraph)\nlibrary(tidygraph)\nlibrary(ggraph)\n```\n:::\n\n\n\n\nRead text input from file:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day07.txt\")\n```\n:::\n\n\n\n\nConvert text input into an igraph/tidygraph object. Bags that contain other bags are represented as a directed edge between two vertices, where the weight of the edge is the number of contained bags.\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ng <- input |> \n  unglue_data(\"{outer_color} bags contain {contains}.\") |> \n  mutate(contains = str_split(contains, \", \")) |> \n  unnest_longer(contains) |> \n  unglue_unnest(\n    contains, \n    \"{num=\\\\d+} {inner_color} bag{=s?}\", \n    convert = TRUE\n  ) |> \n  select(outer_color, inner_color, weight = num) |> \n  drop_na() |> \n  graph_from_data_frame() |> \n  as_tbl_graph()\n```\n:::\n\n\n\n\nPlot the graph of the example input:\n\n\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](day07_files/figure-html/unnamed-chunk-3-1.png){width=960}\n:::\n:::\n\n\n\n\n## Part 1\n\nIdentify how many bag colors can eventually contain a \"shiny gold\" bag by counting the upstream ancestors of that vertex:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ng |> \n  activate(nodes) |> \n  mutate(n_ancestors = local_size(order = graph_order(), mode = \"in\") - 1) |> \n  as_tibble() |>\n  deframe() |> \n  pluck(\"shiny gold\")\n```\n:::\n\n\n\n\n## Part 2\n\nFirst, get the list of all vertices downstream from \"shiny gold\":\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nsrc <- as.numeric(V(g)[\"shiny gold\"])\n\ndownstream <- g |> \n  activate(nodes) |>\n  mutate(neighbors = local_members(order = Inf, mindist = 1, mode = \"out\")) |>\n  as_tibble() |> \n  deframe() |> \n  pluck(\"shiny gold\")\n```\n:::\n\n\n\n\nFor each vertex downstream from \"shiny gold\", get the list of ALL paths from the \"shiny gold\" vertex to the downstream vertex, and convert to an order list of the weights:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\npath_weights <- map(downstream, ~ all_simple_paths(g, src, to = .x)) |> \n  list_flatten() |> \n  map(\\(path) {\n    map_int(2:length(path), \\(id) {\n      get_edge_ids(g, path[c(id - 1, id)])\n    })\n  }) |> \n  map(\\(edge_set) E(g)$weight[edge_set]) \n```\n:::\n\n\n\n\nCompute the product of the weights in each path, then sum up the result from all paths. For example: if bag A contains 2 of bag B, and bag B contains 3 of bag C, then the final count of bag B is 2 and bag C is 6 (= 2 * 3).\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\npath_weights |> \n  map_int(prod) |> \n  sum()\n```\n:::\n",
+    "supporting": [
+      "day07_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
