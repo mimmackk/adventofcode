@@ -8,21 +8,36 @@ author:
 
 ## Setup
 
+Import libraries:
+
 ```{r setup}
-# Libraries
+
 library(tidyverse)
 
-# Read input from file
-input <- read_lines("../input/day11.txt", skip_empty_rows = TRUE) |> 
-  str_split_1(" ") |> 
-  as.integer()
+```
+
+Disable scientific formatting when displaying large numbers:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+Read input from file into a numeric vector:
+
+```{r}
+
+input <- scan("../input/day11.txt")
+
 ```
 
 ## Part 1
 
-Create blink functions:
+Define a function for a single blink. If x is zero, it becomes 1. If x has an even number of digits, the value is split. If odd, it's multiplied by 2024.
 
 ```{r}
+
 blink <- function(x) {
   char <- format(x, scientific = FALSE)
   n <- str_length(char)
@@ -30,13 +45,16 @@ blink <- function(x) {
   if (x == 0) 
     1
   else if (n %% 2 == 0)
-    parse_number(c(
-      str_sub(char, 1, n / 2),
-      str_sub(char, n / 2 + 1, n)
-    ))
+    parse_number(c(str_sub(char, 1, n / 2), str_sub(char, n / 2 + 1, n)))
   else 
     x * 2024
 }
+
+```
+
+Define a recursive function to blink `n` times. We don't store each stone separately -- instead, we store the current unique stones and their counts at every step:
+
+```{r}
 
 blink_n <- function(df, n) {
   if (n == 0)
@@ -48,14 +66,15 @@ blink_n <- function(df, n) {
     summarize(n = sum(n), .by = stones) |> 
     blink_n(n - 1)
 }
+
 ```
 
-Run blink function 25 times on puzzle input:
+Run the blink function 25 times on the puzzle input, starting each stone with a count of 1:
 
 ```{r}
-df <- tibble(stones = input, n = 1)
 
-blink_n(df, 25)
+blink_n(tibble(stones = input, n = 1), 25)
+
 ```
 
 ## Part 2
@@ -63,6 +82,7 @@ blink_n(df, 25)
 Run blink function 75 times on puzzle input:
 
 ```{r}
-blink_n(df, 75) |> 
-  format(scientific = FALSE)
+
+blink_n(tibble(stones = input, n = 1), 75)
+
 ```

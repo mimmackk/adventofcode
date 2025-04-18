@@ -1,0 +1,15 @@
+{
+  "hash": "54123bd9b4ad6da448a3a2ca0d058869",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 8\"\ndate: 2020-12-08\nauthor:\n  name: https://adventofcode.com/2020/day/8\n  url: https://adventofcode.com/2020/day/8\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\nlibrary(unglue)\n```\n:::\n\n\n\n\nRead text input from file and parse into a dataframe of character operations and integer arguments:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day08.txt\") |> \n  unglue_data(\"{op} {arg}\", convert = TRUE) |> \n  deframe()\n```\n:::\n\n\n\n\n## Part 1\n\nDefine a function to loop through the instructions in the input, break whenever an instruction is visited for a second time, and return the accumulator value at that time:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nfind_loop <- function(instructions) {\n  \n  visited <- rep(FALSE, length(instructions))\n  acc <- 0\n  i <- 1\n  \n  while (i <= length(instructions)) {\n    if (visited[i]) {\n      return(acc)\n    } else {\n      visited[i] <- TRUE\n    }\n    \n    op  <- names(instructions)[[i]]\n    arg <- instructions[[i]]\n    \n    if (op == \"nop\") {\n      i <- i + 1\n    } else if (op == \"acc\") {\n      acc <- acc + arg\n      i <- i + 1\n    } else if (op == \"jmp\") {\n      i <- i + arg\n    }\n  }\n  \n  return(NA)\n}\n```\n:::\n\n\n\n\nRun on puzzle input:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nfind_loop(input)\n```\n:::\n\n\n\n\n## Part 2\n\nSwap each `jmp` and `nop` operation one-by-one and see which swap results in a valid output (no loop):\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninstr_mod <- map(\n  which(names(input) %in% c(\"jmp\", \"nop\")),\n  \\(idx) {\n    input |> \n      set_names(modify_at(\n        names(input), \n        idx, \n        ~ case_match(.x, \"jmp\" ~ \"nop\", \"nop\" ~ \"jmp\")\n      ))\n  }\n)\n\nidx_mod <- instr_mod |> \n  map_dbl(find_loop) |> \n  detect_index(is.na)\n```\n:::\n\n\n\n\nModify the `find_loop` function to run the instructions and return the final value of the accumulator:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nrun_instr <- function(instructions) {\n  acc <- 0\n  i <- 1\n  \n  while (i <= length(instructions)) {\n    op  <- names(instructions)[[i]]\n    arg <- instructions[[i]]\n    \n    if (op == \"nop\") {\n      i <- i + 1\n    } else if (op == \"acc\") {\n      acc <- acc + arg\n      i <- i + 1\n    } else if (op == \"jmp\") {\n      i <- i + arg\n    }\n  }\n  \n  return(acc)\n}\n```\n:::\n\n\n\n\nRun on the valid modified index:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nrun_instr(instr_mod[[idx_mod]])\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

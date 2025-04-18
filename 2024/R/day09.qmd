@@ -8,21 +8,38 @@ author:
 
 ## Setup
 
+Import libraries:
+
 ```{r setup}
-# Libraries
+
 library(tidyverse)
 
-# Read input from file
-input <- read_lines("../input/day09.txt", skip_empty_rows = TRUE) |> 
+```
+
+Disable scientific formatting when displaying large numbers:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+Read input from file into a vector of integers:
+
+```{r}
+
+input <- read_lines("../input/day09.txt") |> 
   str_split_1("") |> 
   as.integer()
+
 ```
 
 ## Part 1
 
-Define custom file functions:
+Define a function to move the file blocks:
 
 ```{r}
+
 move_files <- function(filesys) {
   repeat {
     first_blank <- min(which(is.na(filesys)))
@@ -38,29 +55,41 @@ move_files <- function(filesys) {
   filesys
 }
 
+```
+
+Define a function to compute the checksum of the file system:
+
+```{r}
+
 checksum <- function(filesys) {
   filesys |> 
     imap_int(\(x, idx) if_else(is.na(x), 0, x * (idx - 1))) |> 
-    sum() |> 
-    format(scientific = FALSE)
+    sum()
 }
+
 ```
 
-Run puzzle input:
+Uncompress the given file layout, interpreting even entries as files and odd entries as spaces:
 
 ```{r}
-# Uncompress file layout
+
 filesys <- input|> 
   imap(function(x, idx) {
-    # Even entries are files; odd entries are spaces
     file_id <- if_else(idx %% 2 == 1, floor(idx / 2), NA_integer_)
     rep(file_id, x)
   }) |> 
   unlist()
 
+```
+
+Move the files and compute the checksum:
+
+```{r}
+
 filesys |> 
   move_files() |> 
   checksum()
+
 ```
 
 ## Part 2
@@ -93,16 +122,19 @@ move_blocks <- function(filesys) {
       filesys[idx_start:(idx_start + n - 1)] <- file_id
       filesys[file_block] <- NA_integer_
     }
-    
   }
+  
   filesys
 }
+
 ```
 
-Run puzzle input:
+Re-run input with new compression function:
 
 ```{r}
+
 filesys |> 
   move_blocks() |> 
   checksum()
+
 ```

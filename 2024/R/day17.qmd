@@ -8,17 +8,31 @@ author:
 
 ## Setup
 
+Import libraries:
+
 ```{r setup}
-# Libraries
+
 library(tidyverse)
 library(unglue)
 library(bit64)
 
-# Read input from file
+```
+
+Disable scientific formatting when displaying large numbers:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+Read input from file:
+
+```{r}
+
 input <- read_lines("../input/day17.txt", skip_empty_rows = TRUE) |> 
-  unglue_data(patterns = c(
-    "{label}: {value}"
-  ))
+  unglue_data("{label}: {value}")
+
 ```
 
 ## Part 1
@@ -48,7 +62,14 @@ C <- input |>
   pull(value) |> 
   as.integer()
 
-machine <- list(program = program, A = A, B = B, C = C, pointer = 0L, output = NULL)
+machine <- list(
+  program = program, 
+  A = A, 
+  B = B, 
+  C = C, 
+  pointer = 0L, 
+  output = NULL
+)
 
 ```
 
@@ -89,7 +110,8 @@ run_machine <- function(machine) {
     operand <- machine$program[machine$pointer + 2]
     machine <- run_opcode(machine, opcode, operand)
   }
-  return(machine$output)
+  
+  machine$output
 }
 
 ```
@@ -97,6 +119,7 @@ run_machine <- function(machine) {
 Need to define custom bitwise XOR function to handle very large integers without error:
 
 ```{r}
+
 bitwXor64 <- function(x, y) {
   x <- as.bitstring(as.integer64(x))
   y <- as.bitstring(as.integer64(y))
@@ -111,6 +134,7 @@ bitwXor64 <- function(x, y) {
     as.integer64() |> 
     as.numeric()
 }
+
 ```
 
 Define the opcode functions:
@@ -120,19 +144,19 @@ Define the opcode functions:
 adv <- function(machine, operand) {
   machine$A <- floor(machine$A / 2^combo(machine, operand))
   machine$pointer <- machine$pointer + 2
-  return(machine)
+  machine
 }
 
 bxl <- function(machine, operand) {
   machine$B <- bitwXor64(machine$B, operand)
   machine$pointer <- machine$pointer + 2
-  return(machine)
+  machine
 }
 
 bst <- function(machine, operand) {
   machine$B <- combo(machine, operand) %% 8
   machine$pointer <- machine$pointer + 2
-  return(machine)
+  machine
 }
 
 jnz <- function(machine, operand) {
@@ -140,34 +164,31 @@ jnz <- function(machine, operand) {
     machine$pointer <- operand
   else 
     machine$pointer <- machine$pointer + 2
-  return(machine)
+  machine
 }
 
 bxc <- function(machine, operand) {
   machine$B <- bitwXor64(machine$B, machine$C)
   machine$pointer <- machine$pointer + 2
-  return(machine)
+  machine
 }
 
 out <- function(machine, operand) {
-  machine$output <- c(
-    machine$output, 
-    combo(machine, operand) %% 8
-  )
+  machine$output <- c(machine$output, combo(machine, operand) %% 8)
   machine$pointer <- machine$pointer + 2
-  return(machine)
+  machine
 }
 
 bdv <- function(machine, operand) {
   machine$B <- floor(machine$A / 2^combo(machine, operand))
   machine$pointer <- machine$pointer + 2
-  return(machine)
+  machine
 }
 
 cdv <- function(machine, operand) {
   machine$C <- floor(machine$A / 2^combo(machine, operand))
   machine$pointer <- machine$pointer + 2
-  return(machine)
+  machine
 }
 
 ```
@@ -176,8 +197,9 @@ Run on puzzle input:
 
 ```{r}
 
-run_machine(machine) |> 
-  str_c(collapse = ",")
+machine |> 
+  run_machine() |> 
+  str_flatten(",")
 
 ```
 
@@ -187,14 +209,16 @@ Reverse engineer, testing sequences of 3 bits at a time. Thanks to hints from [R
 
 ```{r}
 
-run_machine_a <- function(a) run_machine(list(
-  program = program, 
-  A = a, 
-  B = B, 
-  C = C, 
-  pointer = 0L, 
-  output = NULL
-))
+run_machine_a <- function(a) {
+  run_machine(list(
+    program = program, 
+    A = a, 
+    B = B, 
+    C = C, 
+    pointer = 0L, 
+    output = NULL
+  ))
+}
 
 reveng <- function(program, digit = 1, a = 0) {
   if (digit > length(program))
@@ -206,16 +230,15 @@ reveng <- function(program, digit = 1, a = 0) {
       output = map(output, head, n = 1)
     ) |> 
     filter(output == rev(program)[digit]) |> 
-    mutate(
-      res = map_dbl(candidates, ~ reveng(program, digit + 1, .x))
-    ) |> 
+    mutate(res = map_dbl(candidates, ~ reveng(program, digit + 1, .x))) |> 
     filter(!is.na(res))
   
-  if (nrow(df) == 0) return(Inf)
-  else return(min(df$res))
+  if (nrow(df) == 0) 
+    return(Inf)
+  else 
+    return(min(df$res))
 }
 
-reveng(program) |> 
-  format(scientific = FALSE)
+reveng(program)
 
 ```

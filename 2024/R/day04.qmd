@@ -8,97 +8,99 @@ author:
 
 ## Setup
 
+Import libraries:
+
 ```{r setup}
-# Libraries
+
 library(tidyverse)
 
-# Read input from file
+```
+
+Read text input from file:
+
+```{r}
+
 input <- read_lines("../input/day04.txt")
+
+```
+
+Convert plain text lines into a character matrix:
+
+```{r}
+
+mtx <- input |> 
+  map(~ matrix(str_split_1(.x, ""), nrow = 1)) |> 
+  do.call(what = rbind)
+
 ```
 
 ## Part 1
 
+Extract rows and columns as separate text strings from the matrix:
+
 ```{r}
-# Convert vector of text to matrix
-txt_to_mtx <- function(txt) {
-  txt |> 
+
+mtx_rows <- apply(mtx, 1, str_flatten)
+mtx_cols <- apply(mtx, 2, str_flatten)
+
+```
+
+Extract diagonals from the matrix by padding each row with leading/trailing spaces, then extracting the new columns as strings:
+
+```{r}
+
+padding <- str_dup(" ", 1:nrow(mtx))
+
+mtx_diag <- map(c(I, rev), \(f) {
+  str_c(padding, f(mtx_rows), rev(padding)) |> 
     str_split("") |> 
-    unlist() |> 
-    matrix(nrow = length(txt), byrow = TRUE)
-}
+    list_transpose() |> 
+    map_chr(str_flatten) |> 
+    str_remove_all("\\s")
+}) |> 
+  unlist()
 
-# Convert matrix to vector of text
-mtx_to_txt <- function(mtx) {
-  mtx |> 
-    t() |> 
-    as_tibble() |> 
-    as.list() |> 
-    map(str_flatten) |> 
-    unlist() |> 
-    unname()
-}
+```
 
-# Transpose a vector of text
-transpose_txt <- function(txt) {
-  txt |> 
-    txt_to_mtx() |> 
-    t() |> 
-    mtx_to_txt()
-}
+Search for the string `XMAS` (or its reverse, `SAMX`) in each dimension of the matrix and count the total occurrences:
 
-# Get rows and columns of input as individual text vectors
-rows <- input
-cols <- transpose_txt(rows)
+```{r}
 
-# Convert diagonals of input as individual text vectors
-pad <- map_chr(
-  1:length(rows), 
-  ~ str_c(rep_len(" ", .x - 1), collapse = "")
-)
-
-diag1 <- str_c(pad, rows, rev(pad)) |> 
-  transpose_txt()
-diag2 <- str_c(rev(pad), rows, pad) |> 
-  transpose_txt()
-
-# Loop over rows, columns, and diagnoals and count occurrences of "XMAS"
-map_int(
-  list(rows, cols, diag1, diag2),
-  ~ sum(str_count(.x, "XMAS") + str_count(.x, "SAMX"))
-) |> 
+map(c("XMAS", "SAMX"), ~ str_count(c(mtx_rows, mtx_cols, mtx_diag), .x)) |> 
+  unlist() |>
   sum()
+
 ```
 
 ## Part 2
 
+Define the four possible XMAS patterns in a 3x3 grid as a regex string:
+
 ```{r}
-# Define the four possible XMAS patterns in a 3x3 grid as a regex string
+
 xmas1 <- "M.S.A.M.S"
 xmas4 <- "S.M.A.S.M"
 xmas2 <- "S.S.A.M.M"
 xmas3 <- "M.M.A.S.S"
-xmas_regex <- glue::glue("{xmas1}|{xmas2}|{xmas3}|{xmas4}")
+xmas_regex <- str_glue("{xmas1}|{xmas2}|{xmas3}|{xmas4}")
 
-# Convert input into a matrix
-mtx <- txt_to_mtx(input)
-
-# Extract every 3x3 submatrix in the input text block as a text string
-map(
-  1:(nrow(mtx) - 2),
-  function(row_start) {
-    map_chr(
-      1:(ncol(mtx) - 2),
-      function(col_start) {
-        mtx[row_start:(row_start + 2), col_start:(col_start + 2)] |> 
-          mtx_to_txt() |> 
-          str_flatten()
-      }
-    )
-  }
-) |> 
-  unlist() |> 
-  
-  # Count the text strings with a valid XMAS pattern
-  str_detect(xmas_regex) |> 
-  sum()
 ```
+
+Extract every 3x3 submatrix in the input text block as a text string (concatenating row-wise):
+
+```{r}
+
+sub_mtx <- expand_grid(row = 3:nrow(mtx), col = 3:ncol(mtx)) |> 
+  pmap(\(row, col) mtx[row - 0:2, col - 0:2]) |> 
+  map_chr(str_flatten)
+
+```
+
+Count all text strings with a valid `XMAS` pattern:
+
+```{r}
+
+sum(str_detect(sub_mtx, xmas_regex))
+
+```
+

@@ -8,82 +8,112 @@ author:
 
 ## Setup
 
+Import libraries:
+
 ```{r setup}
-# Libraries
+
 library(tidyverse)
 
-# Read input from file
-input <- read_lines("../input/day08.txt", skip_empty_rows = TRUE)
 ```
 
-## Part 1
-
-Define antinode functions:
+Read input from file:
 
 ```{r}
 
-# Check if a coordinate is in the bounds of the map
-in_bounds <- function(x, map) {
-  between(x[1], 1, nrow(map)) & between(x[2], 1, ncol(map))
-}
+input <- read_lines("../input/day08.txt")
 
-# Compute the antinodes of a given pair of antennas
-antinode_pair <- function(x1, x2, map) {
-  diff <- x2 - x1
-  list(x1 - diff, x2 + diff) |> 
-    keep(~in_bounds(.x, map))
-}
-
-# Get coordinates of every antenna of the given frequency
-get_freq_antennas <- function(freq, map) {
-  antennas <- which(map == freq, arr.ind = TRUE)
-  split(antennas, row(antennas))
-}
-
-# Compute all antinodes of a given frequency in a given map
-get_all_antinodes <- function(freq, map, f) {
-  antennas <- get_freq_antennas(freq, map)
-  
-  pairs <- combn(antennas, 2)
-  pairs <- split(pairs, col(pairs))
-  
-  pairs |> 
-    map(~f(.x[[1]], .x[[2]], map)) |> 
-    list_flatten() |> 
-    unique()
-}
 ```
 
-Run antinode functions on puzzle input:
+Convert text input to a character matrix:
 
 ```{r}
-# Convert input to matrix format
+
 mtx <- input |>
   str_split("") |> 
   unlist() |> 
   matrix(nrow = length(input), byrow = TRUE)
 
-# Find the distinct set of frequencies in the map
-freqs <- keep(
-  unique(as.vector(mtx)), 
-  ~.x %in% c(letters, LETTERS, as.character(0:9))
-)
+```
 
-# Count all distinct antinode locations across all frequencies in the map
+## Part 1
+
+Define a helper function to check if a coordinate `x` is within the bounds of the map (mtx):
+
+```{r}
+
+in_bounds <- \(x, map) between(x[1], 1, nrow(map)) & between(x[2], 1, ncol(map))
+
+```
+
+Define a helper function to compute the antinodes of a given pair of antenna coordinates on a map:
+
+```{r}
+
+antinode_pair <- function(x1, x2, map) {
+  diff <- x2 - x1
+  keep(list(x1 - diff, x2 + diff), ~ in_bounds(.x, map))
+}
+
+```
+
+Define a helper function to get the coordinates of every antenna of a given frequency on a map:
+
+```{r}
+
+get_antennas <- function(freq, map) {
+  antennas <- which(map == freq, arr.ind = TRUE)
+  split(antennas, row(antennas))
+}
+
+```
+
+Define a function to compute all antinodes of a given frequency in a map:
+
+```{r}
+
+get_all_antinodes <- function(freq, map, f) {
+  antennas <- get_antennas(freq, map)
+  
+  pairs <- combn(antennas, 2)
+  pairs <- split(pairs, col(pairs))
+  
+  pairs |> 
+    map(~ f(.x[[1]], .x[[2]], map)) |> 
+    list_flatten() |> 
+    unique()
+}
+
+```
+
+Compute the distinct set of frequencies in the map:
+
+```{r}
+
+freqs <- mtx |>
+  as.vector() |>
+  unique() |> 
+  keep(~ .x %in% c(letters, LETTERS, as.character(0:9)))
+
+```
+
+Count all distinct antinode locations across all frequencies in the map:
+
+```{r}
+
 freqs |> 
-  map(~get_all_antinodes(.x, mtx, antinode_pair)) |> 
+  map(~ get_all_antinodes(.x, mtx, antinode_pair)) |> 
   list_flatten() |> 
   unique() |> 
   length()
+
 ```
 
 ## Part 2
 
-Update the antinode function:
+Update the antinode function which computes the antidotes of a given pair of antennas:
 
 ```{r}
 
-# Compute the updated antinodes of a given pair of antennas
 antinode_set <- function(x1, x2, map) {
   diff <- x2 - x1
   antinodes <- list(x1, x2)
@@ -102,13 +132,15 @@ antinode_set <- function(x1, x2, map) {
   
   antinodes
 }
+
 ```
 
 Re-run puzzle input:
 
 ```{r}
+
 freqs |> 
-  map(~get_all_antinodes(.x, mtx, antinode_set)) |> 
+  map(~ get_all_antinodes(.x, mtx, antinode_set)) |> 
   list_flatten() |> 
   unique() |> 
   length()

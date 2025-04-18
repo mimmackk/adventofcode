@@ -8,12 +8,20 @@ author:
 
 ## Setup
 
+Import libraries:
+
 ```{r setup}
-# Libraries
+
 library(tidyverse)
 
-# Read input from file
+```
+
+Read input from file
+
+```{r}
+
 input <- read_lines("../input/day25.txt", skip_empty_rows = FALSE)
+
 ```
 
 ## Part 1
@@ -40,10 +48,7 @@ groups <- input |>
   select(-c(value, row, type, row)) |> 
   group_split(group_id)
 
-groups <- set_names(
-  groups,
-  map_chr(groups, ~ unique(pull(.x, group_id)))
-)
+groups <- set_names(groups, map_chr(groups, ~ unique(pull(.x, group_id))))
 
 ```
 
@@ -66,6 +71,7 @@ locks <- keep_at(pins, ~ str_starts(.x, "lock"))
 keys  <- keep_at(pins, ~ str_starts(.x, "key"))
 
 ```
+
 Compute maximum height for any given lock/key combo:
 
 ```{r}

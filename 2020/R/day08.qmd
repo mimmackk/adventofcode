@@ -1,0 +1,134 @@
+---
+title: "Day 8"
+date: 2020-12-08
+author:
+  name: https://adventofcode.com/2020/day/8
+  url: https://adventofcode.com/2020/day/8
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read text input from file and parse into a dataframe of character operations and integer arguments:
+
+```{r}
+
+input <- read_lines("../input/day08.txt") |> 
+  unglue_data("{op} {arg}", convert = TRUE) |> 
+  deframe()
+
+```
+
+## Part 1
+
+Define a function to loop through the instructions in the input, break whenever an instruction is visited for a second time, and return the accumulator value at that time:
+
+```{r}
+
+find_loop <- function(instructions) {
+  
+  visited <- rep(FALSE, length(instructions))
+  acc <- 0
+  i <- 1
+  
+  while (i <= length(instructions)) {
+    if (visited[i]) {
+      return(acc)
+    } else {
+      visited[i] <- TRUE
+    }
+    
+    op  <- names(instructions)[[i]]
+    arg <- instructions[[i]]
+    
+    if (op == "nop") {
+      i <- i + 1
+    } else if (op == "acc") {
+      acc <- acc + arg
+      i <- i + 1
+    } else if (op == "jmp") {
+      i <- i + arg
+    }
+  }
+  
+  return(NA)
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+find_loop(input)
+
+```
+
+## Part 2
+
+Swap each `jmp` and `nop` operation one-by-one and see which swap results in a valid output (no loop):
+
+```{r}
+
+instr_mod <- map(
+  which(names(input) %in% c("jmp", "nop")),
+  \(idx) {
+    input |> 
+      set_names(modify_at(
+        names(input), 
+        idx, 
+        ~ case_match(.x, "jmp" ~ "nop", "nop" ~ "jmp")
+      ))
+  }
+)
+
+idx_mod <- instr_mod |> 
+  map_dbl(find_loop) |> 
+  detect_index(is.na)
+
+```
+
+Modify the `find_loop` function to run the instructions and return the final value of the accumulator:
+
+```{r}
+
+run_instr <- function(instructions) {
+  acc <- 0
+  i <- 1
+  
+  while (i <= length(instructions)) {
+    op  <- names(instructions)[[i]]
+    arg <- instructions[[i]]
+    
+    if (op == "nop") {
+      i <- i + 1
+    } else if (op == "acc") {
+      acc <- acc + arg
+      i <- i + 1
+    } else if (op == "jmp") {
+      i <- i + arg
+    }
+  }
+  
+  return(acc)
+}
+
+```
+
+Run on the valid modified index:
+
+```{r}
+
+run_instr(instr_mod[[idx_mod]])
+
+```
+
+

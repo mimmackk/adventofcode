@@ -8,55 +8,61 @@ author:
 
 ## Setup
 
+Import libraries:
+
 ```{r setup}
-# Libraries
+
 library(tidyverse)
 
-# Read input from file
-input <- read_lines("../input/day15.txt")
-input_wh <- keep(input, ~ str_detect(.x, "#"))
-input_mv <- keep(input, ~ str_detect(.x, "<|>|\\^|v"))
 ```
 
-## Part 1
-
-```{r, include = FALSE}
-
-# Debugging print:
-prnt_mtx <- function(data) {
-  data |> 
-    as_tibble() |>
-    as.list() |> 
-    reduce(str_c) |> 
-    cat(sep = "\n")
-}
-
-```
-
-Convert warehouse input to a row/column indexed dataframe
+Read text input from file:
 
 ```{r}
 
-# Convert WH input text to a matrix
+input <- read_lines("../input/day15.txt")
+
+```
+
+Separate text input into moves versus the warehouse map:
+
+```{r}
+
+input_wh <- keep(input, ~ str_detect(.x, "#"))
+input_mv <- keep(input, ~ str_detect(.x, "<|>|\\^|v"))
+
+```
+
+Convert warehouse input to a matrix:
+
+```{r}
+
 mtx <- input_wh |>
   str_split("") |> 
   matrix() |> 
   unlist() |> 
   matrix(byrow = TRUE, nrow = length(input_wh))
 
+```
 
-# Convert movement sequence to a seq of characters
+Convert movement sequence to a seq of characters:
+
+```{r}
+
 move_seq <- input_mv |> 
   str_c(collapse = "") |> 
   str_split_1("")
 
 ```
 
-Define function to update the map based on a single movement of the robot::
+## Part 1
+
+Define a function to update the map based on a single movement of the robot:
 
 ```{r}
 
 move_robot <- function(mtx, dir) {
+  
   # Get the current coordinates of the robot
   robot <- which(mtx == "@", arr.ind = TRUE)
   row <- robot[1, "row"]
@@ -84,49 +90,51 @@ move_robot <- function(mtx, dir) {
   
   # Replace the affected characters in the matrix and return
   mtx[row:row_end, col:col_end] <- new
-  return(mtx)
+  
+  mtx
 }
-
 
 ```
 
-Define a function to iteratively run the set of movements
+Define a function to iteratively run the set of movements:
 
 ```{r}
 
 run_simulation <- function(mtx, move_seq) {
   mtx_prv <- mtx
+  
   for (dir in move_seq) {
     mtx_new <- move_robot(mtx_prv, dir)
     mtx_prv <- mtx_new
   }
-  return(mtx_new)
+  
+  mtx_new
 }
 
 ```
 
-Define a function to determine the GPS coordinates of all boxes
+Define a function to determine the GPS coordinates of all boxes:
 
 ```{r}
 
 get_boxes_gps <- function(mtx) {
   which(mtx == "O", arr.ind = TRUE) |> 
     as_tibble() |> 
-    mutate(
-      gps = 100 * (row - 1) + (col - 1)
-    ) |> 
+    mutate(gps = 100 * (row - 1) + (col - 1)) |> 
     pull(gps)
 }
 
 ```
 
-Run puzzle input:
+Run on puzzle input:
 
 ```{r}
+
 mtx |> 
   run_simulation(move_seq) |> 
   get_boxes_gps() |>
   sum()
+
 ```
 
 ## Part 2
@@ -134,7 +142,7 @@ mtx |>
 Widen the map:
 
 ```{r}
-# Convert WH input text to a matrix
+
 mtx <- input_wh |> 
   str_replace_all("#", "##") |> 
   str_replace_all("O", "[]") |> 
@@ -144,9 +152,10 @@ mtx <- input_wh |>
   matrix() |> 
   unlist() |> 
   matrix(byrow = TRUE, nrow = length(input_wh))
+
 ```
 
-Define functions to move boxes around the map:
+Define a set of helper functions for moving boxes around the map:
 
 ```{r}
 
@@ -190,6 +199,12 @@ is_blocked <- function(mtx, box_num, dir = c("<", "^", ">", "v")) {
     any()
 }
 
+```
+
+Define a function to move a box:
+
+```{r}
+
 move_box <- function(mtx, box_num, dir = c("<", "^", ">", "v")) {
   # Get the coordinates of the current box and the place it'll move to
   cur <- get_box_coords(mtx, box_num)
@@ -203,11 +218,11 @@ move_box <- function(mtx, box_num, dir = c("<", "^", ">", "v")) {
     mtx <- move_box(mtx, box, dir)
   }
   
-  # # Replace the current coords with "." and the next coords with the box
+  # Replace the current coords with "." and the next coords with the box
   mtx[cur$row, cur$col] <- "."
   mtx[nxt$row, nxt$col] <- box_num
   
-  return(mtx)
+  mtx
 }
 
 ```
@@ -217,6 +232,7 @@ Loop through puzzle input:
 ```{r}
 
 run_simulation <- function(mtx, move_seq) {
+  
   # Convert boxes from format "[]" into ID numbers unique to each box:
   coords <- list(l = which(mtx == "["), r = which(mtx == "]"))
   for (i in 1:length(coords$l)) {
@@ -237,6 +253,7 @@ run_simulation <- function(mtx, move_seq) {
 }
 
 output <- run_simulation(mtx, move_seq)
+
 ```
 
 Convert the result to GPS coordinates:
@@ -252,6 +269,7 @@ output |>
     names_prefix = "V", 
     names_transform = as.integer
   ) |> 
+  
   # Select only the leftmost cell of each boxes
   filter(str_detect(value, "\\d+")) |> 
   slice_min(col, by = value) |> 

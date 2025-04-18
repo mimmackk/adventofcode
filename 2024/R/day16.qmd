@@ -8,18 +8,26 @@ author:
 
 ## Setup
 
+Import libraries:
+
 ```{r setup}
-# Libraries
+
 library(tidyverse)
 library(igraph)
 
-# Read input from file
-input <- read_lines("../input/day16.txt", skip_empty_rows = TRUE)
+```
+
+Read text input from file:
+
+```{r}
+
+input <- read_lines("../input/day16.txt")
+
 ```
 
 ## Part 1
 
-Convert text input into a weighted, undirected graph
+Convert text input into a weighted, undirected graph:
 
 ```{r}
 
@@ -83,7 +91,7 @@ g <- graph_from_adjacency_matrix(sym_mtx, mode = "undirected", weighted = TRUE)
 
 ```
 
-Determine possible starting and ending locations from the input
+Determine possible starting and ending locations from the input:
 
 ```{r}
 
@@ -143,7 +151,6 @@ shortest_paths <- min_dist |>
   }) |> 
   flatten() |> 
   map(as.integer)
-
 
 path_vertices <- shortest_paths |> 
   unlist() |> 

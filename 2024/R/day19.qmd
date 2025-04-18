@@ -8,23 +8,46 @@ author:
 
 ## Setup
 
-```{r setup}
-# Libraries
-library(tidyverse)
+Import libraries:
 
-# Read input from file
+```{r setup}
+
+library(tidyverse)
+library(memoise)
+
+```
+
+Disable scientific formatting when displaying large numbers:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+Read input from file:
+
+```{r}
+
 available <- read_lines("../input/day19.txt", n_max = 1) |> str_split_1(", ")
 desired   <- read_lines("../input/day19.txt", skip = 2)
+
 ```
 
 ## Part 1
 
+Convert all possible available patterns into a regex string:
+
 ```{r}
 
-# Convert all possible available patterns into a regex string
 regex <- str_c("^(", str_c(available, collapse = "|"), ")+$")
 
-# Test each desired pattern for a regex match and count the number of matches
+```
+
+Test each desired pattern for a regex match and count the number of matches:
+
+```{r}
+
 desired |> 
   str_detect(regex) |> 
   sum()
@@ -50,13 +73,17 @@ num_matches <- function(str) {
 }
 
 # Memoize the recursive function for performance
-num_matches <- memoise::memoise(num_matches)
+num_matches <- memoise(num_matches)
 
-# Run on puzzle input:
+```
+
+Run on puzzle input:
+
+```{r}
+
 desired |> 
   map_dbl(num_matches) |> 
-  sum() |> 
-  format(scientific = FALSE)
+  sum()
 
 ```
 

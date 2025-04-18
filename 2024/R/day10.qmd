@@ -8,33 +8,56 @@ author:
 
 ## Setup
 
+Import libraries:
+
 ```{r setup}
-# Libraries
+
 library(tidyverse)
 
-# Read input from file
-input <- read_lines("../input/day10.txt", skip_empty_rows = TRUE)
+```
 
-# Convert input to matrix format
+Read plaintext input from file: 
+
+```{r}
+
+input <- read_lines("../input/day10.txt")
+
+```
+
+Convert text input into a numeric matrix:
+
+```{r}
+
 mtx <- input |> 
   str_split("") |>
   unlist() |> 
   as.integer() |> 
   matrix(nrow = length(input), byrow = TRUE)
+
 ```
+
 
 ## Part 1
 
-Define custom functions:
+Define cardinal directions (N/S/E/W) as a list of 2D vectors:
 
 ```{r}
-# North / South / East / West
-dirs <- list(c(0,  1), c(0, -1), c(1,  0), c(-1,  0))
 
-# Check if a coordinate is in the bounds of the map
-in_bounds <- function(x, map) {
-  between(x[1], 1, nrow(map)) & between(x[2], 1, ncol(map))
-}
+dirs <- list(c(0, 1), c(0, -1), c(1, 0), c(-1, 0))
+
+```
+
+Define a helper function to determine if a coordinate is within the map bounds:
+
+```{r}
+
+in_bounds <- \(x, map) between(x[1], 1, nrow(map)) & between(x[2], 1, ncol(map))
+
+```
+
+Define a function to find the trail ends given a map and a starting coordinate:
+
+```{r}
 
 find_trail_ends <- function(cur_coord, map) {
   
@@ -58,22 +81,37 @@ find_trail_ends <- function(cur_coord, map) {
   return(unique(trail_ends))
 }
 
-score_trail <- function(trailhead, map) length(find_trail_ends(trailhead, map))
+```
+
+Define a function to score a trail given the map and trailhead:
+
+```{r}
+
+score_trail <- \(trailhead, map) length(find_trail_ends(trailhead, map))
 
 ```
 
+Get a list of coordinates of all of the trailheads:
+
 ```{r}
-# Get a list of coordinates of all of the trailheads
+
 trailheads <- which(mtx == 0, arr.ind = TRUE)
+
 trailheads_list <- map(
   1:nrow(trailheads), 
   ~ array(trailheads[.x,], dim = c(1, 2))
 )
 
-# Score each trailhead and sum the total
+```
+
+Score each trailhead and sum the total:
+
+```{r}
+
 trailheads_list |> 
   map_int(~ score_trail(.x, mtx)) |> 
   sum()
+
 ```
 
 ## Part 2
@@ -99,12 +137,15 @@ rate_trail <- function(cur_coord, map) {
   ) |> 
     sum()
 }
+
 ```
 
-Re-run the puzzle input:
+Re-run on the puzzle input:
 
 ```{r}
+
 trailheads_list |> 
   map_int(~ rate_trail(.x, mtx)) |> 
   sum()
+
 ```

@@ -8,12 +8,29 @@ author:
 
 ## Setup
 
-```{r setup}
-# Libraries
-library(tidyverse)
+Import libraries:
 
-# Read input from file
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Disable scientific formatting when displaying large numbers:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+Read input from file:
+
+```{r}
+
 input <- read_lines("../input/day24.txt", skip_empty_rows = TRUE)
+
 ```
 
 ## Part 1
@@ -23,11 +40,11 @@ Convert input to lists of gates and wires:
 ```{r}
 
 init <- input |> 
-  unglue::unglue_data("{wire}: {value}", convert = TRUE) |> 
+  unglue_data("{wire}: {value}", convert = TRUE) |> 
   filter(!is.na(wire))
 
 gates <- input |> 
-  unglue::unglue_data("{src1} {gate} {src2} -> {target}") |> 
+  unglue_data("{src1} {gate} {src2} -> {target}") |> 
   filter(!is.na(gate)) |> 
   mutate(gate = case_match(gate, "AND" ~ "&", "OR" ~ "|", "XOR" ~ "xor"))
 
@@ -80,8 +97,7 @@ df |>
   arrange(wire) |> 
   pull(value) |> 
   imap_dbl(\(x, i) x * 2^(i - 1)) |> 
-  sum() |> 
-  format(scientific = FALSE)
+  sum()
 
 ```
 
@@ -169,12 +185,18 @@ Identify invalid outputs by following their logic trail forward and checking the
 ```{r}
 
 invalid_by_path <- gates |> 
-  left_join(select(gates, src1, gate), join_by(x$target == y$src1), suffix = c("", "1")) |> 
-  left_join(select(gates, src2, gate), join_by(x$target == y$src2), suffix = c("", "2")) |> 
-  nest(nxt = c(gate1, gate2), .by = -c(gate1, gate2)) |> 
-  mutate(
-    nxt = map(nxt, ~ .x |> unlist() |> discard(is.na) |> unname())
+  left_join(
+    select(gates, src1, gate), 
+    join_by(x$target == y$src1), 
+    suffix = c("", "1")
   ) |> 
+  left_join(
+    select(gates, src2, gate), 
+    join_by(x$target == y$src2), 
+    suffix = c("", "2")
+  ) |> 
+  nest(nxt = c(gate1, gate2), .by = -c(gate1, gate2)) |> 
+  mutate(nxt = map(nxt, ~ .x |> unlist() |> discard(is.na) |> unname())) |> 
   unnest_wider(nxt, names_sep = "_") |> 
   mutate(
     valid = case_when(
@@ -199,7 +221,6 @@ invalid_by_path <- gates |>
   filter(!valid) |> 
   pull(target)
 
-
 ```
 
 Concatenate all invalid gates alphabetically:
@@ -209,6 +230,6 @@ Concatenate all invalid gates alphabetically:
 c(invalid_by_gate, invalid_by_path) |> 
   unique() |> 
   sort() |> 
-  str_c(collapse = ",")
+  str_flatten(",")
 
 ```

@@ -8,24 +8,27 @@ author:
 
 ## Setup
 
+Import libraries:
+
 ```{r setup}
-# Libraries
+
 library(tidyverse)
 library(unglue)
 
-# Read input from file
-input <- read_lines("../input/day14.txt", skip_empty_rows = TRUE)
-
-# Parameters: dimensions of the room
-room_w <- 101
-room_h <- 103
 ```
 
-## Part 1
-
-Extract numerical values from input text:
+Read input from file:
 
 ```{r}
+
+input <- read_lines("../input/day14.txt")
+
+```
+
+Extract numerical values from plaintext input:
+
+```{r}
+
 df <- input |>
   unglue_data("p={x},{y} v={vx},{vy}") |> 
   mutate(
@@ -33,38 +36,29 @@ df <- input |>
     robot_id = row_number(),
     .before = everything()
   )
+
 ```
 
-For debugging: define a function to print the current state of the grid
+Define parameters: dimensions of the room:
 
 ```{r}
 
-print_grid <- function(df, w = room_w, h = room_h) {
-  df |> 
-    summarize(n = as.character(n()), .by = c(x, y)) |> 
-    complete(
-      x = 0:(room_w - 1), 
-      y = 0:(room_h - 1), 
-      fill = list(n = "")
-    ) |> 
-    mutate(n = str_pad(n, width = max(str_length(n)), side = "left")) |> 
-    arrange(desc(y), x) |> 
-    group_split(y) |> 
-    map_chr(~ pull(.x, n) |> str_c(collapse = " ")) |> 
-    cat(sep = "\n")
-}
+room_w <- 101
+room_h <- 103
 
 ```
+
+## Part 1
 
 Define a function which gives the location of the robots after n seconds. Multiply n by the velocity, add to the current position, and modulo the room dimensions.
 
 ```{r}
 
-pass_time <- function(df, seconds, w = room_w, h = room_h) {
+pass_time <- function(df, seconds) {
   df |> 
     mutate(
-      x = (x + vx * seconds) %% w,
-      y = (y + vy * seconds) %% h
+      x = (x + vx * seconds) %% room_w,
+      y = (y + vy * seconds) %% room_h
     )
 }
 
@@ -74,7 +68,7 @@ Define a function to get the current safety factor by counting the number of rob
 
 ```{r}
 
-get_safety_score <- function(df, w = room_w, h = room_h) {
+get_safety_score <- function(df) {
   mid_w <- (room_w - 1) / 2
   mid_h <- (room_h - 1) / 2
   
@@ -95,6 +89,7 @@ get_safety_score <- function(df, w = room_w, h = room_h) {
 Compute safety score of puzzle input:
 
 ```{r}
+
 df |> 
   pass_time(100) |> 
   get_safety_score()
@@ -115,13 +110,10 @@ For each unique snapshot in the cycle, test for randomness vs structure in the X
 
 ```{r}
   
-simulations <- map_dfr(
-  1:cycle,
-  \(seconds) {
-    new <- pass_time(df, seconds)
-    c(secs = seconds, xvar = var(new$x), yvar = var(new$y))
-  }
-)
+simulations <- map_dfr(1:cycle, \(seconds) {
+  new <- pass_time(df, seconds)
+  c(secs = seconds, xvar = var(new$x), yvar = var(new$y))
+})
 
 simulations |> 
   arrange(xvar, yvar, secs) |> 

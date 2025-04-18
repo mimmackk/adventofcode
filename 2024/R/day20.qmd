@@ -8,11 +8,18 @@ author:
 
 ## Setup
 
+Import libraries:
+
 ```{r setup}
-# Libraries
+
 library(tidyverse)
 
-# Read input from file
+```
+
+Read input from file into a data frame:
+
+```{r}
+
 input <- read_table("../input/day20.txt", col_names = "char") |> 
   mutate(
     row = row_number(),
@@ -101,11 +108,17 @@ count_cheats <- function(cheat_length) {
 Run on puzzle input:
 
 ```{r}
+
 count_cheats(2)
+
 ```
 
 ## Part 2
 
+Re-run with length 20, rather than 2:
+
 ```{r}
+
 count_cheats(20)
+
 ```

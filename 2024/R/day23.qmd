@@ -8,55 +8,64 @@ author:
 
 ## Setup
 
+Import libraries:
+
 ```{r setup}
-# Libraries
+
 library(tidyverse)
+library(unglue)
 library(igraph)
 
-# Read input from file
-input <- read_lines("../input/day23.txt", skip_empty_rows = TRUE) |> 
-  unglue::unglue_data("{v1}-{v2}")
+```
+
+Read input from text file into a data frame:
+
+```{r}
+
+input <- read_lines("../input/day23.txt") |> 
+  unglue_data("{v1}-{v2}")
+
 ```
 
 ## Part 1
 
+Convert the lists of connections to an undirected graph:
+
 ```{r}
 
-# Convert list of connections to an undirected graph
 g <- input |> 
   pmap(function(v1, v2) c(v1, v2)) |> 
   unlist() |> 
   make_graph(directed = FALSE)
 
-# Find all sets of 3 connected vertices
+```
+
+Find all sets of 3 connected vertices (cliques of size 3) and count the sets having some vertex starting with 't'
+
+```{r}
+
 cliques(g, min = 3, max = 3) |> 
-  
-  # Keep only the sets having some vertex starting with 't'
   keep(
     ~ names(.x) |> 
       str_starts("t") |> 
       any()
   ) |> 
-  
-  # Count the number of resulting sets
   length()
 
 ```
 
 ## Part 2
 
+Find the largest interconnected set of vertices, then convert the list of vertices into the "password" by sorting alphabetically and concatenating with commas:
+
 ```{r}
 
 g |> 
-  
-  # Find the largest interconnected set of vertices
   largest_cliques() |> 
   unlist() |> 
-
-  # Convert the list of vertices into the "password" by sorting alphabetically
   names() |> 
   sort() |> 
-  str_c(collapse = ",")
+  str_flatten(",")
 
 ```
 

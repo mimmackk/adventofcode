@@ -8,36 +8,52 @@ author:
 
 ## Setup
 
-```{r setup}
-# Libraries
-library(tidyverse)
+Import libraries:
 
-# Read input from file
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read text input from file:
+
+```{r}
+
 input <- read_lines("../input/day05.txt", skip_empty_rows = TRUE)
+
+```
+
+Extract the page-ordering rules from the input:
+
+```{r}
+
+rules <- input |> 
+  unglue_data("{p1}|{p2}", convert = TRUE) |> 
+  drop_na()
+
+```
+
+Extract the page sequences from the input:
+
+```{r}
+
+pages <- input |>
+  discard_at(1:nrow(rules)) |> 
+  str_split(",") |> 
+  map(parse_number)
+
 ```
 
 ## Part 1
 
+Define a function to sort a given vector of page numbers according to the rules that apply to those page numbers:
+
 ```{r}
 
-# Extract page ordering rules from input
-rule_list <- input |> 
-  keep(~ str_detect(.x, "\\|")) |> 
-  as_tibble_col(column_name = "rule") |> 
-  separate(rule, into = c("p1", "p2")) |> 
-  mutate(rule_num = row_number(), .before = everything()) |> 
-  mutate(across(c(p1, p2), parse_number))
-
-# Extract page sequences from input
-pages <- input |> 
-  discard(~ str_detect(.x, "\\|")) |> 
-  str_split(",") |> 
-  map(parse_number) |> 
-  as_tibble_col(column_name = "update")
-
-# Sort a given vector by its applicable rules
 sort_by_rules <- function(seq) {
-  active_rules <- rule_list |> 
+  active_rules <- rules |> 
     filter(p1 %in% seq & p2 %in% seq)
   
   repeat {
@@ -53,12 +69,19 @@ sort_by_rules <- function(seq) {
         swap_occurred <- TRUE
       }
     }
-    if (!swap_occurred) return(seq)
+    if (!swap_occurred) 
+      return(seq)
   }
 }
 
-# Sort all page sequences and extract the center page of each result
+```
+
+Sort all page sequences in the puzzle input and extract the center page of the result:
+
+```{r}
+
 output <- pages |> 
+  as_tibble_col(column_name = "update") |> 
   mutate(
     resorted = map(update, sort_by_rules),
     is_sorted = map2_lgl(update, resorted, identical),
@@ -67,20 +90,26 @@ output <- pages |>
 
 ```
 
+For all properly-ordered updates, sum the center page numbers:
+
 ```{r}
-# For the properly-ordered updates, sum the center page numbers
+
 output |>
   filter(is_sorted) |> 
   pull(center_page) |> 
   sum()
+
 ```
 
 ## Part 2
 
+For all improperly-ordered updates, sum their sorted center pages
+
 ```{r}
-# For the improperly-ordered updates, sum their sorted center pages
+
 output |>
   filter(!is_sorted) |> 
   pull(center_page) |> 
   sum()
+
 ```

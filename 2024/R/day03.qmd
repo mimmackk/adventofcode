@@ -8,44 +8,57 @@ author:
 
 ## Setup
 
-```{r setup}
-# Libraries
-library(tidyverse)
+Import libraries:
 
-# Read input from file
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read text input from file and combine into a single string:
+
+```{r}
+
 input <- read_lines("../input/day03.txt") |> 
   str_c(collapse = "")
+
 ```
 
 ## Part 1
 
+Define a function that "uncorrupts" a string of text by extracting all valid `mul` instructions, executing them, and adding them together. We perform this extraction with regex:
+
 ```{r}
+
 uncorrupt <- function(str) {
-  
   str |> 
-    
-    # Extract all text of the format `mul(a,b)` where a, b are valid integers
     str_extract_all("mul\\(\\d+,\\d+\\)") |> 
     unlist() |> 
-    
-    # Extract both integers from the mul sequences and multiply them together
-    str_extract_all("\\d+") |> 
-    map(parse_number) |> 
-    map(reduce, prod) |> 
-    
-    # Sum up the total of all results
-    reduce(sum)
-  
+    unglue_data("mul({d1},{d2})", convert = TRUE) |> 
+    pmap_dbl(prod) |> 
+    sum()
 }
 
+```
+
+Run the `uncorrupt` function on the puzzle input:
+
+```{r}
+
 uncorrupt(input)
+
 ```
 
 ## Part 2
 
+Remove all text between `don't()` and `do()`, then uncorrupt the result. We use the regex expression `.*?` to remove as little text as possible between the `don't` and `do` statements (ungreedy), so that only the most recent command is used:
+
 ```{r}
-# Remove all text between `don't()` and `do()`, then uncorrupt the result
+
 input |> 
   str_remove_all("don't\\(\\).*?do\\(\\)") |>   
   uncorrupt()
+
 ```

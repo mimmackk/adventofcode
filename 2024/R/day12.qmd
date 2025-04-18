@@ -8,12 +8,19 @@ author:
 
 ## Setup
 
+Import libraries:
+
 ```{r setup}
-# Libraries
+
 library(tidyverse)
 library(igraph)
 
-# Read input from file into a data frame
+```
+
+Read input from file into a data frame:
+
+```{r}
+
 input <- read_table("../input/day12.txt", col_names = "chr") |> 
   mutate(
     row = row_number(),
@@ -22,6 +29,7 @@ input <- read_table("../input/day12.txt", col_names = "chr") |>
   unnest(chr) |> 
   mutate(col = row_number(), .by = row) |> 
   mutate(idx = row_number(), .before = everything())
+
 ```
 
 ## Part 1
@@ -57,7 +65,12 @@ g <- edges_long |>
 
 V(g)$name <- 1:nrow(input)
 
-# Separate out the resulting graph into sub-graphs of innerconnected regions
+```
+
+Separate out the graph into sub-graphs of innerconnected regions:
+
+```{r}
+
 dg <- decompose(g)
 
 ```
@@ -65,6 +78,7 @@ dg <- decompose(g)
 Compute the perimeter, area, and cost of each subgraph then sum the total:
 
 ```{r}
+
 dg |> 
   map_int(\(subgraph) {
     perim <- sum(4 - degree(subgraph))
@@ -72,6 +86,7 @@ dg |>
     perim * area
   }) |> 
   sum()
+
 ```
 
 ## Part 2
@@ -83,9 +98,10 @@ A plot can have a convex corner or a concave corner.
 -   A cell has a convex corner for each pair of adjacent borders
 -   A cell has a concave corner if it has two adjacent cells of its same group, but its diagonal cell between the two has a different group.
 
+Get the original row/column input and join on the group output from the graph:
+
 ```{r}
 
-# Get original row/column input and join on the group output from the graph
 groups <- left_join(
   input,
   imap_dfr(dg, \(g, grp_idx) tibble(grp = grp_idx, idx = V(g)$name)),
@@ -93,23 +109,48 @@ groups <- left_join(
 ) |> 
   select(idx, grp, row, col)
 
-# For each of a cell's neighbors, flag if they're in the same group
+```
+
+For each of a cell's neighbors, flag if they're in the same group:
+
+```{r}
+
 neighbors <- groups |> 
+  
   # Get group number of each adjacent cell (N/S/E/W)
   left_join(transmute(groups, n = grp, row = row + 1, col), join_by(row, col)) |> 
   left_join(transmute(groups, w = grp, col = col + 1, row), join_by(row, col)) |> 
   left_join(transmute(groups, s = grp, row = row - 1, col), join_by(row, col)) |> 
   left_join(transmute(groups, e = grp, col = col - 1, row), join_by(row, col)) |> 
+  
   # Get group number of each diagonal cell (NW/NE/SW/SE)
-  left_join(transmute(groups, nw = grp, row = row + 1, col = col + 1), join_by(row, col)) |> 
-  left_join(transmute(groups, ne = grp, row = row + 1, col = col - 1), join_by(row, col)) |> 
-  left_join(transmute(groups, sw = grp, row = row - 1, col = col + 1), join_by(row, col)) |> 
-  left_join(transmute(groups, se = grp, row = row - 1, col = col - 1), join_by(row, col)) |> 
+  left_join(
+    transmute(groups, nw = grp, row = row + 1, col = col + 1), 
+    join_by(row, col)
+  ) |> 
+  left_join(
+    transmute(groups, ne = grp, row = row + 1, col = col - 1), 
+    join_by(row, col)
+  ) |> 
+  left_join(
+    transmute(groups, sw = grp, row = row - 1, col = col + 1), 
+    join_by(row, col)
+  ) |> 
+  left_join(
+    transmute(groups, se = grp, row = row - 1, col = col - 1), 
+    join_by(row, col)
+  ) |> 
   select(-c(row, col)) |> 
+  
   # Compare group numbers of adjacent/diagonal cells to the current cell
   mutate(across(c(n, w, s, e, nw, ne, sw, se), ~ replace_na(.x == grp, FALSE)))
 
-# Compute total number of concave/convex corners for each cell
+```
+
+Compute the total number of concave/convex corners for each cell:
+
+```{r}
+
 corners <- neighbors |> 
   mutate(
     convex = (!n & !w) + (!s & !w) + (!s & !e) + (!n & !e),
@@ -121,6 +162,7 @@ corners <- neighbors |>
 Total the number of corners per group and multiply by the group's area to get the total cost:
 
 ```{r}
+
 corners |> 
   summarize(
     area = n(),

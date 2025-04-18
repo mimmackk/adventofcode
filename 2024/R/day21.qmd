@@ -8,15 +8,31 @@ author:
 
 ## Setup
 
+Import libraries:
+
 ```{r setup}
-# Libraries
+
 library(tidyverse)
 library(igraph)
 
-# Read input from file
+```
+
+Disable scientific formatting when displaying large numbers:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+Read input from file:
+
+```{r}
+
 input <- read_lines("../input/day21.txt")
 
 ```
+
 
 ## Part 1
 
@@ -177,8 +193,7 @@ tibble(input) |>
     complexity = numeric_code * shortest_seq
   ) |> 
   pull(complexity) |> 
-  sum() |> 
-  format(scientific = FALSE)
+  sum()
 
 ```
 

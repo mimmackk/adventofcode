@@ -8,140 +8,120 @@ author:
 
 ## Setup
 
+Import libraries:
+
 ```{r setup}
-# Libraries
+
 library(tidyverse)
 
-# Read input from file
-input <- read_lines("../input/day06.txt", skip_empty_rows = TRUE)
+```
+
+Read text input from file:
+
+```{r}
+
+input <- read_lines("../input/day06.txt")
+
+```
+
+Convert text input of the map into a 1/0 matrix (saving the guard's initial location):
+
+```{r}
+
+mtx <- input |> 
+  str_split("") |> 
+  unlist() |> 
+  case_match("." ~ 0, "#" ~ 1, c("^", "v", "<", ">") ~ 2) |> 
+  matrix(nrow = length(input), byrow = TRUE)
+
+init <- as.vector(which(mtx == 2, arr.ind = TRUE))
+
+mtx <- replace(mtx, mtx == 2, 0)
+
 ```
 
 ## Part 1
 
+Define a function that loops through guard positions until it leaves the map, returning a list of all positions where they turned:
+
 ```{r}
-#| eval: false
 
-# Guard functions --------------------------------------------------------------
-guards <- c("^", ">", "v", "<")
-guard_shift <- c(tail(guards, -1), head(guards, 1))
+maxdim <- c(1, ncol(mtx), nrow(mtx), 1)
+mtxdir <- c(-1, 1, 1, -1)
+mtxaxis <- c(1, 2, 1, 2)
 
-rotate_guard <- function(cur) guard_shift[guards == cur]
-
-guard_dir <- function(char) {
-  case_match(char,
-    "^" ~ matrix(c(-1,  0), nrow = 1),
-    ">" ~ matrix(c( 0,  1), nrow = 1),
-    "v" ~ matrix(c( 1,  0), nrow = 1),
-    "<" ~ matrix(c( 0, -1), nrow = 1)
-  )
-}
-
-in_bounds <- function(coord, mtx) {
-  between(coord[1], 1, nrow(mtx)) & between(coord[2], 1, ncol(mtx))
-}
-
-map_path <- function(mtx) {
-
-  # Initiate guard's starting position and direction
-  cur_char  <- keep(mtx, ~ .x %in% guards)
-  cur_coord <- which(mtx == cur_char, arr.ind = TRUE)
-  cur_dir   <- guard_dir(cur_char)
+guard_path <- function(mtx, init) {
+  guard <- init
+  hist <- list(guard)
+  idx <- 1
   
-  # As long as the guard is in bounds, iteratively update its coords and direction
   repeat {
-    next_coord <- cur_coord + cur_dir
+    dir <- mtxdir[idx]
+    dim <- maxdim[idx]
+    axis <- mtxaxis[idx]
     
-    # If next step is out-of-bounds, update matrix and exit
-    if (!in_bounds(next_coord, mtx)) {
-      mtx[cur_coord] <- "X"
-      break
+    if (axis == 1) {
+      path <- mtx[(guard[1] + dir):dim, guard[2]]
+    } else {
+      path <- mtx[guard[1], (guard[2] + dir):dim]
     }
-    # If next step is an obstacle, rotate the guard
-    else if (mtx[next_coord] == '#') {
-      cur_char <- rotate_guard(cur_char)
-      cur_dir  <- guard_dir(cur_char)
-    }
-    # Otherwise advance the guard forward
-    else {
-      mtx[cur_coord] <- "X"
-      cur_coord <- next_coord
-    }
-  }
-  
-  mtx
-}
-```
-
-```{r}
-#| eval: false
-
-# Convert input into a matrix
-mtx <- input |> 
-  str_split("") |> 
-  unlist() |> 
-  matrix(nrow = length(input), byrow = TRUE)
-
-# Map the guard's path
-guard_path <- map_path(mtx)
-
-# Count distinct positions visited
-sum(guard_path == "X")
-```
-
-## Part 2
-
-Change the path mapping function to test for loops
-
-```{r}
-#| eval: false
-
-path_loops <- function(mtx) {
-
-  # Initiate guard's starting position and direction
-  cur_char  <- keep(mtx, ~ .x %in% guards)
-  cur_coord <- which(mtx == cur_char, arr.ind = TRUE)
-  cur_dir   <- guard_dir(cur_char)
-  path_hist <- matrix("", nrow(mtx), ncol(mtx))
-
-  # As long as the guard is in bounds, iteratively update its coords and direction
-  repeat {
-    next_coord <- cur_coord + cur_dir
     
-    # Check if the guard is looping or if they have left the area
-    if (str_detect(path_hist[cur_coord], fixed(cur_char))) 
-      return(TRUE)
-    else if (!in_bounds(next_coord, mtx)) 
-      return(FALSE)
+    # Quit if we reach the edge of the map without an obstacle
+    if (all(path == 0)) {
+      guard[axis] <- dim
+      hist <- c(hist, list(guard))
+      return(hist)
+    }
     
-    # If next step is an obstacle, rotate the guard
-    else if (mtx[next_coord] == '#') {
-      # Update path history
-      path_hist[cur_coord] <- str_c(path_hist[cur_coord], cur_char)
-      # Update guard
-      cur_char <- rotate_guard(cur_char)
-      cur_dir  <- guard_dir(cur_char)
+    # Move the guard
+    guard[axis] <- guard[axis] + dir * head(which(path == 1) - 1, 1)
+    
+    # If we've entered a loop (same position + same direction), exit early
+    if (list(guard) %in% hist) {
+      # (we can't compare nested lists directly, so must compare str vers)
+      hist_str <- map_chr(hist, ~ str_flatten(.x, collapse = "|"))
+      guard_str <- str_flatten(guard, collapse = "|")
+      if (idx %in% ((which(guard_str == hist_str) - 2) %% 4 + 1))
+        return()
     }
-    # Otherwise advance the guard forward
-    else {
-      # Update path history
-      path_hist[cur_coord] <- str_c(path_hist[cur_coord], cur_char)
-      # Update guard
-      cur_coord <- next_coord
-    }
+    
+    # Update the guard's history and the indexing
+    hist <- c(hist, list(guard))
+    idx <- idx %% 4 + 1
   }
 }
+
 ```
 
+Get the guard's path for the puzzle input, then count the number of unique positions visited by the guard:
+
 ```{r}
-#| eval: false
 
-# Create a variation of the map for each possible obstacle location
-obstacles <- which(guard_path == "X" & !(mtx %in% guards))
+path <- guard_path(mtx, init)
 
-# Test each obstacle location for loops and sum result
-obstacles |> 
-  map(~ replace(mtx, .x, "#")) |> 
-  map_lgl(path_loops) |> 
+path_full <- map2(head(path, -1), tail(path, -1), \(source, target) {
+  expand_grid(row = source[1]:target[1], col = source[2]:target[2])
+}) |> 
+  bind_rows() |> 
+  distinct()
+
+nrow(path_full)
+
+```
+
+# Part 2
+
+For each location in the full path (except the starting location), add an obstacle to the matrix. Check the result for loops:
+
+```{r}
+
+path_full |>
+  tail(-1) |>
+  pmap_lgl(\(row, col) {
+    mtx[row, col] <- 1
+    is.null(guard_path(mtx, init))
+  }) |> 
   sum()
 
 ```
+

@@ -8,19 +8,35 @@ author:
 
 ## Setup
 
+Import libraries:
+
 ```{r setup}
-# Libraries
+
 library(tidyverse)
 library(unglue)
 
-# Read input from file
-input <- read_lines("../input/day13.txt", skip_empty_rows = TRUE)
 ```
 
-## Part 1
+Disable scientific formatting when displaying large numbers:
 
-Extract numerical values from input text:
 ```{r}
+
+options(scipen = 999)
+
+```
+
+Read input from file:
+
+```{r}
+
+input <- read_lines("../input/day13.txt", skip_empty_rows = TRUE)
+
+```
+
+Extract numerical values from text input into a data frame:
+
+```{r}
+
 df <- input |> 
   unglue_data(c(
     "Button {button}: X+{x=\\d+}, Y+{y=\\d+}",
@@ -32,8 +48,10 @@ df <- input |>
     .before = everything()
   ) |> 
   pivot_wider(names_from = button, values_from = c(x, y))
+
 ```
 
+## Part 1
 
 Define a function to convert numeric equation input and output token counts:
 
@@ -80,7 +98,9 @@ compute_tokens <- function(df) {
 Run function on puzzle input: 
 
 ```{r}
+
 compute_tokens(df)
+
 ```
 
 
@@ -92,8 +112,7 @@ Add 10000000000000 to each prize intercept and re-compute:
 
 df |> 
   mutate(across(c(x_Prize, y_Prize), ~ .x + 10000000000000)) |> 
-  compute_tokens() |> 
-  format(scientific = FALSE)
+  compute_tokens()
 
 ```
 
