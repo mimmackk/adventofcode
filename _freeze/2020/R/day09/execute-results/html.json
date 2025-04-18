@@ -1,0 +1,15 @@
+{
+  "hash": "0b613c038dc42e06cef02c83e2143da4",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 9\"\ndate: 2020-12-09\nauthor:\n  name: https://adventofcode.com/2020/day/9\n  url: https://adventofcode.com/2020/day/9\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\n```\n:::\n\n\n\n\nRead text input from file into a numeric vector:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- scan(\"../input/day09.txt\")\n```\n:::\n\n\n\n\nDefine the preamble length parameter:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\npreamble <- 25\n```\n:::\n\n\n\n\n## Part 1\n\nFind the first number in the list (after the preamble) which is not the sum of two of the 25 numbers before it:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninvalid_num <- imap(\n  tail(input, n = -preamble),\n  ~ input[1:preamble - 1 + .y] |> \n    combn(2, simplify = FALSE) |> \n    map_dbl(sum) |> \n    setdiff(x = .x, y = _)\n) |> \n  compact() |> \n  pluck(1)\n```\n:::\n\n\n\n\n## Part 2\n\nDefine a function that starts at the first index and examines all following subsequences until their sum either equals or exceeds the invalid number. If it's found, then return the sum of the minimum and maximum index in that range. If it overshoots, start over from the second index (and so on):\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nfind_weakness <- function(vec, target) {\n  idx_start <- 1\n  \n  while (idx_start < length(vec)) {\n    idx_end <- idx_start + 1\n    \n    while (idx_end <= length(vec)) {\n      range <- vec[idx_start:idx_end]\n      \n      if (sum(range) == target)\n        return(min(range) + max(range))\n      if (sum(range) > target)\n        break\n      \n      idx_end <- idx_end + 1\n    }\n    idx_start <- idx_start + 1\n  }\n}\n```\n:::\n\n\n\n\nRun on puzzle input:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nfind_weakness(input, invalid_num)\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

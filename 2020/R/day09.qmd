@@ -1,0 +1,88 @@
+---
+title: "Day 9"
+date: 2020-12-09
+author:
+  name: https://adventofcode.com/2020/day/9
+  url: https://adventofcode.com/2020/day/9
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read text input from file into a numeric vector:
+
+```{r}
+
+input <- scan("../input/day09.txt")
+
+```
+
+Define the preamble length parameter:
+
+```{r}
+
+preamble <- 25
+
+```
+
+## Part 1
+
+Find the first number in the list (after the preamble) which is not the sum of two of the 25 numbers before it:
+
+```{r}
+
+invalid_num <- imap(
+  tail(input, n = -preamble),
+  ~ input[1:preamble - 1 + .y] |> 
+    combn(2, simplify = FALSE) |> 
+    map_dbl(sum) |> 
+    setdiff(x = .x, y = _)
+) |> 
+  compact() |> 
+  pluck(1)
+
+```
+
+## Part 2
+
+Define a function that starts at the first index and examines all following subsequences until their sum either equals or exceeds the invalid number. If it's found, then return the sum of the minimum and maximum index in that range. If it overshoots, start over from the second index (and so on):
+
+```{r}
+
+find_weakness <- function(vec, target) {
+  idx_start <- 1
+  
+  while (idx_start < length(vec)) {
+    idx_end <- idx_start + 1
+    
+    while (idx_end <= length(vec)) {
+      range <- vec[idx_start:idx_end]
+      
+      if (sum(range) == target)
+        return(min(range) + max(range))
+      if (sum(range) > target)
+        break
+      
+      idx_end <- idx_end + 1
+    }
+    idx_start <- idx_start + 1
+  }
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+find_weakness(input, invalid_num)
+
+```
+
