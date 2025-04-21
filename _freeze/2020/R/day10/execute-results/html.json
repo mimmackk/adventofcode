@@ -1,0 +1,17 @@
+{
+  "hash": "04af9f09249baf6ae2d7dbe6800dbf21",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 10\"\ndate: 2020-12-10\nauthor:\n  name: https://adventofcode.com/2020/day/10\n  url: https://adventofcode.com/2020/day/10\nexecute:\n  eval: true\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\nlibrary(igraph)\nlibrary(tidygraph)\nlibrary(ggraph)\n```\n:::\n\n\n\n\nDisable scientific formatting when displaying large numbers:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\noptions(scipen = 999)\n```\n:::\n\n\n\n\nRead text input from file into a numeric vector:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- scan(\"../input/day10.txt\")\n```\n:::\n\n\n\n\n## Part 1\n\nDetermine the differences between each jolt value ranked in order so that all are used, manually including the \"0\" starting point and the output rating of `max(input) + 3`. Compute the total number of 1, 2, and 3-jolt differences:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndist <- c(0, input, max(input) + 3) |> \n  sort() |> \n  diff() |> \n  sort() |> \n  rle()\n```\n:::\n\n\n\n\nMultiply the count of 1-jolt differences by the count of 3-jolt differences:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndist$lengths |> \n  keep(dist$values %in% c(1, 3)) |> \n  prod()\n```\n:::\n\n\n\n\n## Part 2\n\nConvert the list of adapters (including the \"0\" input and final output) into a graph.\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ng <- expand_grid(\n  v1 = c(0, sort(input), max(input) + 3),\n  v2 = c(0, sort(input), max(input) + 3)\n) |> \n  filter(between(v2 - v1, 1, 3)) |> \n  graph_from_data_frame()\n```\n:::\n\n\n\n\nGet the list of all separators from the grap (vertices which disconnect the graph if removed):\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nsep <- g |> \n  as_undirected() |> \n  min_separators() |> \n  map_chr(names)\n```\n:::\n\n\n\n\nThe graph of the \"small example\" in the problem description is shown below, with ends colored green, separators black, and non-separators (nodes which can be individually removed without disconnecting the graph) red:\n\n\n\n\n::: {.cell}\n::: {.cell-output-display}\n![](day10_files/figure-html/unnamed-chunk-7-1.png){width=960}\n:::\n:::\n\n\n\n\nFor each pair of separators in order, determine the number of possible paths between them. To get the final total count of paths, multiply the result of all pairs together:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nsep <- sort(as.numeric(sep))\n\nmap2(c(0, sep), c(sep, max(input) + 3), \\(v1, v2) {\n  g |> \n    all_simple_paths(\n      as.character(v1), \n      as.character(v2), \n      mode = \"out\",\n      cutoff = v2 - v1\n    )\n}) |> \n  map_int(length) |> \n  prod()\n```\n:::\n",
+    "supporting": [
+      "day10_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
