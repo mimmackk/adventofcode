@@ -1,0 +1,130 @@
+---
+title: "Day 12"
+date: 2020-12-12
+author:
+  name: https://adventofcode.com/2020/day/12
+  url: https://adventofcode.com/2020/day/12
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read text input from file into a dataframe, reading actions & values into separate columns:
+
+```{r}
+
+input <- read_lines("../input/day12.txt") |> 
+  unglue_data("{action=[A-Z]}{value=\\d+}", convert = TRUE)
+
+```
+
+## Part 1
+
+Define the cardinal directions in clockwise order, starting from E:
+
+```{r}
+
+cardinal_dirs <- c("E", "S", "W", "N")  
+
+```
+
+Convert all forward/turn actions into N/S/E/W actions:
+
+```{r}
+
+steps <- input |> 
+  mutate(
+    turn = value / 90 * case_match(action, "R" ~ 1, "L" ~ -1, .default = 0),
+    fdir = cardinal_dirs[cumsum(turn) %% 4 + 1]
+  ) |> 
+  mutate(action = case_match(action, "F" ~ fdir, .default = action)) |> 
+  filter(action %in% cardinal_dirs) |> 
+  select(action, value)
+
+```
+
+Compute the Manhattan distance from the starting point to the final end point:
+
+```{r}
+
+steps |> 
+  mutate(
+    v = case_match(action, "N" ~ value, "S" ~ -value, .default = 0),
+    h = case_match(action, "E" ~ value, "W" ~ -value, .default = 0)
+  ) |> 
+  summarize(dist = abs(sum(v)) + abs(sum(h))) |> 
+  pull(dist)
+  
+```
+
+## Part 2
+
+Treat each set of waypoint adjustments followed by a ship movement as a group: 
+
+```{r}
+
+input_grouped <- input |> 
+  mutate(group_id = cumsum(lag(action, default = "") == "F"))
+
+```
+
+For each group of waypoint adjustments, apply all shifts and rotations to get a final vector that will determine the direction of the ship's movement:
+
+```{r}
+
+wp_init <- 1 + 10i
+
+waypoint <- input_grouped |> 
+  filter(action != "F") |> 
+  transmute(
+    group_id,
+    f = case_match(action, cardinal_dirs ~ "+", c("L", "R") ~ "*"),
+    dir = case_match(action,
+      "N" ~  value,
+      "S" ~ -value,
+      "E" ~  value * 1i,
+      "W" ~ -value * 1i,
+      "L" ~ cos(-value / 90 * pi / 2) + 1i * sin(-value / 90 * pi / 2),
+      "R" ~ cos( value / 90 * pi / 2) + 1i * sin( value / 90 * pi / 2)
+    ),
+    wp = accumulate2(f, dir, .f = \(x, f, y) get(f)(x, y), .init = wp_init) |> 
+      tail(-1)
+  ) |> 
+  summarize(wp = last(wp), .by = group_id)
+
+```
+
+Rejoin the waypoint's relative coordinates at each step back with the ship movement instructions. Execute each pair of direction adjustments and advancements in order to get the final coordinates of the ship:
+
+```{r}
+
+end <- input_grouped |> 
+  filter(action == "F") |> 
+  left_join(waypoint, join_by(group_id)) |> 
+  mutate(wp = case_when(group_id == 0 & is.na(wp) ~ wp_init, .default = wp)) |> 
+  fill(wp, .direction = "down") |> 
+  mutate(movement = value * wp) |> 
+  pull(movement) |> 
+  sum()
+  
+```
+
+Compute the Manhattan distance from the starting point to the final end point:
+
+```{r}
+
+abs(Re(end)) + abs(Im(end))
+
+```
+
+

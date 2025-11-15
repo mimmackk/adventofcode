@@ -132,47 +132,91 @@
     ]
   },
   {
-    "objectID": "2020/R/day07.html",
-    "href": "2020/R/day07.html",
-    "title": "Day 7",
+    "objectID": "2020/R/day12.html",
+    "href": "2020/R/day12.html",
+    "title": "Day 12",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(igraph)\nlibrary(tidygraph)\nlibrary(ggraph)\n\nRead text input from file:\n\ninput &lt;- read_lines(\"../input/day07.txt\")\n\nConvert text input into an igraph/tidygraph object. Bags that contain other bags are represented as a directed edge between two vertices, where the weight of the edge is the number of contained bags.\n\ng &lt;- input |&gt; \n  unglue_data(\"{outer_color} bags contain {contains}.\") |&gt; \n  mutate(contains = str_split(contains, \", \")) |&gt; \n  unnest_longer(contains) |&gt; \n  unglue_unnest(\n    contains, \n    \"{num=\\\\d+} {inner_color} bag{=s?}\", \n    convert = TRUE\n  ) |&gt; \n  select(outer_color, inner_color, weight = num) |&gt; \n  drop_na() |&gt; \n  graph_from_data_frame() |&gt; \n  as_tbl_graph()\n\nPlot the graph of the example input:",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead text input from file into a dataframe, reading actions & values into separate columns:\n\ninput &lt;- read_lines(\"../input/day12.txt\") |&gt; \n  unglue_data(\"{action=[A-Z]}{value=\\\\d+}\", convert = TRUE)",
     "crumbs": [
       "2020",
-      "Day 7"
+      "Day 12"
     ]
   },
   {
-    "objectID": "2020/R/day07.html#setup",
-    "href": "2020/R/day07.html#setup",
-    "title": "Day 7",
+    "objectID": "2020/R/day12.html#setup",
+    "href": "2020/R/day12.html#setup",
+    "title": "Day 12",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(igraph)\nlibrary(tidygraph)\nlibrary(ggraph)\n\nRead text input from file:\n\ninput &lt;- read_lines(\"../input/day07.txt\")\n\nConvert text input into an igraph/tidygraph object. Bags that contain other bags are represented as a directed edge between two vertices, where the weight of the edge is the number of contained bags.\n\ng &lt;- input |&gt; \n  unglue_data(\"{outer_color} bags contain {contains}.\") |&gt; \n  mutate(contains = str_split(contains, \", \")) |&gt; \n  unnest_longer(contains) |&gt; \n  unglue_unnest(\n    contains, \n    \"{num=\\\\d+} {inner_color} bag{=s?}\", \n    convert = TRUE\n  ) |&gt; \n  select(outer_color, inner_color, weight = num) |&gt; \n  drop_na() |&gt; \n  graph_from_data_frame() |&gt; \n  as_tbl_graph()\n\nPlot the graph of the example input:",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead text input from file into a dataframe, reading actions & values into separate columns:\n\ninput &lt;- read_lines(\"../input/day12.txt\") |&gt; \n  unglue_data(\"{action=[A-Z]}{value=\\\\d+}\", convert = TRUE)",
     "crumbs": [
       "2020",
-      "Day 7"
+      "Day 12"
     ]
   },
   {
-    "objectID": "2020/R/day07.html#part-1",
-    "href": "2020/R/day07.html#part-1",
-    "title": "Day 7",
+    "objectID": "2020/R/day12.html#part-1",
+    "href": "2020/R/day12.html#part-1",
+    "title": "Day 12",
     "section": "Part 1",
-    "text": "Part 1\nIdentify how many bag colors can eventually contain a “shiny gold” bag by counting the upstream ancestors of that vertex:\n\ng |&gt; \n  activate(nodes) |&gt; \n  mutate(n_ancestors = local_size(order = graph_order(), mode = \"in\") - 1) |&gt; \n  as_tibble() |&gt;\n  deframe() |&gt; \n  pluck(\"shiny gold\")",
+    "text": "Part 1\nDefine the cardinal directions in clockwise order, starting from E:\n\ncardinal_dirs &lt;- c(\"E\", \"S\", \"W\", \"N\")  \n\nConvert all forward/turn actions into N/S/E/W actions:\n\nsteps &lt;- input |&gt; \n  mutate(\n    turn = value / 90 * case_match(action, \"R\" ~ 1, \"L\" ~ -1, .default = 0),\n    fdir = cardinal_dirs[cumsum(turn) %% 4 + 1]\n  ) |&gt; \n  mutate(action = case_match(action, \"F\" ~ fdir, .default = action)) |&gt; \n  filter(action %in% cardinal_dirs) |&gt; \n  select(action, value)\n\nCompute the Manhattan distance from the starting point to the final end point:\n\nsteps |&gt; \n  mutate(\n    v = case_match(action, \"N\" ~ value, \"S\" ~ -value, .default = 0),\n    h = case_match(action, \"E\" ~ value, \"W\" ~ -value, .default = 0)\n  ) |&gt; \n  summarize(dist = abs(sum(v)) + abs(sum(h))) |&gt; \n  pull(dist)",
     "crumbs": [
       "2020",
-      "Day 7"
+      "Day 12"
     ]
   },
   {
-    "objectID": "2020/R/day07.html#part-2",
-    "href": "2020/R/day07.html#part-2",
-    "title": "Day 7",
+    "objectID": "2020/R/day12.html#part-2",
+    "href": "2020/R/day12.html#part-2",
+    "title": "Day 12",
     "section": "Part 2",
-    "text": "Part 2\nFirst, get the list of all vertices downstream from “shiny gold”:\n\nsrc &lt;- as.numeric(V(g)[\"shiny gold\"])\n\ndownstream &lt;- g |&gt; \n  activate(nodes) |&gt;\n  mutate(neighbors = local_members(order = Inf, mindist = 1, mode = \"out\")) |&gt;\n  as_tibble() |&gt; \n  deframe() |&gt; \n  pluck(\"shiny gold\")\n\nFor each vertex downstream from “shiny gold”, get the list of ALL paths from the “shiny gold” vertex to the downstream vertex, and convert to an order list of the weights:\n\npath_weights &lt;- map(downstream, ~ all_simple_paths(g, src, to = .x)) |&gt; \n  list_flatten() |&gt; \n  map(\\(path) {\n    map_int(2:length(path), \\(id) {\n      get_edge_ids(g, path[c(id - 1, id)])\n    })\n  }) |&gt; \n  map(\\(edge_set) E(g)$weight[edge_set]) \n\nCompute the product of the weights in each path, then sum up the result from all paths. For example: if bag A contains 2 of bag B, and bag B contains 3 of bag C, then the final count of bag B is 2 and bag C is 6 (= 2 * 3).\n\npath_weights |&gt; \n  map_int(prod) |&gt; \n  sum()",
+    "text": "Part 2\nTreat each set of waypoint adjustments followed by a ship movement as a group:\n\ninput_grouped &lt;- input |&gt; \n  mutate(group_id = cumsum(lag(action, default = \"\") == \"F\"))\n\nFor each group of waypoint adjustments, apply all shifts and rotations to get a final vector that will determine the direction of the ship’s movement:\n\nwp_init &lt;- 1 + 10i\n\nwaypoint &lt;- input_grouped |&gt; \n  filter(action != \"F\") |&gt; \n  transmute(\n    group_id,\n    f = case_match(action, cardinal_dirs ~ \"+\", c(\"L\", \"R\") ~ \"*\"),\n    dir = case_match(action,\n      \"N\" ~  value,\n      \"S\" ~ -value,\n      \"E\" ~  value * 1i,\n      \"W\" ~ -value * 1i,\n      \"L\" ~ cos(-value / 90 * pi / 2) + 1i * sin(-value / 90 * pi / 2),\n      \"R\" ~ cos( value / 90 * pi / 2) + 1i * sin( value / 90 * pi / 2)\n    ),\n    wp = accumulate2(f, dir, .f = \\(x, f, y) get(f)(x, y), .init = wp_init) |&gt; \n      tail(-1)\n  ) |&gt; \n  summarize(wp = last(wp), .by = group_id)\n\nRejoin the waypoint’s relative coordinates at each step back with the ship movement instructions. Execute each pair of direction adjustments and advancements in order to get the final coordinates of the ship:\n\nend &lt;- input_grouped |&gt; \n  filter(action == \"F\") |&gt; \n  left_join(waypoint, join_by(group_id)) |&gt; \n  mutate(wp = case_when(group_id == 0 & is.na(wp) ~ wp_init, .default = wp)) |&gt; \n  fill(wp, .direction = \"down\") |&gt; \n  mutate(movement = value * wp) |&gt; \n  pull(movement) |&gt; \n  sum()\n\nCompute the Manhattan distance from the starting point to the final end point:\n\nabs(Re(end)) + abs(Im(end))",
     "crumbs": [
       "2020",
-      "Day 7"
+      "Day 12"
+    ]
+  },
+  {
+    "objectID": "2020/R/day11.html",
+    "href": "2020/R/day11.html",
+    "title": "Day 11",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead text input from file into a 1/0 matrix. “.” values are read in as NA.\n\ninput &lt;- read_lines(\"../input/day11.txt\") |&gt; \n  str_split(\"\") |&gt; \n  map(\\(x) case_match(x, \"L\" ~ 0, \"#\" ~ 1)) |&gt; \n  reduce(rbind) |&gt; \n  unname()",
+    "crumbs": [
+      "2020",
+      "Day 11"
+    ]
+  },
+  {
+    "objectID": "2020/R/day11.html#setup",
+    "href": "2020/R/day11.html#setup",
+    "title": "Day 11",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nRead text input from file into a 1/0 matrix. “.” values are read in as NA.\n\ninput &lt;- read_lines(\"../input/day11.txt\") |&gt; \n  str_split(\"\") |&gt; \n  map(\\(x) case_match(x, \"L\" ~ 0, \"#\" ~ 1)) |&gt; \n  reduce(rbind) |&gt; \n  unname()",
+    "crumbs": [
+      "2020",
+      "Day 11"
+    ]
+  },
+  {
+    "objectID": "2020/R/day11.html#part-1",
+    "href": "2020/R/day11.html#part-1",
+    "title": "Day 11",
+    "section": "Part 1",
+    "text": "Part 1\nThe base R functions ‘row’ and ‘col’ generate a row/column index for every element of the supplied matrix. Create a helper function that generates an equivalent mapping for the diagonals of a matrix:\n\ndiag &lt;- function(mtx, direction = c(\"up\", \"down\")) {\n  map2_int(\n    rep(1:nrow(mtx), times = ncol(mtx)), \n    rep(1:ncol(mtx), each  = nrow(mtx)), \n    \\(i, j) {\n      if (direction == \"up\")\n        i + j - 1\n      else if (direction == \"down\")\n        i - j + ncol(mtx)\n    }\n  ) |&gt; \n    matrix(nrow(mtx), ncol(mtx))\n}\n\nDefine a helper function which, for each element of our supplied matrix, counts how many adjacent seats are occupied in each direction:\n\ncounts &lt;- function(mtx) {\n  lst(\n    input_rows  = row(mtx), \n    input_cols  = col(mtx), \n    input_diag1 = diag(mtx, \"up\"), \n    input_diag2 = diag(mtx, \"down\")\n  ) |&gt; \n    map(\\(mapping) {\n      mtx |&gt; \n        split(mapping) |&gt; \n        map(\\(x) coalesce(x, 0)) |&gt;\n        map(\\(x) lead(x, default = 0) + lag(x, default = 0)) |&gt; \n        unsplit(mapping) |&gt; \n        matrix(nrow(mtx), ncol(mtx))\n    }) |&gt; \n    reduce(`+`)\n}\n\nDefine a helper function to iteratively adjust the seating until now changes are found, then return the number of occupied seats:\n\nshift_seating &lt;- function(init, limit) {\n  neighbors &lt;- counts(init)\n  init |&gt; \n    replace(init == 0 & neighbors == 0, 1) |&gt; \n    replace(init == 1 & neighbors &gt;= limit, 0) \n}\n\nLoop until equilibrium & count output:\n\ncur &lt;- input \nnxt &lt;- input\n\nrepeat {\n  nxt &lt;- shift_seating(cur, limit = 4)\n  if (all(nxt == cur | (is.na(cur) & is.na(nxt))))\n    break\n  cur &lt;- nxt\n}\n\nsum(cur, na.rm = TRUE)",
+    "crumbs": [
+      "2020",
+      "Day 11"
+    ]
+  },
+  {
+    "objectID": "2020/R/day11.html#part-2",
+    "href": "2020/R/day11.html#part-2",
+    "title": "Day 11",
+    "section": "Part 2",
+    "text": "Part 2\nAdjust the neighbor counting functions such that rather than just looking at the adjacent seats, it look at all seats in the line of sight:\n\ncounts &lt;- function(mtx) {\n  lst(\n    input_rows  = row(mtx), \n    input_cols  = col(mtx), \n    input_diag1 = diag(mtx, \"up\"), \n    input_diag2 = diag(mtx, \"down\")\n  ) |&gt; \n    map(\\(mapping) {\n      mtx |&gt; \n        split(mapping) |&gt; \n        map(\\(x) {\n          fwd &lt;- x |&gt;\n            accumulate(\\(x, y) coalesce(y, x), .dir = \"forward\") |&gt;\n            lag(default = 0) |&gt; \n            coalesce(0)\n          bwd &lt;- x |&gt;\n            accumulate(\\(x, y) coalesce(x, y), .dir = \"backward\") |&gt;\n            lead(default = 0) |&gt; \n            coalesce(0)\n          fwd + bwd\n        }) |&gt; \n        unsplit(mapping) |&gt; \n        matrix(nrow(mtx), ncol(mtx))\n    }) |&gt; \n    reduce(`+`)\n}\n\nLoop until equilibrium & count output:\n\ncur &lt;- input \nnxt &lt;- input\n\nrepeat {\n  nxt &lt;- shift_seating(cur, limit = 5)\n  if (all(nxt == cur | (is.na(cur) & is.na(nxt))))\n    break\n  cur &lt;- nxt\n}\n\nsum(cur, na.rm = TRUE)",
+    "crumbs": [
+      "2020",
+      "Day 11"
     ]
   },
   {
@@ -4635,6 +4679,50 @@
     "crumbs": [
       "2020",
       "Day 5"
+    ]
+  },
+  {
+    "objectID": "2020/R/day07.html",
+    "href": "2020/R/day07.html",
+    "title": "Day 7",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(igraph)\nlibrary(tidygraph)\nlibrary(ggraph)\n\nRead text input from file:\n\ninput &lt;- read_lines(\"../input/day07.txt\")\n\nConvert text input into an igraph/tidygraph object. Bags that contain other bags are represented as a directed edge between two vertices, where the weight of the edge is the number of contained bags.\n\ng &lt;- input |&gt; \n  unglue_data(\"{outer_color} bags contain {contains}.\") |&gt; \n  mutate(contains = str_split(contains, \", \")) |&gt; \n  unnest_longer(contains) |&gt; \n  unglue_unnest(\n    contains, \n    \"{num=\\\\d+} {inner_color} bag{=s?}\", \n    convert = TRUE\n  ) |&gt; \n  select(outer_color, inner_color, weight = num) |&gt; \n  drop_na() |&gt; \n  graph_from_data_frame() |&gt; \n  as_tbl_graph()\n\nPlot the graph of the example input:",
+    "crumbs": [
+      "2020",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2020/R/day07.html#setup",
+    "href": "2020/R/day07.html#setup",
+    "title": "Day 7",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(igraph)\nlibrary(tidygraph)\nlibrary(ggraph)\n\nRead text input from file:\n\ninput &lt;- read_lines(\"../input/day07.txt\")\n\nConvert text input into an igraph/tidygraph object. Bags that contain other bags are represented as a directed edge between two vertices, where the weight of the edge is the number of contained bags.\n\ng &lt;- input |&gt; \n  unglue_data(\"{outer_color} bags contain {contains}.\") |&gt; \n  mutate(contains = str_split(contains, \", \")) |&gt; \n  unnest_longer(contains) |&gt; \n  unglue_unnest(\n    contains, \n    \"{num=\\\\d+} {inner_color} bag{=s?}\", \n    convert = TRUE\n  ) |&gt; \n  select(outer_color, inner_color, weight = num) |&gt; \n  drop_na() |&gt; \n  graph_from_data_frame() |&gt; \n  as_tbl_graph()\n\nPlot the graph of the example input:",
+    "crumbs": [
+      "2020",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2020/R/day07.html#part-1",
+    "href": "2020/R/day07.html#part-1",
+    "title": "Day 7",
+    "section": "Part 1",
+    "text": "Part 1\nIdentify how many bag colors can eventually contain a “shiny gold” bag by counting the upstream ancestors of that vertex:\n\ng |&gt; \n  activate(nodes) |&gt; \n  mutate(n_ancestors = local_size(order = graph_order(), mode = \"in\") - 1) |&gt; \n  as_tibble() |&gt;\n  deframe() |&gt; \n  pluck(\"shiny gold\")",
+    "crumbs": [
+      "2020",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2020/R/day07.html#part-2",
+    "href": "2020/R/day07.html#part-2",
+    "title": "Day 7",
+    "section": "Part 2",
+    "text": "Part 2\nFirst, get the list of all vertices downstream from “shiny gold”:\n\nsrc &lt;- as.numeric(V(g)[\"shiny gold\"])\n\ndownstream &lt;- g |&gt; \n  activate(nodes) |&gt;\n  mutate(neighbors = local_members(order = Inf, mindist = 1, mode = \"out\")) |&gt;\n  as_tibble() |&gt; \n  deframe() |&gt; \n  pluck(\"shiny gold\")\n\nFor each vertex downstream from “shiny gold”, get the list of ALL paths from the “shiny gold” vertex to the downstream vertex, and convert to an order list of the weights:\n\npath_weights &lt;- map(downstream, ~ all_simple_paths(g, src, to = .x)) |&gt; \n  list_flatten() |&gt; \n  map(\\(path) {\n    map_int(2:length(path), \\(id) {\n      get_edge_ids(g, path[c(id - 1, id)])\n    })\n  }) |&gt; \n  map(\\(edge_set) E(g)$weight[edge_set]) \n\nCompute the product of the weights in each path, then sum up the result from all paths. For example: if bag A contains 2 of bag B, and bag B contains 3 of bag C, then the final count of bag B is 2 and bag C is 6 (= 2 * 3).\n\npath_weights |&gt; \n  map_int(prod) |&gt; \n  sum()",
+    "crumbs": [
+      "2020",
+      "Day 7"
     ]
   },
   {
