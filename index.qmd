@@ -1,10 +1,11 @@
 ---
 title: "Advent of Code: Worked Solutions"
+subtitle: ""
 date: today
 published-title: "Last Updated"
 author: 
-  name: https://adventofcode.com/about
-  url: https://adventofcode.com/about
+  name: https://adventofcode.com
+  url: https://adventofcode.com
 author-title: "About"
 ---
 

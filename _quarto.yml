@@ -3,8 +3,8 @@ project:
   output-dir: docs
 
 subtitle: "Advent of Code: Worked Solutions"
-published-title: "Date"
-author-title: "About"
+published-title: "Puzzle Date"
+author-title: "Puzzle Source"
 
 website:
   title: "Advent of Code: Worked Solutions"
@@ -24,6 +24,8 @@ website:
       contents: 2021/R/*
     - section: "2020"
       contents: 2020/R/*
+    - text: "Packages & Functions"
+      href: helpers.qmd
   page-navigation: true
   bread-crumbs: false
   repo-url: https://github.com/mimmackk/adventofcode

@@ -1,0 +1,194 @@
+---
+title: "Useful Packages & Functions"
+subtitle: ""
+date: today
+published-title: "Last Updated"
+author: 
+  name: https://adventofcode.com
+  url: https://adventofcode.com
+author-title: "About"
+format:
+  html:
+    toc-expand: 1
+---
+
+```{r}
+#| label: setup
+#| include: false
+#| eval: true
+
+library(tidyverse)
+
+```
+
+## About
+
+This page offers a quick reference for R packages, built-in functions, and custom helper functions that I frequently use to solve AOC challenges.
+
+## Packages
+
+| Concept | Package Name | Example |
+|----|----|----|
+| Input Text Parsing | `unglue` | [2020 Day 2](/2020/R/day02.html) |
+| Graphs | `igraph, tidygraph, ggraph` | [2020 Day 10](/2020/R/day10.html) |
+| Memoization | `memoise` | [2021 Day 21](/2021/R/day21.html) |
+| 64-Bit Integers | `bit64` | [2024 Day 17](/2024/R/day17.html) |
+| Sets & Intervals | `sets` | [2021 Day 22](/2021/R/day22.html) |
+| Geometry | `sf` | [2022 Day 15](/2022/R/day15.html) |
+| Primes, GCD, LCM | `numbers` | [2020 Day 13](/2020/R/day13.html) |
+
+## Built-In Functions
+
+### Scientific Notation
+
+Disable scientific notation to display all digits of large numbers:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+### Polar Coordinates
+
+2D coordinates can be represented as complex numbers, easing common calculations such as addition, subtraction, distances, and angles:
+
+```{r}
+
+z = complex(real = x, imaginary = y)
+
+```
+
+### Pipes
+
+Columns of a data frame can be passed through a pipe into a function that takes vector input by using the `with` function:
+
+```{r}
+
+iris |> 
+  with(cor(Sepal.Length, Sepal.Width))
+
+```
+
+### Base N
+
+Convert string representations of numbers in any base to integers using the `strtoi` function:
+
+```{r}
+
+strtoi("0xff", base = 16L)
+strtoi("1010", base = 2L)
+
+```
+
+### Binary
+
+Convert 32-bit integers to binary representation using `intToBits`:
+
+```{r}
+
+intToBits(5)
+
+```
+
+### Run Length
+
+Calculate the length of continuous runs using `rle`. Convert a list of values and run lengths back to a single vector using `inverse.rle`.
+
+```{r}
+
+x <- c(10, 10, 10, 10, 10, 9, 9, 9, 9, 8, 8, 8, 7, 7, 6)
+rle(x)
+inverse.rle(rle(x))
+
+```
+
+### Read Matrix
+
+Read text input directly into a matrix by using a combination of `read.table` and `as.matrix`:
+
+```{r}
+#| eval: false
+
+input <- read.table(filepath) |> 
+  as.matrix() |> 
+  unname()
+
+```
+
+## Custom Functions
+
+### Print Compact Matrix
+
+Display fixed-width matrices in a compact format, with no spaces between cells:
+
+```{r}
+#| eval: true
+
+mtx_compact <- function(mtx) { 
+  mtx |> 
+    apply(1, str_flatten) |> 
+    cat(sep = "\n")
+}
+
+```
+
+Example:
+
+```{r}
+#| eval: true
+#| output: true
+
+c("#", "#", "#", "#", ".", '#', '#', '.', '#', "#", "#", "#") |> 
+  matrix(nrow = 3) |> 
+  mtx_compact()
+
+```
+
+### Visualize Matrix as Image
+
+Print matrices as a colored pixel image:
+
+```{r}
+#| eval: true
+
+mtx_image <- function(mtx, palette = NULL, palette_fun = viridis::mako) {
+  
+  # If a color palette is not supplied, generate one
+  if (is.null(palette)) {
+    palette <- switch(typeof(mtx),
+      "integer"   = palette_fun(max(mtx) - min(mtx) + 1),
+      "double"    = palette_fun(100),
+      "character" = palette_fun(length(unique(c(input))))
+    )
+  }
+  
+  # Convert character matrix to integers
+  if (is.character(mtx)) {
+    mtx <- mtx |> 
+      match(factor(mtx)) |> 
+      matrix(ncol = ncol(mtx))
+  }
+  
+  # Transpose & flip matrix so that pixels are displayed in intended order
+  image(
+    t(mtx)[, nrow(mtx):1], 
+    col = palette,
+    asp = nrow(mtx) / ncol(mtx), 
+    axes = FALSE
+  ) 
+}
+
+```
+
+Example:
+
+```{r}
+#| eval: true
+#| output: true
+
+round(runif(12, max = 100)) |> 
+  matrix(nrow = 3) |> 
+  mtx_image()
+
+```

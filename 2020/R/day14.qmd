@@ -1,0 +1,158 @@
+---
+title: "Day 14"
+date: 2020-12-14
+author:
+  name: https://adventofcode.com/2020/day/14
+  url: https://adventofcode.com/2020/day/14
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+library(bit64)
+
+```
+
+Disable scientific formatting when displaying large numbers:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+Read text input from file:
+
+```{r}
+
+input <- read_lines("../input/day14.txt")
+
+```
+
+Convert text strings to a data frame of memory locations, values, and bit masks:
+
+```{r}
+
+df <- input |> 
+  unglue_data(c("mask = {mask}", "mem[{loc}] = {value}"), convert = TRUE) |> 
+  fill(mask, .direction = "down") |> 
+  filter(!is.na(loc))
+
+```
+
+## Part 1
+
+Create a helper function which takes an integer value and a 36-bit mask and applies the mask to the integer:
+
+```{r}
+
+mask_int <- function(value, mask) {
+  
+  value |>
+    
+    # Convert to a 36-bit binary string
+    as.integer64() |>
+    as.bitstring() |>
+    str_sub(start = 29L) |> 
+    str_split("") |> 
+  
+    # Apply the bitwise mask
+    map2(str_split(mask, ""), \(bin, mask) {
+      case_match(mask, "X" ~ bin, c("0", "1") ~ mask)
+    }) |> 
+    
+    # Convert back from binary to integer format
+    map_vec(\(x) {
+      c(rep(0, 28), x) |>
+        str_flatten() |>
+        structure(class = "bitstring") |>
+        as.integer64()
+    })
+}
+
+```
+
+Apply the mask to each value. Then, for each memory location, pull the last saved value and sum the result:
+
+```{r}
+
+df |> 
+  mutate(value_masked = mask_int(value, mask)) |> 
+  summarize(value = last(value_masked), .by = loc) |> 
+  pull(value) |> 
+  sum()
+
+```
+
+## Part 2
+
+Extract all distinct masks from the dataset:
+
+```{r}
+
+masks <- df |> 
+  distinct(mask) |> 
+  mutate(
+    mask_id = row_number(),
+    floating_idx = str_locate_all(mask, "X"),
+    floating_idx = map(floating_idx, \(mtx) mtx[, 1]),
+    floating_n = map_int(floating_idx, length)
+  )
+
+```
+
+Each mask has a certain number of possible variants based on how many floating values are in the mask string (1X = 1 variant, 2X = 4 variants, etc). Pre-compute the possible 1/0 combinations for each number of variants:
+
+```{r}
+
+variants <- map(1:max(masks$floating_n), \(n) {
+  do.call(crossing, args = rep(list(c("0", "1")), n)) |> 
+    mutate(variant_num = row_number()) |> 
+    pivot_longer(-variant_num, names_to = "idx_order") |> 
+    mutate(idx_order = as.integer(factor(idx_order))) |> 
+    arrange(variant_num, idx_order) |> 
+    summarize(value = list(value), .by = variant_num)
+}) |> 
+  enframe(name = "floating_n", value = "substitutions")
+
+```
+
+For each mask, attach all possible digit variants and compute the new mask:
+
+```{r}
+
+mask_new <- masks |> 
+  mutate(mask = str_split(mask, "")) |> 
+  left_join(variants, join_by(floating_n)) |> 
+  unnest(substitutions) |> 
+  mutate(
+    mask_new = pmap(lst(mask, floating_idx, value), ~ replace(..1, ..2, ..3)),
+    mask_new = map2(mask, mask_new, \(orig, new) {
+      case_match(orig, "0" ~ "X", "1" ~ "1", "X" ~ new)
+    }),
+    across(c(mask, mask_new), \(col) map_chr(col, str_flatten))
+  ) |> 
+  distinct(mask, mask_new)
+
+```
+
+Re-attach the new location masks to the original dataset. Apply the mask to each location to get the new location values, then take the last value written to each location and sum.
+
+```{r}
+
+df |> 
+  left_join(mask_new, join_by(mask)) |> 
+  mutate(loc_masked = mask_int(loc, mask_new)) |> 
+  summarize(value = last(value), .by = loc_masked) |> 
+  pull(value) |> 
+  sum()
+
+```
+
