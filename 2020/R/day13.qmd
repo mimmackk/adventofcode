@@ -1,0 +1,176 @@
+---
+title: "Day 13"
+date: 2020-12-13
+author:
+  name: https://adventofcode.com/2020/day/13
+  url: https://adventofcode.com/2020/day/13
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(numbers)
+library(bit64)
+
+```
+
+Disable scientific formatting when displaying large numbers:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+Read text input from file:
+
+```{r}
+
+input <- read_lines("../input/day13.txt")
+
+```
+
+Separate text input into the core timestamp and the bus list:
+
+```{r}
+
+timestamp <- input[[1]] |> as.numeric()
+bus <- input[[2]] |> str_split_1(",")
+
+```
+
+## Part 1
+
+Using only the non-x values on the bus list, find the earliest departure of each bus on or after our estimated departure time:
+
+```{r}
+
+bus_valid <- bus |> 
+  discard(~ .x == "x") |> 
+  as.numeric()
+
+departures <- ceiling(timestamp / bus_valid) * bus_valid
+
+```
+
+Multiply the wait time for the earliest bus by its ID:
+
+```{r}
+
+(min(departures) - timestamp) * bus_valid[which.min(departures)]
+
+```
+
+## Part 2
+
+Convert the input into a bus schedule. This schedule can be expressed as a system of modular equations. Using the provided example:
+
+$$
+\begin{cases}
+t + 0 = 7n_1  \\
+t + 1 = 13n_2 \\
+t + 4 = 59n_3 \\
+t + 6 = 31n_4 \\
+t + 7 = 19n_5
+\end{cases} 
+\quad\rightarrow\quad
+\begin{cases}
+t \equiv  0 &\pmod{7}  \\
+t \equiv -1 &\pmod{13} \\
+t \equiv -4 &\pmod{59} \\
+t \equiv -6 &\pmod{31} \\
+t \equiv -7 &\pmod{19}
+\end{cases}
+$$
+
+```{r}
+
+schedule <- bus |>
+  enframe(name = NULL, value = "bus") |>
+  mutate(time = row_number() - 1) |>
+  filter(bus != "x") |>
+  mutate(
+    bus = as.integer(bus),
+    remainder = (bus - time) %% bus
+  )
+
+```
+
+We can use the Chinese Remainder Theorem (CRT) to solve this system of equations. However, we must first confirm that all our bus numbers are relatively prime to one another:
+
+```{r}
+
+crossing(bus1 = schedule$bus, bus2 = schedule$bus) |> 
+  filter(bus1 < bus2) |> 
+  mutate(is_coprime = map2_lgl(bus1, bus2, coprime)) |> 
+  pull(is_coprime) |> 
+  all()
+
+```
+
+Our bus numbers are relatively prime. Now, we leverage the CRT to compute $t$. The function `chinese` in the `numbers` package works on small examples, but it does not work for large integers, so we adjust this implementation to work with bigints (`integer64`).
+
+First, we define a multiplicative modular inverse function that will work with int64 inputs:
+
+```{r}
+
+modinv64 <- function(a, n) {
+  
+  cur <- lst(t = 0, r = n)
+  nxt <- lst(t = 1, r = a)
+  
+  while (nxt$r != 0) {
+      prv <- cur
+      cur <- nxt
+      
+      quo <- prv$r %/% cur$r
+      nxt <- map2(prv, cur, \(prv, cur) prv - quo * cur)
+  }
+  
+  r <- cur$r
+  t <- cur$t
+
+  if (r > 1)
+      NA
+  else if (t < 0)
+      t + n
+  else
+      t
+}
+
+```
+
+Next, we define a CRT function that converts its inputs to int64s and executes the CRT algorithm:
+
+```{r}
+
+crt64 <- function(a, m) {
+  
+  a <- as.integer64(a)
+  m <- as.integer64(m)
+  
+  M <- prod(m)
+  x <- pmap_vec(lst(a, m, n = M / m), \(a, m, n) {
+    a * n * modinv64(n, m)
+  })
+  
+  sum(x) %% M
+}
+
+```
+
+Finally, we run the CRT on our input:
+
+```{r}
+
+crt64(schedule$remainder, schedule$bus)
+
+```
+
+
