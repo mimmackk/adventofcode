@@ -1,0 +1,15 @@
+{
+  "hash": "8466e1f63df6b8d0ef5a215a80d10500",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 15\"\ndate: 2020-12-15\nauthor:\n  name: https://adventofcode.com/2020/day/15\n  url: https://adventofcode.com/2020/day/15\nexecute:\n  eval: false\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\n```\n:::\n\n\n\n\nRead text input from file:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- scan(\"../input/day15.txt\", sep = \",\")\n```\n:::\n\n\n\n\n## Part 1\n\nSimple, recursive implementation for small n:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nnth_num <- function(x, n = 2020) {\n  if (length(x) == n)\n    head(x, 1)\n  else\n    match(head(x, 1), tail(x, -1)) |> \n      replace_na(0) |> \n      c(x) |> \n      nth_num(n)\n}\n```\n:::\n\n\n\n\nRun on puzzle input:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nnth_num(input, 2020)\n```\n:::\n\n\n\n\n## Part 2\n\nFor large n, we leverage a hash table for performance:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nnth_num <- function(init, n) {\n\n  init <- as.character(init)\n  last <- tail(init,  1)\n  init <- head(init, -1)\n  hash <- new.env()\n  \n  for (i in 1:length(init)) {\n    hash[[init[[i]]]] <- i\n  }\n  \n  i <- length(init) + 1\n  \n  while (i < n) {\n    if (exists(last, hash)) {\n      nxt <- as.character(i - hash[[last]])\n    } else {\n      nxt <- \"0\"\n    }\n  \n    hash[[last]] <- i\n    last <- nxt\n    i <- i + 1\n  }\n  \n  nxt\n}\n```\n:::\n\n\n\n\nRun on puzzle input:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nnth_num(input, 30000000)\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

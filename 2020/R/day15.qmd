@@ -1,0 +1,99 @@
+---
+title: "Day 15"
+date: 2020-12-15
+author:
+  name: https://adventofcode.com/2020/day/15
+  url: https://adventofcode.com/2020/day/15
+execute:
+  eval: false
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read text input from file:
+
+```{r}
+
+input <- scan("../input/day15.txt", sep = ",")
+
+```
+
+## Part 1
+
+Simple, recursive implementation for small n:
+
+```{r}
+
+nth_num <- function(x, n = 2020) {
+  if (length(x) == n)
+    head(x, 1)
+  else
+    match(head(x, 1), tail(x, -1)) |> 
+      replace_na(0) |> 
+      c(x) |> 
+      nth_num(n)
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+nth_num(input, 2020)
+
+```
+
+## Part 2
+
+For large n, we leverage a hash table for performance:
+
+```{r}
+
+nth_num <- function(init, n) {
+
+  init <- as.character(init)
+  last <- tail(init,  1)
+  init <- head(init, -1)
+  hash <- new.env()
+  
+  for (i in 1:length(init)) {
+    hash[[init[[i]]]] <- i
+  }
+  
+  i <- length(init) + 1
+  
+  while (i < n) {
+    if (exists(last, hash)) {
+      nxt <- as.character(i - hash[[last]])
+    } else {
+      nxt <- "0"
+    }
+  
+    hash[[last]] <- i
+    last <- nxt
+    i <- i + 1
+  }
+  
+  nxt
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+nth_num(input, 30000000)
+
+```
+
+
