@@ -1,0 +1,146 @@
+---
+title: "Day 16"
+date: 2020-12-16
+author:
+  name: https://adventofcode.com/2020/day/16
+  url: https://adventofcode.com/2020/day/16
+execute:
+  eval: false
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read text input from file:
+
+```{r}
+
+input <- read_lines("../input/day16.txt", skip_empty_rows = TRUE)
+
+```
+
+Parse raw text input into lists of rules, your ticket, and nearby tickets:
+
+```{r}
+
+rules <- input |> 
+  head_while(\(x) x != "your ticket:") |> 
+  unglue_data("{rule}: {min1}-{max1} or {min2}-{max2}", convert = TRUE) |> 
+  pivot_longer(
+    c(min1, max1, min2, max2), 
+    names_pattern = "(min|max)(1|2)", 
+    names_to = c(".value", "option"),
+    names_transform = list(option = as.integer)
+  )
+
+tickets <- input |> 
+  tail_while(\(x) x != "your ticket:") |> 
+  discard(\(x) x == "nearby tickets:") |> 
+  enframe(name = "ticket_id", value = "ticket") |> 
+  mutate(
+    owner = case_when(ticket_id == 1 ~ "mine", .default = "nearby"),
+    ticket = map(str_split(ticket, ","), parse_integer)
+  ) |> 
+  unnest_longer(ticket, indices_to = "field_id", values_to = "field_value")
+
+```
+
+## Part 1
+
+Determine which tickets have values that are not valid for any field:
+
+```{r}
+
+ticket_validity <- tickets |> 
+  filter(owner == "nearby") |> 
+  cross_join(rules) |> 
+  mutate(valid = between(field_value, min, max)) |> 
+  summarize(valid = any(valid), .by = c(ticket_id, field_id, field_value))
+
+```
+
+Compute the ticket scanning error rate:
+
+```{r}
+
+ticket_validity |> 
+  filter(!valid) |> 
+  pull(field_value) |> 
+  sum()
+
+```
+
+## Part 2
+
+Discard invalid tickets:
+
+```{r}
+
+tickets_valid <- anti_join(
+  tickets,
+  ticket_validity |> 
+    summarize(valid = all(valid), .by = ticket_id) |> 
+    filter(!valid),
+  join_by(ticket_id)
+)
+
+```
+
+Among the valid tickets, determine which rules are valid for the same fields across every ticket:
+
+```{r}
+
+n_max <- n_distinct(tickets_valid$ticket_id)
+
+field_options <- tickets_valid |> 
+  cross_join(rules) |> 
+  filter(between(field_value, min, max)) |> 
+  summarize(n_tickets = n_distinct(ticket_id), .by = c(field_id, rule)) |> 
+  filter(n_tickets == n_max) |> 
+  select(-n_tickets)
+
+```
+
+If there's only one field that a certain rule is valid for, then that mapping must be the true mapping. Similarly, if there's only rule that a certain field can have, that must also be the true mapping. Iteratively pull out the valid mappings until all have been determined:
+
+```{r}
+
+mapping <- tibble(field_id = integer(), rule = character())
+
+while (nrow(field_options > 1)) {
+  
+  mapping <- field_options |> 
+    mutate(valid1 = n() == 1, .by = field_id) |> 
+    mutate(valid2 = n() == 1, .by = rule) |> 
+    filter(valid1 | valid2) |> 
+    select(field_id, rule) |> 
+    bind_rows(mapping)
+  
+  field_options <- field_options |> 
+    anti_join(mapping, join_by(field_id)) |> 
+    anti_join(mapping, join_by(rule))
+}
+
+```
+
+Now that the mapping has been determined for each field, join back to the tickets and multiply the departure field values together:
+
+```{r}
+
+tickets |> 
+  filter(owner == "mine") |> 
+  left_join(mapping, join_by(field_id)) |> 
+  filter(str_detect(rule, "departure")) |> 
+  pull(field_value) |> 
+  prod()
+
+```
+

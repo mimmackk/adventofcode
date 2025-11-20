@@ -1,7 +1,7 @@
 ---
 title: "Useful Packages & Functions"
 subtitle: ""
-date: today
+date: 2025-11-18
 published-title: "Last Updated"
 author: 
   name: https://adventofcode.com
@@ -21,14 +21,12 @@ library(tidyverse)
 
 ```
 
-## About
-
-This page offers a quick reference for R packages, built-in functions, and custom helper functions that I frequently use to solve AOC challenges.
+This page offers a quick reference for R packages, built-in functions, and custom helper functions that I regularly use in AOC challenges.
 
 ## Packages
 
 | Concept | Package Name | Example |
-|----|----|----|
+|------------------------|------------------------|------------------------|
 | Input Text Parsing | `unglue` | [2020 Day 2](/2020/R/day02.html) |
 | Graphs | `igraph, tidygraph, ggraph` | [2020 Day 10](/2020/R/day10.html) |
 | Memoization | `memoise` | [2021 Day 21](/2021/R/day21.html) |
@@ -37,7 +35,7 @@ This page offers a quick reference for R packages, built-in functions, and custo
 | Geometry | `sf` | [2022 Day 15](/2022/R/day15.html) |
 | Primes, GCD, LCM | `numbers` | [2020 Day 13](/2020/R/day13.html) |
 
-## Built-In Functions
+## Built-In
 
 ### Scientific Notation
 
@@ -103,6 +101,8 @@ inverse.rle(rle(x))
 
 ```
 
+## Snippets & Custom Functions
+
 ### Read Matrix
 
 Read text input directly into a matrix by using a combination of `read.table` and `as.matrix`:
@@ -115,8 +115,6 @@ input <- read.table(filepath) |>
   unname()
 
 ```
-
-## Custom Functions
 
 ### Print Compact Matrix
 

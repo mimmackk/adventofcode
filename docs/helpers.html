@@ -66,7 +66,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
-<link href="./2020/R/day15.html" rel="prev">
+<link href="./2020/R/day17.html" rel="prev">
 <script src="site_libs/quarto-html/quarto.js"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -877,6 +877,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Day 15</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./2020/R/day16.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Day 16</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./2020/R/day17.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Day 17</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item">
@@ -895,9 +907,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">Contents</h2>
    
   <ul>
-  <li><a href="#about" id="toc-about" class="nav-link active" data-scroll-target="#about">About</a></li>
-  <li><a href="#packages" id="toc-packages" class="nav-link" data-scroll-target="#packages">Packages</a></li>
-  <li><a href="#built-in-functions" id="toc-built-in-functions" class="nav-link" data-scroll-target="#built-in-functions">Built-In Functions</a>
+  <li><a href="#packages" id="toc-packages" class="nav-link active" data-scroll-target="#packages">Packages</a></li>
+  <li><a href="#built-in" id="toc-built-in" class="nav-link" data-scroll-target="#built-in">Built-In</a>
   <ul class="collapse">
   <li><a href="#scientific-notation" id="toc-scientific-notation" class="nav-link" data-scroll-target="#scientific-notation">Scientific Notation</a></li>
   <li><a href="#polar-coordinates" id="toc-polar-coordinates" class="nav-link" data-scroll-target="#polar-coordinates">Polar Coordinates</a></li>
@@ -905,10 +916,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#base-n" id="toc-base-n" class="nav-link" data-scroll-target="#base-n">Base N</a></li>
   <li><a href="#binary" id="toc-binary" class="nav-link" data-scroll-target="#binary">Binary</a></li>
   <li><a href="#run-length" id="toc-run-length" class="nav-link" data-scroll-target="#run-length">Run Length</a></li>
-  <li><a href="#read-matrix" id="toc-read-matrix" class="nav-link" data-scroll-target="#read-matrix">Read Matrix</a></li>
   </ul></li>
-  <li><a href="#custom-functions" id="toc-custom-functions" class="nav-link" data-scroll-target="#custom-functions">Custom Functions</a>
+  <li><a href="#snippets-custom-functions" id="toc-snippets-custom-functions" class="nav-link" data-scroll-target="#snippets-custom-functions">Snippets &amp; Custom Functions</a>
   <ul class="collapse">
+  <li><a href="#read-matrix" id="toc-read-matrix" class="nav-link" data-scroll-target="#read-matrix">Read Matrix</a></li>
   <li><a href="#print-compact-matrix" id="toc-print-compact-matrix" class="nav-link" data-scroll-target="#print-compact-matrix">Print Compact Matrix</a></li>
   <li><a href="#visualize-matrix-as-image" id="toc-visualize-matrix-as-image" class="nav-link" data-scroll-target="#visualize-matrix-as-image">Visualize Matrix as Image</a></li>
   </ul></li>
@@ -949,10 +960,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="about" class="level2">
-<h2 class="anchored" data-anchor-id="about">About</h2>
-<p>This page offers a quick reference for R packages, built-in functions, and custom helper functions that I frequently use to solve AOC challenges.</p>
-</section>
+<p>This page offers a quick reference for R packages, built-in functions, and custom helper functions that I regularly use in AOC challenges.</p>
 <section id="packages" class="level2">
 <h2 class="anchored" data-anchor-id="packages">Packages</h2>
 <table class="caption-top table">
@@ -1002,8 +1010,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="built-in-functions" class="level2">
-<h2 class="anchored" data-anchor-id="built-in-functions">Built-In Functions</h2>
+<section id="built-in" class="level2">
+<h2 class="anchored" data-anchor-id="built-in">Built-In</h2>
 <section id="scientific-notation" class="level3">
 <h3 class="anchored" data-anchor-id="scientific-notation">Scientific Notation</h3>
 <p>Disable scientific notation to display all digits of large numbers:</p>
@@ -1050,6 +1058,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">inverse.rle</span>(<span class="fu">rle</span>(x))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
+</section>
+<section id="snippets-custom-functions" class="level2">
+<h2 class="anchored" data-anchor-id="snippets-custom-functions">Snippets &amp; Custom Functions</h2>
 <section id="read-matrix" class="level3">
 <h3 class="anchored" data-anchor-id="read-matrix">Read Matrix</h3>
 <p>Read text input directly into a matrix by using a combination of <code>read.table</code> and <code>as.matrix</code>:</p>
@@ -1059,9 +1070,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unname</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-</section>
-<section id="custom-functions" class="level2">
-<h2 class="anchored" data-anchor-id="custom-functions">Custom Functions</h2>
 <section id="print-compact-matrix" class="level3">
 <h3 class="anchored" data-anchor-id="print-compact-matrix">Print Compact Matrix</h3>
 <p>Display fixed-width matrices in a compact format, with no spaces between cells:</p>
@@ -1553,8 +1561,8 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="./2020/R/day15.html" class="pagination-link" aria-label="Day 15">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Day 15</span>
+      <a href="./2020/R/day17.html" class="pagination-link" aria-label="Day 17">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Day 17</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">

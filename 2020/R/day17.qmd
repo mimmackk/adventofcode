@@ -1,0 +1,129 @@
+---
+title: "Day 17"
+date: 2020-12-17
+author:
+  name: https://adventofcode.com/2020/day/17
+  url: https://adventofcode.com/2020/day/17
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read text input from file into a data frame of x & y coordinates with TRUE/FALSE values for active state:
+
+```{r}
+
+input <- read_lines("../input/day17.txt") |> 
+  map(~ str_split_1(.x, "") == "#") |> 
+  enframe(name = "x", value = "is_active") |>   
+  unnest_longer(is_active, indices_to = "y") |>
+  mutate(z = 0L)
+
+```
+
+## Part 1
+
+Create a data frame of x/y/z adjustments that can join on any coordinate to get its full set of neighbors:
+
+```{r}
+
+nbr <- expand_grid(x = -1:1, y = -1:1, z = -1:1) |> 
+  filter(!(x == 0 & y == 0 & z == 0))
+
+```
+
+Define a function to cycles through the initiation process n times, iteratively comparing neighboring cubes to determine the next state with each cyle:
+
+```{r}
+
+cycle <- function(grid, n = 6) {
+  
+  for (i in 1:n) {
+    grid <- grid |> 
+      cross_join(nbr, suffix = c("", "_nbr")) |> 
+      mutate(
+        x = x + x_nbr,
+        y = y + y_nbr,
+        z = z + z_nbr
+      ) |> 
+      summarize(nbrs = sum(is_active), .by = c(x, y, z)) |> 
+      left_join(select(grid, x, y, z, is_active), join_by(x, y, z)) |>
+      mutate(is_active = replace_na(is_active, FALSE)) |> 
+      transmute(x, y, z, is_active = (nbrs == 3) | (is_active & nbrs == 2))
+  }
+  
+  grid
+  
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+cycle(input) |> 
+  pull(is_active) |> 
+  sum()
+
+```
+
+
+## Part 2
+
+Extend the adjustment dataframe to accommodate a fourth dimension:
+
+```{r}
+
+nbr <- expand_grid(x = -1:1, y = -1:1, z = -1:1, w = -1:1) |> 
+  filter(!(x == 0 & y == 0 & z == 0 & w == 0))
+
+```
+
+Extend the cycle function to accommodate a fourth dimension:
+
+```{r}
+
+cycle <- function(grid, n = 6) {
+  
+  for (i in 1:n) {
+    grid <- grid |> 
+      cross_join(nbr, suffix = c("", "_nbr")) |> 
+      mutate(
+        x = x + x_nbr,
+        y = y + y_nbr,
+        z = z + z_nbr,
+        w = w + w_nbr
+      ) |> 
+      summarize(nbrs = sum(is_active), .by = c(x, y, z, w)) |> 
+      left_join(select(grid, x, y, z, w, is_active), join_by(x, y, z, w)) |>
+      mutate(is_active = replace_na(is_active, FALSE)) |> 
+      transmute(x, y, z, w, is_active = (nbrs == 3) | (is_active & nbrs == 2))
+  }
+  
+  grid
+  
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+input |> 
+  mutate(w = 0L) |> 
+  cycle() |> 
+  pull(is_active) |> 
+  sum()
+
+```
