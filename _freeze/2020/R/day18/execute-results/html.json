@@ -1,0 +1,15 @@
+{
+  "hash": "06f7a3396a9e728475cb864272a054df",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 18\"\ndate: 2020-12-18\nauthor:\n  name: https://adventofcode.com/2020/day/18\n  url: https://adventofcode.com/2020/day/18\nexecute:\n  eval: true\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\n```\n:::\n\n\n\n\nDisable scientific notation to display large integers:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\noptions(scipen = 999)\n```\n:::\n\n\n\n\nRead text input from file:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day18.txt\")\n```\n:::\n\n\n\n\n## Part 1\n\nDefine a function that converts the plain text to a nested list, using parentheses as signals to nest:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nnest_eqn <- function(x) {\n  x |> \n    str_replace_all(\" \", \",\") |> \n    str_replace_all(\"(\\\\d|\\\\+|\\\\*)\", \"'\\\\1'\") |> \n    str_replace_all(\"\\\\(\", \"list(\") |> \n    str_replace_all(\"^\", \"list(\") |> \n    str_replace_all(\"$\", \")\") |> \n    parse(text = _) |> \n    eval()\n}\n```\n:::\n\n\n\n\nDefine a function which takes a nested list of single-digit integers and +/* operators and performs the operations without precedence:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nparse_eqn <- function(x) {\n  cur <- 0\n  op  <- '+'\n  \n  for (item in x) {\n    if (typeof(item) == \"list\")\n      item <- parse_eqn(item)\n    \n    if (item %in% c(\"*\", \"+\"))\n      op <- item\n    else\n      cur <- get(op)(cur, as.numeric(item))\n  }\n  \n  cur\n}\n```\n:::\n\n\n\n\nRun on puzzle input:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput |> \n  map(nest_eqn) |> \n  map_dbl(parse_eqn) |> \n  sum()\n```\n:::\n\n\n\n\n## Part 2\n\nTo apply operator precedence, we re-nest our list one level deeper whenever we encounter our character with precedence. Here, whenever we see a '+' character, we nest it one level deeper alongside the items preceeding and following it.\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nnest_precedence <- function(x) {\n  for (i in 1:length(x)) {\n    if (typeof(x[[i]]) == \"list\")\n      x[[i]] <- nest_precedence(x[[i]])\n  }\n  \n  i <- 2\n\n  while (i < length(x)) {\n    if (typeof(x[[i]]) == \"character\" && x[[i]] == \"+\") {\n      x[[i - 1]] <- list(x[[i - 1]], x[[i]], x[[i + 1]])\n      x <- x[-c(i, i + 1)]\n      i <- i - 1\n    }\n    i <- i + 1\n  }\n  \n  x\n}\n```\n:::\n\n\n\n\nRun on puzzle input:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput |> \n  map(nest_eqn) |> \n  map(nest_precedence) |> \n  map_dbl(parse_eqn) |>\n  sum()\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

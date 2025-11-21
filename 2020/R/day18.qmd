@@ -1,0 +1,132 @@
+---
+title: "Day 18"
+date: 2020-12-18
+author:
+  name: https://adventofcode.com/2020/day/18
+  url: https://adventofcode.com/2020/day/18
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Disable scientific notation to display large integers:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+Read text input from file:
+
+```{r}
+
+input <- read_lines("../input/day18.txt")
+
+```
+
+## Part 1
+
+Define a function that converts the plain text to a nested list, using parentheses as signals to nest:
+
+```{r}
+
+nest_eqn <- function(x) {
+  x |> 
+    str_replace_all(" ", ",") |> 
+    str_replace_all("(\\d|\\+|\\*)", "'\\1'") |> 
+    str_replace_all("\\(", "list(") |> 
+    str_replace_all("^", "list(") |> 
+    str_replace_all("$", ")") |> 
+    parse(text = _) |> 
+    eval()
+}
+
+```
+
+Define a function which takes a nested list of single-digit integers and +/* operators and performs the operations without precedence:
+
+```{r}
+
+parse_eqn <- function(x) {
+  cur <- 0
+  op  <- '+'
+  
+  for (item in x) {
+    if (typeof(item) == "list")
+      item <- parse_eqn(item)
+    
+    if (item %in% c("*", "+"))
+      op <- item
+    else
+      cur <- get(op)(cur, as.numeric(item))
+  }
+  
+  cur
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+input |> 
+  map(nest_eqn) |> 
+  map_dbl(parse_eqn) |> 
+  sum()
+
+```
+
+## Part 2
+
+To apply operator precedence, we re-nest our list one level deeper whenever we encounter our character with precedence. Here, whenever we see a '+' character, we nest it one level deeper alongside the items preceeding and following it.
+
+```{r}
+
+nest_precedence <- function(x) {
+  for (i in 1:length(x)) {
+    if (typeof(x[[i]]) == "list")
+      x[[i]] <- nest_precedence(x[[i]])
+  }
+  
+  i <- 2
+
+  while (i < length(x)) {
+    if (typeof(x[[i]]) == "character" && x[[i]] == "+") {
+      x[[i - 1]] <- list(x[[i - 1]], x[[i]], x[[i + 1]])
+      x <- x[-c(i, i + 1)]
+      i <- i - 1
+    }
+    i <- i + 1
+  }
+  
+  x
+}
+
+
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+input |> 
+  map(nest_eqn) |> 
+  map(nest_precedence) |> 
+  map_dbl(parse_eqn) |>
+  sum()
+
+```
+
+

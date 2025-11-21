@@ -1,0 +1,143 @@
+---
+title: "Day 19"
+date: 2020-12-19
+author:
+  name: https://adventofcode.com/2020/day/19
+  url: https://adventofcode.com/2020/day/19
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read text input from file:
+
+```{r}
+
+input <- read_lines("../input/day19.txt", skip_empty_rows = TRUE)
+
+```
+
+Separate input into rules & messages:
+
+```{r}
+
+messages <- discard(input, ~ str_starts(.x, "^\\d"))
+
+rules <- input |>
+  keep(~ str_starts(.x, "^\\d")) |> 
+  unglue_data(
+    c(
+      "{rule_id}: {rule=[ |0-9]+}", 
+      "{rule_id}: \"{rule}\""
+    ), 
+    convert = FALSE
+  ) |> 
+  mutate(rule = str_split(rule, " \\| ")) |> 
+  unnest_longer(rule, indices_to = "alternate") |> 
+  mutate(rule = str_split(rule, " ")) |> 
+  unnest_longer(rule, indices_to = "order", values_to = "rule_component")
+
+```
+
+## Part 1
+
+Iteratively build rules using regex to represent 'or' statements:
+
+```{r}
+
+finalized <- rules |> 
+  filter(str_detect(rule_component, "^(a|b)+$")) |> 
+  transmute(
+    rule_id, 
+    rule_value = rule_component,
+    len = 1,
+  )
+
+while (!(0 %in% finalized$rule_id)) {
+  finalized <- rules |> 
+    anti_join(finalized, join_by(rule_id)) |> 
+    left_join(finalized, join_by(x$rule_component == y$rule_id)) |> 
+    filter(all(!is.na(rule_value)), .by = rule_id) |> 
+    summarize(
+      rule_value = str_flatten(rule_value), 
+      len = sum(len),
+      .by = c(rule_id, alternate)
+    ) |> 
+    summarize(
+      rule_value = str_flatten(rule_value, collapse = "|"),
+      len = min(len),
+      .by = rule_id
+    ) |> 
+    mutate(
+      rule_value = case_when(
+        str_detect(rule_value, "\\|") ~ str_glue("({rule_value})"),
+        .default = rule_value
+      )
+    ) |> 
+    bind_rows(finalized)
+}
+
+```
+
+Count how many messages match the final row 0 regex: 
+
+```{r}
+
+rule_zero <- finalized |> 
+  filter(rule_id == 0) |> 
+  pull(rule_value)
+
+messages |> 
+  keep(~ str_detect(.x, str_glue("^{rule_zero}$"))) |> 
+  length()
+
+```
+
+## Part 2
+
+The modified version of rule 8 could be interpreted as "1 or more copies of rule 42".
+
+The modified version of rule 11 can be interpreted as: "one or more copies of rule 42, followed by an equal number of copies of rule 31."
+
+Putting these together, the new version of rule 0, which was orignally "8 11", can now be read as "n >= 1 copies of rule 31 proceeded by at least n + 1 copies of rule 42."
+
+Based on the length of rule 31, rule 42, and the longest message in our input, we can construct all possible combinations of these rules that follow the above pattern:
+
+```{r}
+
+rule42 <- finalized |> filter(rule_id == 42) |> pull(rule_value)
+rule31 <- finalized |> filter(rule_id == 31) |> pull(rule_value)
+len_42 <- finalized |> filter(rule_id == 42) |> pull(len)
+len_31 <- finalized |> filter(rule_id == 31) |> pull(len)
+len_max <- max(str_length(messages))
+
+rule0 <- expand_grid(n_42 = 1:len_max, n_31 = 1:len_max) |> 
+  filter(n_42 >= n_31 + 1) |> 
+  filter(n_42 * len_42 + n_31 * len_31 <= len_max) |> 
+  pmap_chr(~ str_c("^", rule42, "{", ..1, "}", rule31, "{", ..2, "}$"))
+
+```
+
+For all legal variations of the rule 0 regex, check if any messages are valid. Count the total number of possible valid messages. 
+
+```{r}
+
+rule0 |> 
+  map(~ str_detect(messages, .x)) |> 
+  transpose() |> 
+  map_lgl(~ any(unlist(.x))) |> 
+  sum()
+
+```
+
+

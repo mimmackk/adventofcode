@@ -44,6 +44,50 @@
     ]
   },
   {
+    "objectID": "2020/R/day18.html",
+    "href": "2020/R/day18.html",
+    "title": "Day 18",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nDisable scientific notation to display large integers:\n\noptions(scipen = 999)\n\nRead text input from file:\n\ninput &lt;- read_lines(\"../input/day18.txt\")",
+    "crumbs": [
+      "2020",
+      "Day 18"
+    ]
+  },
+  {
+    "objectID": "2020/R/day18.html#setup",
+    "href": "2020/R/day18.html#setup",
+    "title": "Day 18",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nDisable scientific notation to display large integers:\n\noptions(scipen = 999)\n\nRead text input from file:\n\ninput &lt;- read_lines(\"../input/day18.txt\")",
+    "crumbs": [
+      "2020",
+      "Day 18"
+    ]
+  },
+  {
+    "objectID": "2020/R/day18.html#part-1",
+    "href": "2020/R/day18.html#part-1",
+    "title": "Day 18",
+    "section": "Part 1",
+    "text": "Part 1\nDefine a function that converts the plain text to a nested list, using parentheses as signals to nest:\n\nnest_eqn &lt;- function(x) {\n  x |&gt; \n    str_replace_all(\" \", \",\") |&gt; \n    str_replace_all(\"(\\\\d|\\\\+|\\\\*)\", \"'\\\\1'\") |&gt; \n    str_replace_all(\"\\\\(\", \"list(\") |&gt; \n    str_replace_all(\"^\", \"list(\") |&gt; \n    str_replace_all(\"$\", \")\") |&gt; \n    parse(text = _) |&gt; \n    eval()\n}\n\nDefine a function which takes a nested list of single-digit integers and +/* operators and performs the operations without precedence:\n\nparse_eqn &lt;- function(x) {\n  cur &lt;- 0\n  op  &lt;- '+'\n  \n  for (item in x) {\n    if (typeof(item) == \"list\")\n      item &lt;- parse_eqn(item)\n    \n    if (item %in% c(\"*\", \"+\"))\n      op &lt;- item\n    else\n      cur &lt;- get(op)(cur, as.numeric(item))\n  }\n  \n  cur\n}\n\nRun on puzzle input:\n\ninput |&gt; \n  map(nest_eqn) |&gt; \n  map_dbl(parse_eqn) |&gt; \n  sum()",
+    "crumbs": [
+      "2020",
+      "Day 18"
+    ]
+  },
+  {
+    "objectID": "2020/R/day18.html#part-2",
+    "href": "2020/R/day18.html#part-2",
+    "title": "Day 18",
+    "section": "Part 2",
+    "text": "Part 2\nTo apply operator precedence, we re-nest our list one level deeper whenever we encounter our character with precedence. Here, whenever we see a ‘+’ character, we nest it one level deeper alongside the items preceeding and following it.\n\nnest_precedence &lt;- function(x) {\n  for (i in 1:length(x)) {\n    if (typeof(x[[i]]) == \"list\")\n      x[[i]] &lt;- nest_precedence(x[[i]])\n  }\n  \n  i &lt;- 2\n\n  while (i &lt; length(x)) {\n    if (typeof(x[[i]]) == \"character\" && x[[i]] == \"+\") {\n      x[[i - 1]] &lt;- list(x[[i - 1]], x[[i]], x[[i + 1]])\n      x &lt;- x[-c(i, i + 1)]\n      i &lt;- i - 1\n    }\n    i &lt;- i + 1\n  }\n  \n  x\n}\n\nRun on puzzle input:\n\ninput |&gt; \n  map(nest_eqn) |&gt; \n  map(nest_precedence) |&gt; \n  map_dbl(parse_eqn) |&gt;\n  sum()",
+    "crumbs": [
+      "2020",
+      "Day 18"
+    ]
+  },
+  {
     "objectID": "2020/R/day14.html",
     "href": "2020/R/day14.html",
     "title": "Day 14",
@@ -5071,6 +5115,50 @@
     "crumbs": [
       "2020",
       "Day 1"
+    ]
+  },
+  {
+    "objectID": "2020/R/day19.html",
+    "href": "2020/R/day19.html",
+    "title": "Day 19",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead text input from file:\n\ninput &lt;- read_lines(\"../input/day19.txt\", skip_empty_rows = TRUE)\n\nSeparate input into rules & messages:\n\nmessages &lt;- discard(input, ~ str_starts(.x, \"^\\\\d\"))\n\nrules &lt;- input |&gt;\n  keep(~ str_starts(.x, \"^\\\\d\")) |&gt; \n  unglue_data(\n    c(\n      \"{rule_id}: {rule=[ |0-9]+}\", \n      \"{rule_id}: \\\"{rule}\\\"\"\n    ), \n    convert = FALSE\n  ) |&gt; \n  mutate(rule = str_split(rule, \" \\\\| \")) |&gt; \n  unnest_longer(rule, indices_to = \"alternate\") |&gt; \n  mutate(rule = str_split(rule, \" \")) |&gt; \n  unnest_longer(rule, indices_to = \"order\", values_to = \"rule_component\")",
+    "crumbs": [
+      "2020",
+      "Day 19"
+    ]
+  },
+  {
+    "objectID": "2020/R/day19.html#setup",
+    "href": "2020/R/day19.html#setup",
+    "title": "Day 19",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead text input from file:\n\ninput &lt;- read_lines(\"../input/day19.txt\", skip_empty_rows = TRUE)\n\nSeparate input into rules & messages:\n\nmessages &lt;- discard(input, ~ str_starts(.x, \"^\\\\d\"))\n\nrules &lt;- input |&gt;\n  keep(~ str_starts(.x, \"^\\\\d\")) |&gt; \n  unglue_data(\n    c(\n      \"{rule_id}: {rule=[ |0-9]+}\", \n      \"{rule_id}: \\\"{rule}\\\"\"\n    ), \n    convert = FALSE\n  ) |&gt; \n  mutate(rule = str_split(rule, \" \\\\| \")) |&gt; \n  unnest_longer(rule, indices_to = \"alternate\") |&gt; \n  mutate(rule = str_split(rule, \" \")) |&gt; \n  unnest_longer(rule, indices_to = \"order\", values_to = \"rule_component\")",
+    "crumbs": [
+      "2020",
+      "Day 19"
+    ]
+  },
+  {
+    "objectID": "2020/R/day19.html#part-1",
+    "href": "2020/R/day19.html#part-1",
+    "title": "Day 19",
+    "section": "Part 1",
+    "text": "Part 1\nIteratively build rules using regex to represent ‘or’ statements:\n\nfinalized &lt;- rules |&gt; \n  filter(str_detect(rule_component, \"^(a|b)+$\")) |&gt; \n  transmute(\n    rule_id, \n    rule_value = rule_component,\n    len = 1,\n  )\n\nwhile (!(0 %in% finalized$rule_id)) {\n  finalized &lt;- rules |&gt; \n    anti_join(finalized, join_by(rule_id)) |&gt; \n    left_join(finalized, join_by(x$rule_component == y$rule_id)) |&gt; \n    filter(all(!is.na(rule_value)), .by = rule_id) |&gt; \n    summarize(\n      rule_value = str_flatten(rule_value), \n      len = sum(len),\n      .by = c(rule_id, alternate)\n    ) |&gt; \n    summarize(\n      rule_value = str_flatten(rule_value, collapse = \"|\"),\n      len = min(len),\n      .by = rule_id\n    ) |&gt; \n    mutate(\n      rule_value = case_when(\n        str_detect(rule_value, \"\\\\|\") ~ str_glue(\"({rule_value})\"),\n        .default = rule_value\n      )\n    ) |&gt; \n    bind_rows(finalized)\n}\n\nCount how many messages match the final row 0 regex:\n\nrule_zero &lt;- finalized |&gt; \n  filter(rule_id == 0) |&gt; \n  pull(rule_value)\n\nmessages |&gt; \n  keep(~ str_detect(.x, str_glue(\"^{rule_zero}$\"))) |&gt; \n  length()",
+    "crumbs": [
+      "2020",
+      "Day 19"
+    ]
+  },
+  {
+    "objectID": "2020/R/day19.html#part-2",
+    "href": "2020/R/day19.html#part-2",
+    "title": "Day 19",
+    "section": "Part 2",
+    "text": "Part 2\nThe modified version of rule 8 could be interpreted as “1 or more copies of rule 42”.\nThe modified version of rule 11 can be interpreted as: “one or more copies of rule 42, followed by an equal number of copies of rule 31.”\nPutting these together, the new version of rule 0, which was orignally “8 11”, can now be read as “n &gt;= 1 copies of rule 31 proceeded by at least n + 1 copies of rule 42.”\nBased on the length of rule 31, rule 42, and the longest message in our input, we can construct all possible combinations of these rules that follow the above pattern:\n\nrule42 &lt;- finalized |&gt; filter(rule_id == 42) |&gt; pull(rule_value)\nrule31 &lt;- finalized |&gt; filter(rule_id == 31) |&gt; pull(rule_value)\nlen_42 &lt;- finalized |&gt; filter(rule_id == 42) |&gt; pull(len)\nlen_31 &lt;- finalized |&gt; filter(rule_id == 31) |&gt; pull(len)\nlen_max &lt;- max(str_length(messages))\n\nrule0 &lt;- expand_grid(n_42 = 1:len_max, n_31 = 1:len_max) |&gt; \n  filter(n_42 &gt;= n_31 + 1) |&gt; \n  filter(n_42 * len_42 + n_31 * len_31 &lt;= len_max) |&gt; \n  pmap_chr(~ str_c(\"^\", rule42, \"{\", ..1, \"}\", rule31, \"{\", ..2, \"}$\"))\n\nFor all legal variations of the rule 0 regex, check if any messages are valid. Count the total number of possible valid messages.\n\nrule0 |&gt; \n  map(~ str_detect(messages, .x)) |&gt; \n  transpose() |&gt; \n  map_lgl(~ any(unlist(.x))) |&gt; \n  sum()",
+    "crumbs": [
+      "2020",
+      "Day 19"
     ]
   },
   {
