@@ -1,0 +1,357 @@
+---
+title: "Day 20"
+date: 2020-12-20
+author:
+  name: https://adventofcode.com/2020/day/20
+  url: https://adventofcode.com/2020/day/20
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(stringi)
+
+```
+
+Disable scientific notation:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+Read text input from file:
+
+```{r}
+
+input <- read_lines("../input/day20.txt", skip_empty_rows = TRUE)
+
+```
+
+Convert text input into a list of tiles represented as matrices:
+
+```{r}
+
+tiles <- input |> 
+  enframe(name = NULL) |> 
+  mutate(tile_id = as.numeric(str_extract(value, "\\d+"))) |> 
+  fill(tile_id, .direction = "down") |> 
+  filter(!str_starts(value, "Tile")) |> 
+  summarize(mtx = list(unlist(str_split(value, ""))), .by = tile_id) |> 
+  mutate(mtx = map(mtx, ~ matrix(.x, byrow = TRUE, nrow = sqrt(length(.x)))))
+
+```
+
+Define a helper function to flip a matrix horizontally:
+
+```{r}
+
+flip_mtx <- \(mtx) t(apply(mtx, MARGIN = 1, FUN = rev))
+
+```
+
+Define a helper function to rotate a matrix counterclockwise in multiples of 90 degrees:
+
+```{r}
+
+rotate_mtx <- \(mtx, deg = 90) {
+  reduce(
+    .x = seq(length.out = (deg %% 360 / 90)), 
+    .f = \(x, y) apply(t(x), 2, rev), 
+    .init = mtx
+  )
+}
+
+```
+
+## Part 1
+
+Extract each of the 4 borders from all tiles:
+
+```{r}
+
+borders <- tiles |> 
+  mutate(
+    b1 = map_chr(mtx, ~ .x |>        head(1) |> str_flatten()),
+    b2 = map_chr(mtx, ~ .x |> t() |> tail(1) |> str_flatten()),
+    b3 = map_chr(mtx, ~ .x |>        tail(1) |> str_flatten()),
+    b4 = map_chr(mtx, ~ .x |> t() |> head(1) |> str_flatten()),
+  ) |> 
+  pivot_longer(
+    c(b1, b2, b3, b4), 
+    names_to = "border_dir", 
+    names_prefix = "b",
+    names_transform = as.integer,
+    values_to = "border"
+  )
+
+```
+
+Determine which borders match with one another:
+
+```{r}
+
+nbrs <- cross_join(borders, borders, suffix = c("", "_nbr")) |> 
+  select(-c(mtx, mtx_nbr)) |> 
+  filter(
+    tile_id != tile_id_nbr,
+    (border == border_nbr | border == stri_reverse(border_nbr))
+  )
+
+```
+
+Confirm that each tile border matched with at most one other:
+
+```{r}
+
+nbrs |> 
+  filter(n() > 1, .by = c(tile_id, border_dir)) |> 
+  nrow() |> 
+  case_match(0 ~ "PASS", .default = "FAIL")
+
+```
+
+Pull the list of corner tiles (those with only two matched borders):
+
+```{r}
+
+corners <- nbrs |> 
+  summarize(n_matches = n(), .by = tile_id) |> 
+  filter(n_matches == 2) |> 
+  pull(tile_id)
+
+```
+
+Multiply together the IDs of the corners:
+
+```{r}
+
+prod(corners)
+
+```
+
+## Part 2
+
+Pick one corner to place in the upper left of the grid (row 1, col 1) and set the common orientation for the rest of the tiles. Here, we choose the minimum corner index:
+
+```{r}
+
+opposite_dir <- (1:4 + 1) %% 4 + 1
+
+init <- nbrs |> 
+  filter(tile_id == min(corners)) |> 
+  summarize(
+    row = 1,
+    col = 1,
+    dir_s = max(border_dir),
+    dir_e = min(border_dir),
+    dir_n = opposite_dir[dir_s],
+    dir_w = opposite_dir[dir_e],
+    .by = tile_id
+  ) |> 
+  select(tile_id, row, col, dir_n, dir_e, dir_s, dir_w)
+
+```
+
+Now, we get the column order of the rest of the tiles in the first row by iteratively attaching them one-by-one and filling in their N/E/S/W directions:
+
+```{r}
+
+cur   <- init
+n_prv <- 0
+
+while(nrow(cur) != n_prv) {
+  
+  n_prv <- nrow(cur)
+  
+  cur <- cur |>
+    left_join(nbrs, join_by(tile_id)) |> 
+    filter(!(tile_id_nbr %in% tile_id) & border_dir == dir_e) |> 
+    transmute(
+      tile_id = tile_id_nbr,
+      row = row,
+      col = col + 1,
+      dir_w = border_dir_nbr,
+      dir_e = opposite_dir[border_dir_nbr]
+    ) |> 
+    left_join(nbrs, join_by(tile_id)) |> 
+    filter(border_dir != dir_w, border_dir != dir_e) |> 
+    mutate(
+      dir_s = border_dir,
+      dir_n = opposite_dir[border_dir]
+    ) |> 
+    distinct(tile_id, row, col, dir_n, dir_e, dir_s, dir_w) |> 
+    bind_rows(cur)
+}
+
+first_row <- cur
+
+```
+
+Now that our first row is ordered and oriented, we attach and orient each of the following sets of rows, one full row at a time:
+
+```{r}
+
+cur <- first_row
+n_prv <- 0
+
+while(nrow(cur) != n_prv) {
+  
+  n_prv <- nrow(cur)
+  
+  nxt <- cur |>
+    left_join(nbrs, join_by(tile_id)) |> 
+    filter(!(tile_id_nbr %in% tile_id) & border_dir == dir_s) |> 
+    transmute(
+      tile_id = tile_id_nbr,
+      row = row + 1,
+      col = col,
+      dir_n = border_dir_nbr,
+      dir_s = opposite_dir[border_dir_nbr]
+    ) 
+  
+  cur <- nxt |> 
+    left_join(nbrs, join_by(tile_id)) |> 
+    filter(border_dir != dir_n, border_dir != dir_s) |> 
+    
+    select(-c(border, border_nbr)) |> 
+    left_join(
+      select(nxt, tile_id, col_nbr = col), 
+      join_by(x$tile_id_nbr == y$tile_id)
+    ) |> 
+    mutate(
+      dir_w = if_else(col_nbr == col - 1, border_dir, opposite_dir[border_dir]),
+      dir_e = opposite_dir[dir_w]
+    ) |> 
+    distinct(tile_id, row, col, dir_n, dir_e, dir_s, dir_w) |> 
+    bind_rows(cur)
+}
+
+orientations <- cur
+
+```
+
+Convert the completed N/S/E/W alignment mapping into a set of flip & rotation instructions, then apply the transformation to each tile:
+
+```{r}
+
+transformation <- orientations |> 
+  left_join(tiles, join_by(tile_id)) |> 
+  mutate(
+    flip = (dir_n == (dir_e %% 4 + 1)),
+    rotate = if_else(flip, ((5 - dir_n) %% 4) * 90, (dir_n - 1) * 90),
+    mtx = if_else(flip, map(mtx, flip_mtx), mtx),
+    mtx = map2(mtx, rotate, rotate_mtx)
+  ) 
+
+```
+
+Trim the borders of each tile and merge into one large image:
+
+```{r}
+
+image <- transformation |> 
+  arrange(row, col) |> 
+  mutate(mtx = map(mtx, ~ .x[2:(nrow(.x) - 1), 2:(ncol(.x) - 1)])) |> 
+  summarize(mtx = list(do.call(cbind, mtx)), .by = row) |> 
+  summarize(mtx = list(do.call(rbind, mtx))) |> 
+  pull(mtx) |> 
+  pluck(1)
+
+```
+
+Convert the sea monster text into a set of matrix indices requiring a '\#' character:
+
+```{r}
+
+monster <- str_c(
+  "                  # ",
+  "#    ##    ##    ###",
+  " #  #  #  #  #  #   "
+) |> 
+  str_split_1("") |> 
+  matrix(byrow = TRUE, nrow = 3)
+
+monster_idx <- which(monster == '#')
+
+```
+
+Generate the coordinates for all `monster_width` by `monster_height` submatrices of the image:
+
+```{r}
+
+submatrix_coords <- expand_grid(
+  row = map(1:(nrow(image) - nrow(monster) + 1), ~ .x:(nrow(monster) + .x - 1)),
+  col = map(1:(ncol(image) - ncol(monster) + 1), ~ .x:(ncol(monster) + .x - 1))
+)
+
+```
+
+Generate all rotated & flipped variants of the image:
+
+```{r}
+
+variants <- expand_grid(
+  flip = c(FALSE, TRUE),
+  rotate = c(0, 90, 180, 270)
+) |> 
+  mutate(
+    variant_id = row_number(),
+    mtx = rep(list(image), max(variant_id)),
+    mtx = if_else(flip, map(mtx, flip_mtx), mtx),
+    mtx = map2(mtx, rotate, rotate_mtx)
+  )
+
+```
+
+Scan all submatrices of all variants and locate the indices of the sea monsters:
+
+```{r}
+
+monster_locn <- variants |> 
+  cross_join(submatrix_coords) |> 
+  mutate(
+    subimg = pmap(lst(mtx, row, col), ~ ..1[..2, ..3]),
+    idx = map(subimg, ~ which(.x == '#')),
+    is_monster = map_lgl(idx, ~ length(setdiff(monster_idx, .x)) == 0)
+  ) |> 
+  filter(is_monster)
+
+```
+
+Convert the indicies of the monster '#' in the submatrix to the full image:
+
+```{r}
+
+monster_idx_img <- monster_locn |> 
+  mutate(
+    monster_idx = pmap(lst(mtx, row, col), \(mtx, rows, cols) {
+      ((monster_idx - 1) %/% nrow(monster) + min(cols) - 1) * nrow(mtx) +
+      ((monster_idx - 1) %%  nrow(monster) + min(rows))
+    })
+  ) |> 
+  pull(monster_idx) |> 
+  unlist()
+  
+```
+
+Pull the indices of all '#' in the full image, minus those of the monsters, and count the remaining values:
+
+```{r}
+
+img_rotated <- monster_locn |> 
+  pull(mtx) |> 
+  pluck(1)
+
+which(img_rotated == '#') |> 
+  setdiff(monster_idx_img) |> 
+  length()
+
+```
