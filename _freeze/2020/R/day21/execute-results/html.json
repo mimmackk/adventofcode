@@ -1,0 +1,15 @@
+{
+  "hash": "3429be0f13f026d395626100aace2eeb",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 21\"\ndate: 2020-12-21\nauthor:\n  name: https://adventofcode.com/2020/day/21\n  url: https://adventofcode.com/2020/day/21\nexecute:\n  eval: true\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\nlibrary(unglue)\n```\n:::\n\n\n\n\nRead text input from file:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day21.txt\", skip_empty_rows = TRUE)\n```\n:::\n\n\n\n\nConvert plain text input into lists of ingredients and allergens:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndf <- input |> \n  unglue_data(\"{ingredient} (contains {allergen})\") |> \n  mutate(\n    food_id = row_number(),\n    ingredient = str_split(ingredient, \" \"),\n    allergen = str_split(allergen, \", \")\n  ) |> \n  unnest_longer(ingredient) |> \n  unnest_longer(allergen)\n```\n:::\n\n\n\n\n## Part 1\n\nIteratively pull ingredient-allergen pairs where one ingredient is the only option for a given allergen:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nidentified <- tibble(allergen = character(0), ingredient = character(0))\n\nn_prv <- -1\n\nwhile(n_prv != nrow(identified)) {\n  n_prv <- nrow(identified)\n  \n  identified <- df |> \n    anti_join(identified, join_by(allergen)) |> \n    anti_join(identified, join_by(ingredient)) |> \n    summarize(n = n(), .by = c(allergen, ingredient)) |> \n    arrange(allergen, desc(n)) |> \n    slice_max(order_by = n, by = allergen) |> \n    filter(n() == 1, .by = allergen) |> \n    select(allergen, ingredient) |> \n    bind_rows(identified)\n}\n```\n:::\n\n\n\n\nCount the number of times that non-allergen ingredients appear in the list:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndf |> \n  anti_join(identified, join_by(ingredient)) |> \n  distinct(ingredient, food_id) |> \n  nrow()\n```\n:::\n\n\n\n\n## Part 2\n\nArrange the allergen-containing ingredients alphabetically by allergen, then convert to a CSV string:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nidentified |> \n  arrange(allergen) |> \n  pull(ingredient) |> \n  str_flatten(\",\")\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

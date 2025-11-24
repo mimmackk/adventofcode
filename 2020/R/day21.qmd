@@ -1,0 +1,98 @@
+---
+title: "Day 21"
+date: 2020-12-21
+author:
+  name: https://adventofcode.com/2020/day/21
+  url: https://adventofcode.com/2020/day/21
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read text input from file:
+
+```{r}
+
+input <- read_lines("../input/day21.txt", skip_empty_rows = TRUE)
+
+```
+
+Convert plain text input into lists of ingredients and allergens:
+
+```{r}
+
+df <- input |> 
+  unglue_data("{ingredient} (contains {allergen})") |> 
+  mutate(
+    food_id = row_number(),
+    ingredient = str_split(ingredient, " "),
+    allergen = str_split(allergen, ", ")
+  ) |> 
+  unnest_longer(ingredient) |> 
+  unnest_longer(allergen)
+
+```
+
+## Part 1
+
+Iteratively pull ingredient-allergen pairs where one ingredient is the only option for a given allergen:
+
+```{r}
+
+identified <- tibble(allergen = character(0), ingredient = character(0))
+
+n_prv <- -1
+
+while(n_prv != nrow(identified)) {
+  n_prv <- nrow(identified)
+  
+  identified <- df |> 
+    anti_join(identified, join_by(allergen)) |> 
+    anti_join(identified, join_by(ingredient)) |> 
+    summarize(n = n(), .by = c(allergen, ingredient)) |> 
+    arrange(allergen, desc(n)) |> 
+    slice_max(order_by = n, by = allergen) |> 
+    filter(n() == 1, .by = allergen) |> 
+    select(allergen, ingredient) |> 
+    bind_rows(identified)
+}
+
+```
+
+Count the number of times that non-allergen ingredients appear in the list:
+
+```{r}
+
+df |> 
+  anti_join(identified, join_by(ingredient)) |> 
+  distinct(ingredient, food_id) |> 
+  nrow()
+
+```
+
+## Part 2
+
+Arrange the allergen-containing ingredients alphabetically by allergen, then convert to a CSV string:
+
+```{r}
+
+identified |> 
+  arrange(allergen) |> 
+  pull(ingredient) |> 
+  str_flatten(",")
+
+```
+
+
+
+
