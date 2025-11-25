@@ -1,0 +1,164 @@
+---
+title: "Day 22"
+date: 2020-12-22
+author:
+  name: https://adventofcode.com/2020/day/22
+  url: https://adventofcode.com/2020/day/22
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read text input from file:
+
+```{r}
+
+input <- read_lines("../input/day22.txt", skip_empty_rows = TRUE)
+
+```
+
+Convert text input to two lists of values, one for each player:
+
+```{r}
+
+init <- input |>
+  keep(~ str_detect(.x, "^\\d+$")) |>
+  as.integer() %>%
+  split(cut(seq_along(.), 2, labels = FALSE)) |> 
+  unname()
+
+```
+
+## Part 1
+
+Define a helper function to play a single round:
+
+```{r}
+
+play_round <- function(players) {
+  top_cards <- players |> 
+    list_transpose() |> 
+    pluck(1) |> 
+    unname()
+  
+  winner <- which.max(top_cards)
+
+  players |> 
+    map(~ tail(.x, -1)) |> 
+    modify_in(winner, ~ c(.x, sort(top_cards, decreasing = TRUE)))
+}
+
+```
+
+Define a helper function to score a winning hand:
+
+```{r}
+
+score <- function(x) {
+  map2_dbl(x, length(x):1, prod) |> 
+    sum()
+}
+
+```
+
+Play a game using the provided starting hand and score the winner:
+
+```{r}
+
+cur <- init
+
+while (every(cur, ~ length(.x) > 0)) {
+  cur <- play_round(cur)
+}
+
+cur |> 
+  unlist() |> 
+  score()
+
+```
+
+## Part 2
+
+Redefine the helper function that plays a single round to adjust to the new rules:
+
+```{r}
+
+play_round <- function(players) {
+  
+  top_cards <- c(players[[1]][[1]], players[[2]][[1]])
+  
+  can_recurse <- players |> 
+    map_lgl(~ length(.x) > pluck(.x, 1)) |> 
+    all()
+  
+  if (!can_recurse) {
+    winner <- which.max(top_cards)
+  } else {
+    winner <- players |>
+      map(~ .x[seq(from = 2, length.out = pluck(.x, 1))]) |> 
+      play_game() |> 
+      map_int(length) |> 
+      which.max()
+  }
+  
+  players |> 
+    map(~ tail(.x, -1)) |> 
+    modify_in(winner, ~ c(.x, top_cards[c(winner, setdiff(1:2, winner))]))
+}
+
+```
+
+Define a helper function to play the game while the game state to avoid infinite recursion:
+
+```{r}
+
+play_game <- function(players) {
+  game_hist <- c()
+  
+  while (every(players, ~ length(.x) > 0)) {
+    cur_state <- players |> 
+      map_chr(~ str_flatten(.x, ",")) |> 
+      str_flatten("|")
+    
+    if (cur_state %in% game_hist) {
+      return(assign_in(players, 2, integer(0)))
+    } else {
+      game_hist <- c(
+        game_hist, 
+        cur_state,
+        players |> 
+          map_chr(~ str_flatten(.x, ",")) |> 
+          rev() |> 
+          str_flatten("|")
+      )
+      players <- play_round(players)
+    }
+  }
+  
+  players
+}
+
+```
+
+Run the game on the puzzle input and score the winning player:
+
+```{r}
+
+init |> 
+  play_game() |> 
+  unlist() |> 
+  score()
+
+```
+
+
+
