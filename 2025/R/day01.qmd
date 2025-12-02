@@ -19,16 +19,25 @@ library(unglue)
 
 ```
 
-Read text input from file and convert into a vector of positive (R) or negative (L) numbers:
+Read text input from file: 
 
 ```{r}
 
-input <- read_lines("../input/day01.txt") |> 
+input <- read_lines("../input/day01.txt")
+
+```
+
+Convert text input into a vector of positive (R) or negative (L) rotation integers:
+
+```{r}
+
+rotation <- input |> 
   unglue_data("{dir=L|R}{num=\\d+}", convert = TRUE) |> 
   mutate(num = case_match(dir, "R" ~ num, "L" ~ -num)) |> 
   pull(num)
 
 ```
+
 
 ## Part 1
 
@@ -36,7 +45,7 @@ Starting from 50, apply all rotations in sequence as additions modulo 100:
 
 ```{r}
 
-dial <- accumulate(input, .f = \(x, y) (x + y) %% 100, .init = 50)
+dial <- accumulate(rotation, .f = \(x, y) (x + y) %% 100, .init = 50)
 
 ```
 
@@ -44,11 +53,32 @@ Count the number of zeroes in the resulting sequence:
 
 ```{r}
 
-dial |> 
-  keep(\(x) x == 0) |> 
-  length()
+sum(dial == 0)
 
 ```
 
+
+## Part 2
+
+Using the dial's starting position for each turn as calculated in part 1, additionally determine how many times 0 is passed in each turn.
+
+If the rotation is positive (R direction), we can sum the rotation and the starting value and count how many times the result is divisible by 100 (integer division). If the rotation is negative (L direction), we convert the negative to a symmetrical positive rotation, starting instead at the modular complement of the dial's starting position. 
+
+For example, starting at 1 and rotating left twice is equivalent to starting at 99 and rotating right twice (only in terms of the number of passes over zero).
+
+```{r}
+
+dial_start <- head(dial, -1)
+num_passes <- (((sign(rotation) * dial_start) %% 100) + abs(rotation)) %/% 100
+
+```
+
+Count the total times zero is passed:
+
+```{r}
+
+sum(num_passes)
+
+```
 
 

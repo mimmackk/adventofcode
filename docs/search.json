@@ -3223,7 +3223,7 @@
     "href": "2025/R/day01.html",
     "title": "Day 1",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead text input from file and convert into a vector of positive (R) or negative (L) numbers:\n\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; \n  unglue_data(\"{dir=L|R}{num=\\\\d+}\", convert = TRUE) |&gt; \n  mutate(num = case_match(dir, \"R\" ~ num, \"L\" ~ -num)) |&gt; \n  pull(num)",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead text input from file:\n\ninput &lt;- read_lines(\"../input/day01.txt\")\n\nConvert text input into a vector of positive (R) or negative (L) rotation integers:\n\nrotation &lt;- input |&gt; \n  unglue_data(\"{dir=L|R}{num=\\\\d+}\", convert = TRUE) |&gt; \n  mutate(num = case_match(dir, \"R\" ~ num, \"L\" ~ -num)) |&gt; \n  pull(num)",
     "crumbs": [
       "2025",
       "Day 1"
@@ -3234,7 +3234,7 @@
     "href": "2025/R/day01.html#setup",
     "title": "Day 1",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead text input from file and convert into a vector of positive (R) or negative (L) numbers:\n\ninput &lt;- read_lines(\"../input/day01.txt\") |&gt; \n  unglue_data(\"{dir=L|R}{num=\\\\d+}\", convert = TRUE) |&gt; \n  mutate(num = case_match(dir, \"R\" ~ num, \"L\" ~ -num)) |&gt; \n  pull(num)",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead text input from file:\n\ninput &lt;- read_lines(\"../input/day01.txt\")\n\nConvert text input into a vector of positive (R) or negative (L) rotation integers:\n\nrotation &lt;- input |&gt; \n  unglue_data(\"{dir=L|R}{num=\\\\d+}\", convert = TRUE) |&gt; \n  mutate(num = case_match(dir, \"R\" ~ num, \"L\" ~ -num)) |&gt; \n  pull(num)",
     "crumbs": [
       "2025",
       "Day 1"
@@ -3245,7 +3245,18 @@
     "href": "2025/R/day01.html#part-1",
     "title": "Day 1",
     "section": "Part 1",
-    "text": "Part 1\nStarting from 50, apply all rotations in sequence as additions modulo 100, then count the number of zeroes in the resulting sequence:\n\ninput |&gt; \n  accumulate(.f = \\(x, y) (x + y) %% 100, .init = 50) |&gt; \n  keep(\\(x) x == 0) |&gt; \n  length()",
+    "text": "Part 1\nStarting from 50, apply all rotations in sequence as additions modulo 100:\n\ndial &lt;- accumulate(rotation, .f = \\(x, y) (x + y) %% 100, .init = 50)\n\nCount the number of zeroes in the resulting sequence:\n\nsum(dial == 0)",
+    "crumbs": [
+      "2025",
+      "Day 1"
+    ]
+  },
+  {
+    "objectID": "2025/R/day01.html#part-2",
+    "href": "2025/R/day01.html#part-2",
+    "title": "Day 1",
+    "section": "Part 2",
+    "text": "Part 2\nUsing the dial’s starting position for each turn as calculated in part 1, additionally determine how many times 0 is passed in each turn.\nIf the rotation is positive (R direction), we can sum the rotation and the starting value and count how many times the result is divisible by 100 (integer division). If the rotation is negative (L direction), we convert the negative to a symmetrical positive rotation, starting instead at the modular complement of the dial’s starting position.\nFor example, starting at 1 and rotating left twice is equivalent to starting at 99 and rotating right twice (only in terms of the number of passes over zero).\n\ndial_start &lt;- head(dial, -1)\nnum_passes &lt;- (((sign(rotation) * dial_start) %% 100) + abs(rotation)) %/% 100\n\nCount the total times zero is passed:\n\nsum(num_passes)",
     "crumbs": [
       "2025",
       "Day 1"
