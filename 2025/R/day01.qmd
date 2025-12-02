@@ -1,0 +1,54 @@
+---
+title: "Day 1"
+date: 2025-12-01
+author:
+  name: https://adventofcode.com/2025/day/1
+  url: https://adventofcode.com/2025/day/1
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read text input from file and convert into a vector of positive (R) or negative (L) numbers:
+
+```{r}
+
+input <- read_lines("../input/day01.txt") |> 
+  unglue_data("{dir=L|R}{num=\\d+}", convert = TRUE) |> 
+  mutate(num = case_match(dir, "R" ~ num, "L" ~ -num)) |> 
+  pull(num)
+
+```
+
+## Part 1
+
+Starting from 50, apply all rotations in sequence as additions modulo 100:
+
+```{r}
+
+dial <- accumulate(input, .f = \(x, y) (x + y) %% 100, .init = 50)
+
+```
+
+Count the number of zeroes in the resulting sequence:
+
+```{r}
+
+dial |> 
+  keep(\(x) x == 0) |> 
+  length()
+
+```
+
+
+

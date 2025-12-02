@@ -14,6 +14,8 @@ website:
     search: false
     collapse-level: 1
     contents:
+    - section: "2025"
+      contents: 2025/R/*
     - section: "2024"
       contents: 2024/R/*
     - section: "2023"

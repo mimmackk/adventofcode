@@ -1,0 +1,15 @@
+{
+  "hash": "2a01d2d849d615027bb0c0f825e02f84",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 1\"\ndate: 2025-12-01\nauthor:\n  name: https://adventofcode.com/2025/day/1\n  url: https://adventofcode.com/2025/day/1\nexecute:\n  eval: true\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\nlibrary(unglue)\n```\n:::\n\n\n\n\nRead text input from file and convert into a vector of positive (R) or negative (L) numbers:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day01.txt\") |> \n  unglue_data(\"{dir=L|R}{num=\\\\d+}\", convert = TRUE) |> \n  mutate(num = case_match(dir, \"R\" ~ num, \"L\" ~ -num)) |> \n  pull(num)\n```\n:::\n\n\n\n\n## Part 1\n\nStarting from 50, apply all rotations in sequence as **additions modulo 100**, then count the number of zeroes in the resulting sequence:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput |> \n  accumulate(.f = \\(x, y) (x + y) %% 100, .init = 50) |> \n  keep(\\(x) x == 0) |> \n  length()\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
