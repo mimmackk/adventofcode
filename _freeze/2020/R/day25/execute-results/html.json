@@ -1,0 +1,15 @@
+{
+  "hash": "a7a7a4b686a100e2f543e52739e06239",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 25\"\ndate: 2020-12-25\nauthor:\n  name: https://adventofcode.com/2020/day/25\n  url: https://adventofcode.com/2020/day/25\nexecute:\n  eval: true\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\n```\n:::\n\n\n\n\nRead text input from file:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\npublic_keys <- read_lines(\"../input/day25.txt\") |> \n  as.numeric() |> \n  set_names(c(\"card\", \"door\"))\n```\n:::\n\n\n\n\n## Part 1\n\nDefine a function which, given a subject number and a public key, determines the loop size:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nget_loop_size <- function(public_key, subject_number) {\n  \n  n <- 0\n  value <- 1\n  \n  while (value != public_key) {\n    value <- (value * subject_number) %% 20201227\n    n <- n + 1\n  }\n  \n  n\n}\n```\n:::\n\n\n\n\nRun on puzzle input to get the loop size for the card & door:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nloop_size <- public_keys |> \n  map_int(\\(x) get_loop_size(x, subject_number = 7))\n```\n:::\n\n\n\n\nDefine a function to get the encryption key given a public key and loop size:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nencrypt <- function(public_key, loop_size) {\n  reduce(1:loop_size, \\(x, n) (x * public_key) %% 20201227, .init = 1)\n}\n```\n:::\n\n\n\n\nRun on puzzle input:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nmap2_dbl(public_keys, rev(loop_size), \\(x, y) encrypt(x, y))\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

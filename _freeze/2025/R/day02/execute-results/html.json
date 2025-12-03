@@ -1,0 +1,15 @@
+{
+  "hash": "a65b1dafdd0cc2c82c0688e79d2506a2",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 2\"\ndate: 2025-12-02\nauthor:\n  name: https://adventofcode.com/2025/day/2\n  url: https://adventofcode.com/2025/day/2\nexecute:\n  eval: true\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\nlibrary(unglue)\n```\n:::\n\n\n\n\nRead text input from file into a set of start/end values: \n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day02.txt\") |> \n  str_split_1(\",\") |> \n  unglue_data(\"{start}-{end}\", convert = TRUE)\n```\n:::\n\n\n\n\n## Part 1\n\nUse regex to match all instances of single-repeated substrings within the range of integers:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput |> \n  with(map2(start, end, seq)) |> \n  unlist() |> \n  keep(\\(x) str_detect(x, \"^(.+)\\\\1$\")) |> \n  sum()\n```\n:::\n\n\n\n\n## Part 2\n\nAlter the regex from `^(.+)\\\\1$` to `^(.+)\\\\1+$` to allow any number of repeated matches (not just one):\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput |> \n  with(map2(start, end, seq)) |> \n  unlist() |> \n  keep(\\(x) str_detect(x, \"^(.+)\\\\1+$\")) |> \n  sum()\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "hash": "d267830a7fd2db6ef10dc463b08f121e",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 24\"\ndate: 2020-12-24\nauthor:\n  name: https://adventofcode.com/2020/day/24\n  url: https://adventofcode.com/2020/day/24\nexecute:\n  eval: true\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\n```\n:::\n\n\n\n\nRead text input from file and parse into E/W/NE/NW/SE/SW instructions:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day24.txt\") |> \n  str_replace_all(\"([ns][ew]|(?<![ns])[we])\", \" \\\\1 \") |> \n  str_squish() |> \n  str_split(\" \")\n```\n:::\n\n\n\n\n## Part 1\n\nUsing a [double-width coordinate system](https://www.redblobgames.com/grids/hexagons/#coordinates-doubled) we convert each E/W/etc direction into a coordinate value (represented by complex numbers):\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndirs <- c(\n  \"e\"  =  2 + 0i,\n  \"w\"  = -2 + 0i,\n  \"ne\" =  1 + 1i,\n  \"nw\" = -1 + 1i,\n  \"se\" =  1 - 1i,\n  \"sw\" = -1 - 1i\n)\n```\n:::\n\n\n\n\nUsing a reference tile with coordinates (0, 0), we convert each of our directional instructions into a set of final tile coordinates:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncoords <- map_vec(input, \\(x) sum(dirs[x]))\n```\n:::\n\n\n\n\nDetermine which tiles were flipped an odd number of times:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nblack <- tibble(tile = coords) |> \n  summarise(flips = n(), .by = tile) |> \n  filter(flips %% 2 == 1) |> \n  pull(tile)\n```\n:::\n\n\n\n\nCount the black tiles:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlength(black)\n```\n:::\n\n\n\n\n## Part 2\n\nDefine a function which, when given a list of black tiles, returns a new list of black tiles after the flipping has occurred:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nflip <- function(init) {\n  \n  nbrs <- tibble(tile = init) |> \n    expand_grid(neighbor_dir = dirs) |> \n    mutate(\n      neighbor_coord = tile + neighbor_dir,\n      neighbor_color = if_else(neighbor_coord %in% init, \"black\", \"white\")\n    )\n  \n  black_keep <- nbrs |>\n    summarize(\n      new_color = case_match(\n        sum(neighbor_color == \"black\"),\n        c(1, 2) ~ \"black\",\n        .default = \"white\"\n      ), \n      .by = tile\n    ) |> \n    filter(new_color == \"black\") |> \n    pull(tile)\n  \n  black_new <- nbrs |> \n    filter(neighbor_color == \"white\") |> \n    filter(n() == 2, .by = neighbor_coord) |> \n    pull(neighbor_coord) |> \n    unique()\n  \n  c(black_keep, black_new)\n  \n}\n```\n:::\n\n\n\n\nRun 100 days worth of flips:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nfinal <- reduce(1:100, \\(x, y) flip(x), .init = black)\n```\n:::\n\n\n\n\nCount how many black tiles remain at the end:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlength(final)\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

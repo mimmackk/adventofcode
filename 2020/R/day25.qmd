@@ -1,0 +1,80 @@
+---
+title: "Day 25"
+date: 2020-12-25
+author:
+  name: https://adventofcode.com/2020/day/25
+  url: https://adventofcode.com/2020/day/25
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read text input from file:
+
+```{r}
+
+public_keys <- read_lines("../input/day25.txt") |> 
+  as.numeric() |> 
+  set_names(c("card", "door"))
+
+```
+
+## Part 1
+
+Define a function which, given a subject number and a public key, determines the loop size:
+
+```{r}
+
+get_loop_size <- function(public_key, subject_number) {
+  
+  n <- 0
+  value <- 1
+  
+  while (value != public_key) {
+    value <- (value * subject_number) %% 20201227
+    n <- n + 1
+  }
+  
+  n
+}
+
+```
+
+Run on puzzle input to get the loop size for the card & door:
+
+```{r}
+
+loop_size <- public_keys |> 
+  map_int(\(x) get_loop_size(x, subject_number = 7))
+
+```
+
+Define a function to get the encryption key given a public key and loop size:
+
+```{r}
+
+encrypt <- function(public_key, loop_size) {
+  reduce(1:loop_size, \(x, n) (x * public_key) %% 20201227, .init = 1)
+}
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+map2_dbl(public_keys, rev(loop_size), \(x, y) encrypt(x, y))
+
+```
+
+
+

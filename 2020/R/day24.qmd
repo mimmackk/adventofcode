@@ -1,0 +1,134 @@
+---
+title: "Day 24"
+date: 2020-12-24
+author:
+  name: https://adventofcode.com/2020/day/24
+  url: https://adventofcode.com/2020/day/24
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read text input from file and parse into E/W/NE/NW/SE/SW instructions:
+
+```{r}
+
+input <- read_lines("../input/day24.txt") |> 
+  str_replace_all("([ns][ew]|(?<![ns])[we])", " \\1 ") |> 
+  str_squish() |> 
+  str_split(" ")
+
+```
+
+## Part 1
+
+Using a [double-width coordinate system](https://www.redblobgames.com/grids/hexagons/#coordinates-doubled) we convert each E/W/etc direction into a coordinate value (represented by complex numbers):
+
+```{r}
+
+dirs <- c(
+  "e"  =  2 + 0i,
+  "w"  = -2 + 0i,
+  "ne" =  1 + 1i,
+  "nw" = -1 + 1i,
+  "se" =  1 - 1i,
+  "sw" = -1 - 1i
+)
+
+```
+
+Using a reference tile with coordinates (0, 0), we convert each of our directional instructions into a set of final tile coordinates:
+
+```{r}
+
+coords <- map_vec(input, \(x) sum(dirs[x]))
+
+```
+
+Determine which tiles were flipped an odd number of times:
+
+```{r}
+
+black <- tibble(tile = coords) |> 
+  summarise(flips = n(), .by = tile) |> 
+  filter(flips %% 2 == 1) |> 
+  pull(tile)
+
+```
+
+Count the black tiles:
+
+```{r}
+
+length(black)
+
+```
+
+## Part 2
+
+Define a function which, when given a list of black tiles, returns a new list of black tiles after the flipping has occurred:
+
+```{r}
+
+flip <- function(init) {
+  
+  nbrs <- tibble(tile = init) |> 
+    expand_grid(neighbor_dir = dirs) |> 
+    mutate(
+      neighbor_coord = tile + neighbor_dir,
+      neighbor_color = if_else(neighbor_coord %in% init, "black", "white")
+    )
+  
+  black_keep <- nbrs |>
+    summarize(
+      new_color = case_match(
+        sum(neighbor_color == "black"),
+        c(1, 2) ~ "black",
+        .default = "white"
+      ), 
+      .by = tile
+    ) |> 
+    filter(new_color == "black") |> 
+    pull(tile)
+  
+  black_new <- nbrs |> 
+    filter(neighbor_color == "white") |> 
+    filter(n() == 2, .by = neighbor_coord) |> 
+    pull(neighbor_coord) |> 
+    unique()
+  
+  c(black_keep, black_new)
+  
+}
+
+```
+
+Run 100 days worth of flips:
+
+```{r}
+
+final <- reduce(1:100, \(x, y) flip(x), .init = black)
+
+```
+
+Count how many black tiles remain at the end:
+
+```{r}
+
+length(final)
+
+```
+
+
+
+
+

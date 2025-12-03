@@ -1,0 +1,61 @@
+---
+title: "Day 2"
+date: 2025-12-02
+author:
+  name: https://adventofcode.com/2025/day/2
+  url: https://adventofcode.com/2025/day/2
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read text input from file into a set of start/end values: 
+
+```{r}
+
+input <- read_lines("../input/day02.txt") |> 
+  str_split_1(",") |> 
+  unglue_data("{start}-{end}", convert = TRUE)
+
+```
+
+## Part 1
+
+Use regex to match all instances of single-repeated substrings within the range of integers:
+
+```{r}
+
+input |> 
+  with(map2(start, end, seq)) |> 
+  unlist() |> 
+  keep(\(x) str_detect(x, "^(.+)\\1$")) |> 
+  sum()
+
+```
+
+## Part 2
+
+Alter the regex from `^(.+)\\1$` to `^(.+)\\1+$` to allow any number of repeated matches (not just one):
+
+```{r}
+
+input |> 
+  with(map2(start, end, seq)) |> 
+  unlist() |> 
+  keep(\(x) str_detect(x, "^(.+)\\1+$")) |> 
+  sum()
+
+```
+
+
+
