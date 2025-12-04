@@ -1,0 +1,15 @@
+{
+  "hash": "85bdeabb7d55a01770e08793f41aeadc",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 3\"\ndate: 2025-12-03\nauthor:\n  name: https://adventofcode.com/2025/day/3\n  url: https://adventofcode.com/2025/day/3\nexecute:\n  eval: true\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\n```\n:::\n\n\n\n\nDisable scientific notation to display all digits of large numbers:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\noptions(scipen = 999)\n```\n:::\n\n\n\n\nRead text input from file:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day03.txt\") |> \n  str_split(\"\") |> \n  map(as.numeric)\n```\n:::\n\n\n\n\n## Part 1\n\nFor each number, take the largest possible single digit NOT in the final location, and combine it with the largest following digit:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput |> \n  map_dbl(\\(x) {\n    tens <- which.max(head(x, -1))\n    ones <- max(tail(x, -tens))\n    x[tens] * 10 + ones\n  }) |> \n  sum()\n```\n:::\n\n\n\n\n## Part 2\n\nDefine a recursive function which looks for the first through nth digits:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\njoltage <- function(input, n, init = \"\") {\n  \n  if (n == 0)\n    return(as.numeric(init))\n  \n  posn <- input |> \n    discard_at(length(input) - seq_len(n - 1) + 1) |> \n    which.max()\n  \n  joltage(discard_at(input, 1:posn), n - 1, str_c(init, input[posn]))\n  \n}\n```\n:::\n\n\n\n\nRun on puzzle input with 12 digits and sum the result:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput |> \n  map_dbl(\\(x) joltage(x, 12)) |> \n  sum()\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

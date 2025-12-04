@@ -1,0 +1,86 @@
+---
+title: "Day 3"
+date: 2025-12-03
+author:
+  name: https://adventofcode.com/2025/day/3
+  url: https://adventofcode.com/2025/day/3
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Disable scientific notation to display all digits of large numbers:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+Read text input from file:
+
+```{r}
+
+input <- read_lines("../input/day03.txt") |> 
+  str_split("") |> 
+  map(as.numeric)
+
+```
+
+## Part 1
+
+For each number, take the largest possible single digit NOT in the final location, and combine it with the largest following digit:
+
+```{r}
+
+input |> 
+  map_dbl(\(x) {
+    tens <- which.max(head(x, -1))
+    ones <- max(tail(x, -tens))
+    x[tens] * 10 + ones
+  }) |> 
+  sum()
+
+```
+
+## Part 2
+
+Define a recursive function which looks for the first through nth digits:
+
+```{r}
+
+joltage <- function(input, n, init = "") {
+  
+  if (n == 0)
+    return(as.numeric(init))
+  
+  posn <- input |> 
+    discard_at(length(input) - seq_len(n - 1) + 1) |> 
+    which.max()
+  
+  joltage(discard_at(input, 1:posn), n - 1, str_c(init, input[posn]))
+  
+}
+
+```
+
+Run on puzzle input with 12 digits and sum the result:
+
+```{r}
+
+input |> 
+  map_dbl(\(x) joltage(x, 12)) |> 
+  sum()
+
+```
+
+
