@@ -1,0 +1,107 @@
+---
+title: "Day 4"
+date: 2025-12-04
+author:
+  name: https://adventofcode.com/2025/day/4
+  url: https://adventofcode.com/2025/day/4
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Read text input from file into a matrix:
+
+```{r}
+
+input <- read_lines("../input/day04.txt") |>
+  str_split("") |> 
+  enframe(name = NULL) |> 
+  unnest_wider(value, names_sep = "") |> 
+  as.matrix() |> 
+  unname()
+
+```
+
+## Part 1
+
+Define a function to shift a matrix up, down, left, or right:
+
+```{r}
+
+shift <- function(mtx, dir = c("up", "down", "left", "right"), ...) {
+  switch(dir,
+    "up"    = mtx |> lead(...),
+    "down"  = mtx |> lag(...),
+    "left"  = mtx |> t() |> lead(...) |> t(),
+    "right" = mtx |> t() |> lag(...)  |> t()
+  )
+}
+
+```
+
+Define a function which, for each cell in the matrix, counts how many of its 8 immediate neighbors match a given value:
+
+```{r}
+
+count_nbrs <- function(mtx, value) {
+  list(
+    mtx |> shift("up",    default = "."),
+    mtx |> shift("down",  default = "."),
+    mtx |> shift("left",  default = "."),
+    mtx |> shift("right", default = "."),
+    mtx |> shift("up",    default = ".") |> shift("left",  default = "."),
+    mtx |> shift("up",    default = ".") |> shift("right", default = "."),
+    mtx |> shift("down",  default = ".") |> shift("left",  default = "."),
+    mtx |> shift("down",  default = ".") |> shift("right", default = ".")
+  ) |> 
+    map(\(x) x == value) |> 
+    reduce(`+`)
+}
+
+```
+
+Count how many rolls in the input have less than 4 neighboring rolls:
+
+```{r}
+
+sum(input == '@' & count_nbrs(input, '@') < 4)
+
+```
+
+## Part 2
+
+Iteratively remove rolls until no more removals are possible:
+
+```{r}
+
+cur <- input
+
+repeat {
+  prv <- cur
+  cur[cur == '@' & count_nbrs(cur, '@') < 4] <- "."
+  if (all(prv == cur))
+    break
+}
+
+fnl <- cur
+
+```
+
+Count how many rolls were removed:
+
+```{r}
+
+sum(input == "@") - sum(fnl == "@")
+
+```
+
+

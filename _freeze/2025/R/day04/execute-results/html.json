@@ -1,0 +1,15 @@
+{
+  "hash": "b58a1a10fc490db7397c586032de5ce9",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 4\"\ndate: 2025-12-04\nauthor:\n  name: https://adventofcode.com/2025/day/4\n  url: https://adventofcode.com/2025/day/4\nexecute:\n  eval: true\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\n```\n:::\n\n\n\n\nRead text input from file into a matrix:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day04.txt\") |>\n  str_split(\"\") |> \n  enframe(name = NULL) |> \n  unnest_wider(value, names_sep = \"\") |> \n  as.matrix() |> \n  unname()\n```\n:::\n\n\n\n\n## Part 1\n\nDefine a function to shift a matrix up, down, left, or right:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nshift <- function(mtx, dir = c(\"up\", \"down\", \"left\", \"right\"), ...) {\n  switch(dir,\n    \"up\"    = mtx |> lead(...),\n    \"down\"  = mtx |> lag(...),\n    \"left\"  = mtx |> t() |> lead(...) |> t(),\n    \"right\" = mtx |> t() |> lag(...)  |> t()\n  )\n}\n```\n:::\n\n\n\n\nDefine a function which, for each cell in the matrix, counts how many of its 8 immediate neighbors match a given value:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncount_nbrs <- function(mtx, value) {\n  list(\n    mtx |> shift(\"up\",    default = \".\"),\n    mtx |> shift(\"down\",  default = \".\"),\n    mtx |> shift(\"left\",  default = \".\"),\n    mtx |> shift(\"right\", default = \".\"),\n    mtx |> shift(\"up\",    default = \".\") |> shift(\"left\",  default = \".\"),\n    mtx |> shift(\"up\",    default = \".\") |> shift(\"right\", default = \".\"),\n    mtx |> shift(\"down\",  default = \".\") |> shift(\"left\",  default = \".\"),\n    mtx |> shift(\"down\",  default = \".\") |> shift(\"right\", default = \".\")\n  ) |> \n    map(\\(x) x == value) |> \n    reduce(`+`)\n}\n```\n:::\n\n\n\n\nCount how many rolls in the input have less than 4 neighboring rolls:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nsum(input == '@' & count_nbrs(input, '@') < 4)\n```\n:::\n\n\n\n\n## Part 2\n\nIteratively remove rolls until no more removals are possible:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncur <- input\n\nrepeat {\n  prv <- cur\n  cur[cur == '@' & count_nbrs(cur, '@') < 4] <- \".\"\n  if (all(prv == cur))\n    break\n}\n\nfnl <- cur\n```\n:::\n\n\n\n\nCount how many rolls were removed:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nsum(input == \"@\") - sum(fnl == \"@\")\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
