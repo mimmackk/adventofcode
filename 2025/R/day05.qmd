@@ -1,0 +1,84 @@
+---
+title: "Day 5"
+date: 2025-12-05
+author:
+  name: https://adventofcode.com/2025/day/5
+  url: https://adventofcode.com/2025/day/5
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+library(sets)
+
+```
+
+Disable scientific notation to display all digits of large numbers:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+Read text input from file:
+
+```{r}
+
+input <- read_lines("../input/day05.txt", skip_empty_rows = TRUE)
+
+```
+
+Separate text input into (1) ranges of "fresh" IDs, and (2) a single vector of "available" IDs:
+
+```{r}
+
+fresh <- input |>
+  unglue_data("{start}-{end}", convert = TRUE) |> 
+  drop_na()
+
+available <- input |>
+  keep(\(x) str_detect(x, "^\\d+$")) |> 
+  as.numeric()
+
+```
+
+## Part 1
+
+Count how many of the "available" IDs are in any "fresh" ID range:
+
+```{r}
+
+available |> 
+  enframe() |> 
+  cross_join(fresh) |> 
+  filter(between(value, start, end)) |> 
+  distinct(value) |> 
+  nrow()
+
+```
+
+## Part 2
+
+Convert each pair of start/end "fresh" IDs into intervals, take their union, and count the size of the result:
+
+```{r}
+
+fresh |> 
+  with(map2(start, end, \(a, b) interval(a, b, bounds = "closed"))) |> 
+  reduce(interval_union) |> 
+  as.list() |> 
+  map_dbl(\(x) interval_measure(x) + 1) |> 
+  sum()
+
+```
+
+
+

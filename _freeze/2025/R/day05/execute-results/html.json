@@ -1,0 +1,15 @@
+{
+  "hash": "eef0a4e447e495fb97c154f3591b076d",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 5\"\ndate: 2025-12-05\nauthor:\n  name: https://adventofcode.com/2025/day/5\n  url: https://adventofcode.com/2025/day/5\nexecute:\n  eval: true\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(sets)\n```\n:::\n\n\n\n\nDisable scientific notation to display all digits of large numbers:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\noptions(scipen = 999)\n```\n:::\n\n\n\n\nRead text input from file:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day05.txt\", skip_empty_rows = TRUE)\n```\n:::\n\n\n\n\nSeparate text input into (1) ranges of \"fresh\" IDs, and (2) a single vector of \"available\" IDs:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nfresh <- input |>\n  unglue_data(\"{start}-{end}\", convert = TRUE) |> \n  drop_na()\n\navailable <- input |>\n  keep(\\(x) str_detect(x, \"^\\\\d+$\")) |> \n  as.numeric()\n```\n:::\n\n\n\n\n## Part 1\n\nCount how many of the \"available\" IDs are in any \"fresh\" ID range:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\navailable |> \n  enframe() |> \n  cross_join(fresh) |> \n  filter(between(value, start, end)) |> \n  distinct(value) |> \n  nrow()\n```\n:::\n\n\n\n\n## Part 2\n\nConvert each pair of start/end \"fresh\" IDs into intervals, take their union, and count the size of the result:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nfresh |> \n  with(map2(start, end, \\(a, b) interval(a, b, bounds = \"closed\"))) |> \n  reduce(interval_union) |> \n  as.list() |> \n  map_dbl(\\(x) interval_measure(x) + 1) |> \n  sum()\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
