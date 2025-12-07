@@ -1,0 +1,96 @@
+---
+title: "Day 7"
+date: 2025-12-07
+author:
+  name: https://adventofcode.com/2025/day/7
+  url: https://adventofcode.com/2025/day/7
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+
+```
+
+Disable scientific notation to display all digits of large numbers:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+Read text input from file into a data frame of characters with row & column positions:
+
+```{r}
+
+input <- read_lines("../input/day07.txt") |> 
+  str_split("") |> 
+  map(enframe, name = "col") |> 
+  list_rbind(names_to = "row") |> 
+  filter(value != ".") |> 
+  arrange(value != "S") |> 
+  mutate(id = row_number(), .before = everything())
+
+```
+
+## Part 1
+
+Iterate through the rows of the input, tracking the current beam locations at each step, counting when a beam splits, and tracking how many timelines (for part 2) have been created so far:
+
+```{r}
+
+ncol  <- max(input$col) + 1
+beams <- rep(FALSE, ncol) |> replace(input$col[input$value == "S"], TRUE)
+timelines <- as.numeric(beams)
+nsplit <- 0
+
+for (row_num in unique(input$row[-1])) {
+  
+  split <- input |> 
+    filter(row == row_num) |> 
+    pull(col) |> 
+    keep(\(x) beams[x] == TRUE)
+  
+  newbeams <- unique(c(split - 1, split + 1))
+  
+  beams[split] <- FALSE
+  beams[newbeams] <- TRUE
+  
+  timelines[split - 1] <- timelines[split - 1] + timelines[split]
+  timelines[split + 1] <- timelines[split + 1] + timelines[split]
+  timelines[split] <- 0
+  
+  nsplit <- nsplit + length(split)
+  
+}
+
+```
+
+Count the total number of splits that occurred:
+
+```{r}
+
+nsplit
+
+```
+
+## Part 2
+
+Count the total timelines created:
+
+```{r}
+
+sum(timelines)
+
+```
+
+
+
+

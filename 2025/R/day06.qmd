@@ -1,0 +1,92 @@
+---
+title: "Day 6"
+date: 2025-12-06
+author:
+  name: https://adventofcode.com/2025/day/6
+  url: https://adventofcode.com/2025/day/6
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Disable scientific notation to display all digits of large numbers:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+Read text input from file:
+
+```{r}
+
+input <- read_lines("../input/day06.txt")
+
+```
+
+Parse plain text input into a square data frame, having once cell per row per column (preserving whitespace):
+
+```{r}
+
+df <- str_pad(input, width = max(str_length(input)), side = "right") |> 
+  str_split("") |> 
+  set_names(c(str_c("row", seq(length(input) - 1)), "op")) |> 
+  as_tibble() |> 
+  mutate(
+    all_blank = rowSums(across(starts_with("row"), \(x) x != " ")) == 0,
+    col_id = cumsum(all_blank),
+    op = case_match(op, "+" ~ "sum", "*" ~ "prod", .default = op)
+  ) |> 
+  filter(!all_blank) |> 
+  select(-all_blank)
+
+```
+
+
+## Part 1
+
+Re-combine digits row-wise into sets of numbers, apply the operation to the result, and sum:
+
+```{r}
+
+df |> 
+  summarize(
+    across(starts_with("row"), \(x) parse_number(str_flatten(x))),
+    op = max(op),
+    .by = col_id
+  ) |> 
+  nest(nums = starts_with("row")) |> 
+  mutate(nums = map2_dbl(op, nums, \(op, nums) get(op)(unlist(nums)))) |> 
+  with(sum(nums))
+
+```
+
+
+## Part 2
+
+First combine all numbers column-wise instead of row-wise, then repeat the process from part 1:
+
+```{r}
+
+df |> 
+  arrange(desc(row_number())) |> 
+  mutate(num_id = row_number()) |> 
+  nest(num = starts_with("row")) |> 
+  mutate(num = map_dbl(num, \(x) parse_number(str_flatten(unlist(x))))) |> 
+  summarize(num = get(max(op))(num), .by = col_id) |> 
+  with(sum(num))
+
+```
+
+

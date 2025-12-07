@@ -1,0 +1,15 @@
+{
+  "hash": "9b2c439b0d22695d4260fae0ad3c356a",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 7\"\ndate: 2025-12-07\nauthor:\n  name: https://adventofcode.com/2025/day/7\n  url: https://adventofcode.com/2025/day/7\nexecute:\n  eval: true\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\n```\n:::\n\n\n\n\nDisable scientific notation to display all digits of large numbers:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\noptions(scipen = 999)\n```\n:::\n\n\n\n\nRead text input from file into a data frame of characters with row & column positions:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day07.txt\") |> \n  str_split(\"\") |> \n  map(enframe, name = \"col\") |> \n  list_rbind(names_to = \"row\") |> \n  filter(value != \".\") |> \n  arrange(value != \"S\") |> \n  mutate(id = row_number(), .before = everything())\n```\n:::\n\n\n\n\n## Part 1\n\nIterate through the rows of the input, tracking the current beam locations at each step, counting when a beam splits, and tracking how many timelines (for part 2) have been created so far:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nncol  <- max(input$col) + 1\nbeams <- rep(FALSE, ncol) |> replace(input$col[input$value == \"S\"], TRUE)\ntimelines <- as.numeric(beams)\nnsplit <- 0\n\nfor (row_num in unique(input$row[-1])) {\n  \n  split <- input |> \n    filter(row == row_num) |> \n    pull(col) |> \n    keep(\\(x) beams[x] == TRUE)\n  \n  newbeams <- unique(c(split - 1, split + 1))\n  \n  beams[split] <- FALSE\n  beams[newbeams] <- TRUE\n  \n  timelines[split - 1] <- timelines[split - 1] + timelines[split]\n  timelines[split + 1] <- timelines[split + 1] + timelines[split]\n  timelines[split] <- 0\n  \n  nsplit <- nsplit + length(split)\n  \n}\n```\n:::\n\n\n\n\nCount the total number of splits that occurred:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nnsplit\n```\n:::\n\n\n\n\n## Part 2\n\nCount the total timelines created:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nsum(timelines)\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

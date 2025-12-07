@@ -1,0 +1,15 @@
+{
+  "hash": "63f546f2299dd358109d80532a1fe8dc",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 6\"\ndate: 2025-12-06\nauthor:\n  name: https://adventofcode.com/2025/day/6\n  url: https://adventofcode.com/2025/day/6\nexecute:\n  eval: true\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\nlibrary(unglue)\n```\n:::\n\n\n\n\nDisable scientific notation to display all digits of large numbers:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\noptions(scipen = 999)\n```\n:::\n\n\n\n\nRead text input from file:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day06.txt\")\n```\n:::\n\n\n\n\nParse plain text input into a square data frame, having once cell per row per column (preserving whitespace):\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndf <- str_pad(input, width = max(str_length(input)), side = \"right\") |> \n  str_split(\"\") |> \n  set_names(c(str_c(\"row\", seq(length(input) - 1)), \"op\")) |> \n  as_tibble() |> \n  mutate(\n    all_blank = rowSums(across(starts_with(\"row\"), \\(x) x != \" \")) == 0,\n    col_id = cumsum(all_blank),\n    op = case_match(op, \"+\" ~ \"sum\", \"*\" ~ \"prod\", .default = op)\n  ) |> \n  filter(!all_blank) |> \n  select(-all_blank)\n```\n:::\n\n\n\n\n\n## Part 1\n\nRe-combine digits row-wise into sets of numbers, apply the operation to the result, and sum:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndf |> \n  summarize(\n    across(starts_with(\"row\"), \\(x) parse_number(str_flatten(x))),\n    op = max(op),\n    .by = col_id\n  ) |> \n  nest(nums = starts_with(\"row\")) |> \n  mutate(nums = map2_dbl(op, nums, \\(op, nums) get(op)(unlist(nums)))) |> \n  with(sum(nums))\n```\n:::\n\n\n\n\n\n## Part 2\n\nFirst combine all numbers column-wise instead of row-wise, then repeat the process from part 1:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndf |> \n  arrange(desc(row_number())) |> \n  mutate(num_id = row_number()) |> \n  nest(num = starts_with(\"row\")) |> \n  mutate(num = map_dbl(num, \\(x) parse_number(str_flatten(unlist(x))))) |> \n  summarize(num = get(max(op))(num), .by = col_id) |> \n  with(sum(num))\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

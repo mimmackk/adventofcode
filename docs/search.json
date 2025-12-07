@@ -2295,6 +2295,50 @@
     ]
   },
   {
+    "objectID": "2025/R/day07.html",
+    "href": "2025/R/day07.html",
+    "title": "Day 7",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nDisable scientific notation to display all digits of large numbers:\n\noptions(scipen = 999)\n\nRead text input from file into a data frame of characters with row & column positions:\n\ninput &lt;- read_lines(\"../input/day07.txt\") |&gt; \n  str_split(\"\") |&gt; \n  map(enframe, name = \"col\") |&gt; \n  list_rbind(names_to = \"row\") |&gt; \n  filter(value != \".\") |&gt; \n  arrange(value != \"S\") |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "crumbs": [
+      "2025",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2025/R/day07.html#setup",
+    "href": "2025/R/day07.html#setup",
+    "title": "Day 7",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nDisable scientific notation to display all digits of large numbers:\n\noptions(scipen = 999)\n\nRead text input from file into a data frame of characters with row & column positions:\n\ninput &lt;- read_lines(\"../input/day07.txt\") |&gt; \n  str_split(\"\") |&gt; \n  map(enframe, name = \"col\") |&gt; \n  list_rbind(names_to = \"row\") |&gt; \n  filter(value != \".\") |&gt; \n  arrange(value != \"S\") |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "crumbs": [
+      "2025",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2025/R/day07.html#part-1",
+    "href": "2025/R/day07.html#part-1",
+    "title": "Day 7",
+    "section": "Part 1",
+    "text": "Part 1\nIterate through the rows of the input, tracking the current beam locations at each step, counting when a beam splits, and tracking how many timelines (for part 2) have been created so far:\n\nncol  &lt;- max(input$col) + 1\nbeams &lt;- rep(FALSE, ncol) |&gt; replace(input$col[input$value == \"S\"], TRUE)\ntimelines &lt;- as.numeric(beams)\nnsplit &lt;- 0\n\nfor (row_num in unique(input$row[-1])) {\n  \n  split &lt;- input |&gt; \n    filter(row == row_num) |&gt; \n    pull(col) |&gt; \n    keep(\\(x) beams[x] == TRUE)\n  \n  newbeams &lt;- unique(c(split - 1, split + 1))\n  \n  beams[split] &lt;- FALSE\n  beams[newbeams] &lt;- TRUE\n  \n  timelines[split - 1] &lt;- timelines[split - 1] + timelines[split]\n  timelines[split + 1] &lt;- timelines[split + 1] + timelines[split]\n  timelines[split] &lt;- 0\n  \n  nsplit &lt;- nsplit + length(split)\n  \n}\n\nCount the total number of splits that occurred:\n\nnsplit",
+    "crumbs": [
+      "2025",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2025/R/day07.html#part-2",
+    "href": "2025/R/day07.html#part-2",
+    "title": "Day 7",
+    "section": "Part 2",
+    "text": "Part 2\nCount the total timelines created:\n\nsum(timelines)",
+    "crumbs": [
+      "2025",
+      "Day 7"
+    ]
+  },
+  {
     "objectID": "2025/R/day04.html",
     "href": "2025/R/day04.html",
     "title": "Day 4",
@@ -3447,6 +3491,50 @@
     "crumbs": [
       "2025",
       "Day 5"
+    ]
+  },
+  {
+    "objectID": "2025/R/day06.html",
+    "href": "2025/R/day06.html",
+    "title": "Day 6",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nDisable scientific notation to display all digits of large numbers:\n\noptions(scipen = 999)\n\nRead text input from file:\n\ninput &lt;- read_lines(\"../input/day06.txt\")\n\nParse plain text input into a square data frame, having once cell per row per column (preserving whitespace):\n\ndf &lt;- str_pad(input, width = max(str_length(input)), side = \"right\") |&gt; \n  str_split(\"\") |&gt; \n  set_names(c(str_c(\"row\", seq(length(input) - 1)), \"op\")) |&gt; \n  as_tibble() |&gt; \n  mutate(\n    all_blank = rowSums(across(starts_with(\"row\"), \\(x) x != \" \")) == 0,\n    col_id = cumsum(all_blank),\n    op = case_match(op, \"+\" ~ \"sum\", \"*\" ~ \"prod\", .default = op)\n  ) |&gt; \n  filter(!all_blank) |&gt; \n  select(-all_blank)",
+    "crumbs": [
+      "2025",
+      "Day 6"
+    ]
+  },
+  {
+    "objectID": "2025/R/day06.html#setup",
+    "href": "2025/R/day06.html#setup",
+    "title": "Day 6",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nDisable scientific notation to display all digits of large numbers:\n\noptions(scipen = 999)\n\nRead text input from file:\n\ninput &lt;- read_lines(\"../input/day06.txt\")\n\nParse plain text input into a square data frame, having once cell per row per column (preserving whitespace):\n\ndf &lt;- str_pad(input, width = max(str_length(input)), side = \"right\") |&gt; \n  str_split(\"\") |&gt; \n  set_names(c(str_c(\"row\", seq(length(input) - 1)), \"op\")) |&gt; \n  as_tibble() |&gt; \n  mutate(\n    all_blank = rowSums(across(starts_with(\"row\"), \\(x) x != \" \")) == 0,\n    col_id = cumsum(all_blank),\n    op = case_match(op, \"+\" ~ \"sum\", \"*\" ~ \"prod\", .default = op)\n  ) |&gt; \n  filter(!all_blank) |&gt; \n  select(-all_blank)",
+    "crumbs": [
+      "2025",
+      "Day 6"
+    ]
+  },
+  {
+    "objectID": "2025/R/day06.html#part-1",
+    "href": "2025/R/day06.html#part-1",
+    "title": "Day 6",
+    "section": "Part 1",
+    "text": "Part 1\nRe-combine digits row-wise into sets of numbers, apply the operation to the result, and sum:\n\ndf |&gt; \n  summarize(\n    across(starts_with(\"row\"), \\(x) parse_number(str_flatten(x))),\n    op = max(op),\n    .by = col_id\n  ) |&gt; \n  nest(nums = starts_with(\"row\")) |&gt; \n  mutate(nums = map2_dbl(op, nums, \\(op, nums) get(op)(unlist(nums)))) |&gt; \n  with(sum(nums))",
+    "crumbs": [
+      "2025",
+      "Day 6"
+    ]
+  },
+  {
+    "objectID": "2025/R/day06.html#part-2",
+    "href": "2025/R/day06.html#part-2",
+    "title": "Day 6",
+    "section": "Part 2",
+    "text": "Part 2\nFirst combine all numbers column-wise instead of row-wise, then repeat the process from part 1:\n\ndf |&gt; \n  arrange(desc(row_number())) |&gt; \n  mutate(num_id = row_number()) |&gt; \n  nest(num = starts_with(\"row\")) |&gt; \n  mutate(num = map_dbl(num, \\(x) parse_number(str_flatten(unlist(x))))) |&gt; \n  summarize(num = get(max(op))(num), .by = col_id) |&gt; \n  with(sum(num))",
+    "crumbs": [
+      "2025",
+      "Day 6"
     ]
   },
   {
