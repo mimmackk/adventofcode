@@ -1,0 +1,115 @@
+---
+title: "Day 8"
+date: 2025-12-08
+author:
+  name: https://adventofcode.com/2025/day/8
+  url: https://adventofcode.com/2025/day/8
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read text input from file:
+
+```{r}
+
+input <- read_lines("../input/day08.txt") |> 
+  str_split(",") |> 
+  map(as.numeric)
+
+```
+
+## Part 1
+
+Define a helper function to compute the euclidian distance between two vectors:
+
+```{r}
+
+dist <- \(x, y) sqrt(sum(map2_dbl(x, y, ~ (.x - .y)^2)))
+
+```
+
+Construct all unique combinations of junction boxes, then compute the distance between each:
+
+```{r}
+
+combos <- combn(1:length(input), 2, simplify = FALSE) |> 
+  as_tibble_col("box") |> 
+  unnest_wider(box, names_sep = "") |> 
+  mutate(
+    across(c(box1, box2), ~ input[.x], .names = "{.col}_coord"),
+    d = map2_dbl(box1_coord, box2_coord, dist)
+  ) |> 
+  arrange(d)
+  
+```
+
+Assign each box to its own circut, iterate through the first 1000 box pairs:
+
+```{r}
+
+circuts <- 1:length(input)
+
+for (i in 1:1000) {
+  circut1 <- circuts[combos$box1[i]]
+  circut2 <- circuts[combos$box2[i]]
+  if (circut1 != circut2) {
+    circuts <- replace(circuts, circuts == circut1, circut2)
+  }
+}
+
+```
+
+Multiply together the sizes of the 3 largest circuts:
+
+```{r}
+
+circuts |> 
+  sort() |> 
+  rle() |> 
+  pluck("lengths") |> 
+  sort(decreasing = TRUE) |> 
+  head(3) |> 
+  prod()
+
+```
+
+## Part 2
+
+Iteravely make connections until all boxes are on a single circut:
+
+```{r}
+
+circuts <- 1:length(input)
+i <- 0
+
+while(length(unique(circuts)) > 1) {
+  i <- i + 1
+  circut1 <- circuts[combos$box1[i]]
+  circut2 <- circuts[combos$box2[i]]
+  if (circut1 != circut2) {
+    circuts <- replace(circuts, circuts == circut1, circut2)
+  }
+}
+
+```
+
+Multiply the x coordinates of the last two boxes connected:
+
+```{r}
+
+combos$box1_coord[[i]][1] * combos$box2_coord[[i]][1]
+
+```
+
+
+
+

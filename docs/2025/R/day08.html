@@ -6,10 +6,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="https://adventofcode.com/2025/day/4">
-<meta name="dcterms.date" content="2025-12-04">
+<meta name="author" content="https://adventofcode.com/2025/day/8">
+<meta name="dcterms.date" content="2025-12-08">
 
-<title>Day 4 – Advent of Code: Worked Solutions</title>
+<title>Day 8 – Advent of Code: Worked Solutions</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -66,8 +66,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../../">
-<link href="../../2025/R/day05.html" rel="next">
-<link href="../../2025/R/day03.html" rel="prev">
+<link href="../../2024/R/day01.html" rel="next">
+<link href="../../2025/R/day07.html" rel="prev">
 <script src="../../site_libs/quarto-html/quarto.js"></script>
 <script src="../../site_libs/quarto-html/popper.min.js"></script>
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -119,7 +119,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
         <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
-          <h1 class="quarto-secondary-nav-title">Day 4</h1>
+          <h1 class="quarto-secondary-nav-title">Day 8</h1>
         </a>     
     </div>
   </nav>
@@ -164,7 +164,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../2025/R/day04.html" class="sidebar-item-text sidebar-link active">
+  <a href="../../2025/R/day04.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Day 4</span></a>
   </div>
 </li>
@@ -188,7 +188,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../2025/R/day08.html" class="sidebar-item-text sidebar-link">
+  <a href="../../2025/R/day08.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Day 8</span></a>
   </div>
 </li>
@@ -1019,14 +1019,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#part-1" id="toc-part-1" class="nav-link" data-scroll-target="#part-1">Part 1</a></li>
   <li><a href="#part-2" id="toc-part-2" class="nav-link" data-scroll-target="#part-2">Part 2</a></li>
   </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/mimmackk/adventofcode/blob/main/2025/R/day04.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li></ul></div></nav>
+<div class="toc-actions"><ul><li><a href="https://github.com/mimmackk/adventofcode/blob/main/2025/R/day08.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li></ul></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title d-none d-lg-block">Day 4</h1>
+<h1 class="title d-none d-lg-block">Day 8</h1>
 <p class="subtitle lead">Advent of Code: Worked Solutions</p>
 </div>
 
@@ -1037,14 +1037,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Puzzle Source</div>
     <div class="quarto-title-meta-contents">
-             <p><a href="https://adventofcode.com/2025/day/4">https://adventofcode.com/2025/day/4</a> </p>
+             <p><a href="https://adventofcode.com/2025/day/8">https://adventofcode.com/2025/day/8</a> </p>
           </div>
   </div>
     
     <div>
     <div class="quarto-title-meta-heading">Puzzle Date</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">December 4, 2025</p>
+      <p class="date">December 8, 2025</p>
     </div>
   </div>
   
@@ -1060,71 +1060,75 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
 <p>Import libraries:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(unglue)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Read text input from file into a matrix:</p>
+<p>Read text input from file:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>input <span class="ot">&lt;-</span> <span class="fu">read_lines</span>(<span class="st">"../input/day04.txt"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">str_split</span>(<span class="st">""</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enframe</span>(<span class="at">name =</span> <span class="cn">NULL</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest_wider</span>(value, <span class="at">names_sep =</span> <span class="st">""</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.matrix</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unname</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>input <span class="ot">&lt;-</span> <span class="fu">read_lines</span>(<span class="st">"../input/day08.txt"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">str_split</span>(<span class="st">","</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(as.numeric)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="part-1" class="level2">
 <h2 class="anchored" data-anchor-id="part-1">Part 1</h2>
-<p>Define a function to shift a matrix up, down, left, or right:</p>
+<p>Define a helper function to compute the euclidian distance between two vectors:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>shift <span class="ot">&lt;-</span> <span class="cf">function</span>(mtx, <span class="at">dir =</span> <span class="fu">c</span>(<span class="st">"up"</span>, <span class="st">"down"</span>, <span class="st">"left"</span>, <span class="st">"right"</span>), ...) {</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">switch</span>(dir,</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"up"</span>    <span class="ot">=</span> mtx <span class="sc">|&gt;</span> <span class="fu">lead</span>(...),</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"down"</span>  <span class="ot">=</span> mtx <span class="sc">|&gt;</span> <span class="fu">lag</span>(...),</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"left"</span>  <span class="ot">=</span> mtx <span class="sc">|&gt;</span> <span class="fu">t</span>() <span class="sc">|&gt;</span> <span class="fu">lead</span>(...) <span class="sc">|&gt;</span> <span class="fu">t</span>(),</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"right"</span> <span class="ot">=</span> mtx <span class="sc">|&gt;</span> <span class="fu">t</span>() <span class="sc">|&gt;</span> <span class="fu">lag</span>(...)  <span class="sc">|&gt;</span> <span class="fu">t</span>()</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>dist <span class="ot">&lt;-</span> \(x, y) <span class="fu">sqrt</span>(<span class="fu">sum</span>(<span class="fu">map2_dbl</span>(x, y, <span class="sc">~</span> (.x <span class="sc">-</span> .y)<span class="sc">^</span><span class="dv">2</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Define a function which, for each cell in the matrix, counts how many of its 8 immediate neighbors match a given value:</p>
+<p>Construct all unique combinations of junction boxes, then compute the distance between each:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>count_nbrs <span class="ot">&lt;-</span> <span class="cf">function</span>(mtx, value) {</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    mtx <span class="sc">|&gt;</span> <span class="fu">shift</span>(<span class="st">"up"</span>,    <span class="at">default =</span> <span class="st">"."</span>),</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    mtx <span class="sc">|&gt;</span> <span class="fu">shift</span>(<span class="st">"down"</span>,  <span class="at">default =</span> <span class="st">"."</span>),</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    mtx <span class="sc">|&gt;</span> <span class="fu">shift</span>(<span class="st">"left"</span>,  <span class="at">default =</span> <span class="st">"."</span>),</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    mtx <span class="sc">|&gt;</span> <span class="fu">shift</span>(<span class="st">"right"</span>, <span class="at">default =</span> <span class="st">"."</span>),</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    mtx <span class="sc">|&gt;</span> <span class="fu">shift</span>(<span class="st">"up"</span>,    <span class="at">default =</span> <span class="st">"."</span>) <span class="sc">|&gt;</span> <span class="fu">shift</span>(<span class="st">"left"</span>,  <span class="at">default =</span> <span class="st">"."</span>),</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    mtx <span class="sc">|&gt;</span> <span class="fu">shift</span>(<span class="st">"up"</span>,    <span class="at">default =</span> <span class="st">"."</span>) <span class="sc">|&gt;</span> <span class="fu">shift</span>(<span class="st">"right"</span>, <span class="at">default =</span> <span class="st">"."</span>),</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    mtx <span class="sc">|&gt;</span> <span class="fu">shift</span>(<span class="st">"down"</span>,  <span class="at">default =</span> <span class="st">"."</span>) <span class="sc">|&gt;</span> <span class="fu">shift</span>(<span class="st">"left"</span>,  <span class="at">default =</span> <span class="st">"."</span>),</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    mtx <span class="sc">|&gt;</span> <span class="fu">shift</span>(<span class="st">"down"</span>,  <span class="at">default =</span> <span class="st">"."</span>) <span class="sc">|&gt;</span> <span class="fu">shift</span>(<span class="st">"right"</span>, <span class="at">default =</span> <span class="st">"."</span>)</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">map</span>(\(x) x <span class="sc">==</span> value) <span class="sc">|&gt;</span> </span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">reduce</span>(<span class="st">`</span><span class="at">+</span><span class="st">`</span>)</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>combos <span class="ot">&lt;-</span> <span class="fu">combn</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(input), <span class="dv">2</span>, <span class="at">simplify =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble_col</span>(<span class="st">"box"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest_wider</span>(box, <span class="at">names_sep =</span> <span class="st">""</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">across</span>(<span class="fu">c</span>(box1, box2), <span class="sc">~</span> input[.x], <span class="at">.names =</span> <span class="st">"{.col}_coord"</span>),</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">d =</span> <span class="fu">map2_dbl</span>(box1_coord, box2_coord, dist)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(d)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Count how many rolls in the input have less than 4 neighboring rolls:</p>
+<p>Assign each box to its own circut, iterate through the first 1000 box pairs:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(input <span class="sc">==</span> <span class="st">'@'</span> <span class="sc">&amp;</span> <span class="fu">count_nbrs</span>(input, <span class="st">'@'</span>) <span class="sc">&lt;</span> <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>circuts <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(input)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">1000</span>) {</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  circut1 <span class="ot">&lt;-</span> circuts[combos<span class="sc">$</span>box1[i]]</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  circut2 <span class="ot">&lt;-</span> circuts[combos<span class="sc">$</span>box2[i]]</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (circut1 <span class="sc">!=</span> circut2) {</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    circuts <span class="ot">&lt;-</span> <span class="fu">replace</span>(circuts, circuts <span class="sc">==</span> circut1, circut2)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Multiply together the sizes of the 3 largest circuts:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>circuts <span class="sc">|&gt;</span> </span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sort</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rle</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pluck</span>(<span class="st">"lengths"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sort</span>(<span class="at">decreasing =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">3</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prod</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="part-2" class="level2">
 <h2 class="anchored" data-anchor-id="part-2">Part 2</h2>
-<p>Iteratively remove rolls until no more removals are possible:</p>
+<p>Iteravely make connections until all boxes are on a single circut:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>cur <span class="ot">&lt;-</span> input</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="cf">repeat</span> {</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  prv <span class="ot">&lt;-</span> cur</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  cur[cur <span class="sc">==</span> <span class="st">'@'</span> <span class="sc">&amp;</span> <span class="fu">count_nbrs</span>(cur, <span class="st">'@'</span>) <span class="sc">&lt;</span> <span class="dv">4</span>] <span class="ot">&lt;-</span> <span class="st">"."</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">all</span>(prv <span class="sc">==</span> cur))</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">break</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>fnl <span class="ot">&lt;-</span> cur</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>circuts <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(input)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>i <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span>(<span class="fu">length</span>(<span class="fu">unique</span>(circuts)) <span class="sc">&gt;</span> <span class="dv">1</span>) {</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  i <span class="ot">&lt;-</span> i <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  circut1 <span class="ot">&lt;-</span> circuts[combos<span class="sc">$</span>box1[i]]</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  circut2 <span class="ot">&lt;-</span> circuts[combos<span class="sc">$</span>box2[i]]</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (circut1 <span class="sc">!=</span> circut2) {</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    circuts <span class="ot">&lt;-</span> <span class="fu">replace</span>(circuts, circuts <span class="sc">==</span> circut1, circut2)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Count how many rolls were removed:</p>
+<p>Multiply the x coordinates of the last two boxes connected:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(input <span class="sc">==</span> <span class="st">"@"</span>) <span class="sc">-</span> <span class="fu">sum</span>(fnl <span class="sc">==</span> <span class="st">"@"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>combos<span class="sc">$</span>box1_coord[[i]][<span class="dv">1</span>] <span class="sc">*</span> combos<span class="sc">$</span>box2_coord[[i]][<span class="dv">1</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
 
@@ -1550,13 +1554,13 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="../../2025/R/day03.html" class="pagination-link" aria-label="Day 3">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Day 3</span>
+      <a href="../../2025/R/day07.html" class="pagination-link" aria-label="Day 7">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Day 7</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../../2025/R/day05.html" class="pagination-link" aria-label="Day 5">
-        <span class="nav-page-text">Day 5</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="../../2024/R/day01.html" class="pagination-link" aria-label="Day 1">
+        <span class="nav-page-text">Day 1</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>
@@ -1565,4 +1569,4 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 
 
 
-<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/mimmackk/adventofcode/blob/main/2025/R/day04.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li></ul></div></div></div></footer></body></html>
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/mimmackk/adventofcode/blob/main/2025/R/day08.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li></ul></div></div></div></footer></body></html>

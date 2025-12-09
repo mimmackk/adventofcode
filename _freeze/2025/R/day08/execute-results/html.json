@@ -1,0 +1,15 @@
+{
+  "hash": "f315ec0fb50bd42e514cc30f94fc70e3",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 8\"\ndate: 2025-12-08\nauthor:\n  name: https://adventofcode.com/2025/day/8\n  url: https://adventofcode.com/2025/day/8\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\nlibrary(unglue)\n```\n:::\n\n\n\n\nRead text input from file:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day08.txt\") |> \n  str_split(\",\") |> \n  map(as.numeric)\n```\n:::\n\n\n\n\n## Part 1\n\nDefine a helper function to compute the euclidian distance between two vectors:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndist <- \\(x, y) sqrt(sum(map2_dbl(x, y, ~ (.x - .y)^2)))\n```\n:::\n\n\n\n\nConstruct all unique combinations of junction boxes, then compute the distance between each:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncombos <- combn(1:length(input), 2, simplify = FALSE) |> \n  as_tibble_col(\"box\") |> \n  unnest_wider(box, names_sep = \"\") |> \n  mutate(\n    across(c(box1, box2), ~ input[.x], .names = \"{.col}_coord\"),\n    d = map2_dbl(box1_coord, box2_coord, dist)\n  ) |> \n  arrange(d)\n```\n:::\n\n\n\n\nAssign each box to its own circut, iterate through the first 1000 box pairs:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncircuts <- 1:length(input)\n\nfor (i in 1:1000) {\n  circut1 <- circuts[combos$box1[i]]\n  circut2 <- circuts[combos$box2[i]]\n  if (circut1 != circut2) {\n    circuts <- replace(circuts, circuts == circut1, circut2)\n  }\n}\n```\n:::\n\n\n\n\nMultiply together the sizes of the 3 largest circuts:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncircuts |> \n  sort() |> \n  rle() |> \n  pluck(\"lengths\") |> \n  sort(decreasing = TRUE) |> \n  head(3) |> \n  prod()\n```\n:::\n\n\n\n\n## Part 2\n\nIteravely make connections until all boxes are on a single circut:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncircuts <- 1:length(input)\ni <- 0\n\nwhile(length(unique(circuts)) > 1) {\n  i <- i + 1\n  circut1 <- circuts[combos$box1[i]]\n  circut2 <- circuts[combos$box2[i]]\n  if (circut1 != circut2) {\n    circuts <- replace(circuts, circuts == circut1, circut2)\n  }\n}\n```\n:::\n\n\n\n\nMultiply the x coordinates of the last two boxes connected:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncombos$box1_coord[[i]][1] * combos$box2_coord[[i]][1]\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
