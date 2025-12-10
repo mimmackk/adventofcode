@@ -1,0 +1,138 @@
+---
+title: "Day 9"
+date: 2025-12-09
+author:
+  name: https://adventofcode.com/2025/day/9
+  url: https://adventofcode.com/2025/day/9
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+library(sf)
+
+```
+
+Read text input from file into a data frame of X-Y coordinates:
+
+```{r}
+
+input <- read_lines("../input/day09.txt") |> 
+  unglue_data("{x},{y}", convert = TRUE) |> 
+  mutate(id = row_number())
+
+```
+
+## Part 1
+
+Compute the area of the rectangle formed by every pair of coordinates:
+
+```{r}
+
+combn <- cross_join(input, input, suffix = c("1", "2")) |> 
+  filter(id1 < id2) |> 
+  mutate(
+    w = abs(x2 - x1) + 1,
+    h = abs(y2 - y1) + 1,
+    area = w * h
+  )
+
+```
+
+Pull the largest area:
+
+```{r}
+
+combn |> 
+  pull(area) |> 
+  max()
+
+```
+
+## Part 2
+
+Convert tiles to a polygon:
+
+```{r}
+
+polygon <- input |> 
+  rbind(head(input, 1)) |> 
+  pmap(\(x, y, ...) c(x = x, y = y)) |>
+  reduce(rbind) |> 
+  list() |> 
+  st_polygon()
+
+polygon_buffer <- polygon |> 
+  st_buffer(dist = 0.5, joinStyle = 'MITRE', mitreLimit = sqrt(2))
+
+```
+
+Graph the polygon:
+
+```{r}
+#| output: true
+
+polygon |> 
+  ggplot() + 
+  geom_sf(color = NA) +
+  theme_void()
+
+```
+
+For each rectangle formed by a pair of corners, create an sf object.
+
+```{r}
+
+combn <- combn |> 
+  filter(x1 != x2 & y1 != y2) |> 
+  mutate(
+    rect = pmap(lst(x1, x2, y1, y2), \(x1, x2, y1, y2) {
+      st_polygon(list(rbind(
+        c(x1, y1), 
+        c(x1, y2), 
+        c(x2, y2), 
+        c(x2, y1), 
+        c(x1, y1)
+      )))
+    })
+  ) |> 
+  arrange(desc(area))
+
+```
+
+In descending order of area, check if each rectangle is fully contained within the polygon, quitting once the largest valid rectangle is found:
+
+```{r}
+
+valid_idx <- NA
+
+for (i in 1:nrow(combn)) {
+  if (st_contains(polygon_buffer, combn$rect[[i]], sparse = FALSE)) {
+    valid_idx <- i
+    break
+  }
+}
+
+combn$area[[valid_idx]]
+
+```
+
+Plot the result:
+
+```{r}
+#| output: true
+
+ggplot() + 
+  geom_sf(data = polygon, color = NA) +
+  geom_sf(data = combn$rect[[valid_idx]], fill = "#21918c", color = NA) +
+  theme_void()
+    
+```
+

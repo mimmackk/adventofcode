@@ -1,0 +1,17 @@
+{
+  "hash": "38dadc1a5d2c36a46f8be6704ed80241",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 9\"\ndate: 2025-12-09\nauthor:\n  name: https://adventofcode.com/2025/day/9\n  url: https://adventofcode.com/2025/day/9\nexecute:\n  eval: true\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(sf)\n```\n:::\n\n\n\n\nRead text input from file into a data frame of X-Y coordinates:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day09.txt\") |> \n  unglue_data(\"{x},{y}\", convert = TRUE) |> \n  mutate(id = row_number())\n```\n:::\n\n\n\n\n## Part 1\n\nCompute the area of the rectangle formed by every pair of coordinates:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncombn <- cross_join(input, input, suffix = c(\"1\", \"2\")) |> \n  filter(id1 < id2) |> \n  mutate(\n    w = abs(x2 - x1) + 1,\n    h = abs(y2 - y1) + 1,\n    area = w * h\n  )\n```\n:::\n\n\n\n\nPull the largest area:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncombn |> \n  pull(area) |> \n  max()\n```\n:::\n\n\n\n\n## Part 2\n\nConvert tiles to a polygon:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\npolygon <- input |> \n  rbind(head(input, 1)) |> \n  pmap(\\(x, y, ...) c(x = x, y = y)) |>\n  reduce(rbind) |> \n  list() |> \n  st_polygon()\n\npolygon_buffer <- polygon |> \n  st_buffer(dist = 0.5, joinStyle = 'MITRE', mitreLimit = sqrt(2))\n```\n:::\n\n\n\n\nGraph the polygon:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\npolygon |> \n  ggplot() + \n  geom_sf(color = NA) +\n  theme_void()\n```\n\n::: {.cell-output-display}\n![](day09_files/figure-html/unnamed-chunk-5-1.png){width=672}\n:::\n:::\n\n\n\n\nFor each rectangle formed by a pair of corners, create an sf object.\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ncombn <- combn |> \n  filter(x1 != x2 & y1 != y2) |> \n  mutate(\n    rect = pmap(lst(x1, x2, y1, y2), \\(x1, x2, y1, y2) {\n      st_polygon(list(rbind(\n        c(x1, y1), \n        c(x1, y2), \n        c(x2, y2), \n        c(x2, y1), \n        c(x1, y1)\n      )))\n    })\n  ) |> \n  arrange(desc(area))\n```\n:::\n\n\n\n\nIn descending order of area, check if each rectangle is fully contained within the polygon, quitting once the largest valid rectangle is found:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nvalid_idx <- NA\n\nfor (i in 1:nrow(combn)) {\n  if (st_contains(polygon_buffer, combn$rect[[i]], sparse = FALSE)) {\n    valid_idx <- i\n    break\n  }\n}\n\ncombn$area[[valid_idx]]\n```\n:::\n\n\n\n\nPlot the result:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nggplot() + \n  geom_sf(data = polygon, color = NA) +\n  geom_sf(data = combn$rect[[valid_idx]], fill = \"#21918c\", color = NA) +\n  theme_void()\n```\n\n::: {.cell-output-display}\n![](day09_files/figure-html/unnamed-chunk-8-1.png){width=672}\n:::\n:::\n",
+    "supporting": [
+      "day09_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
