@@ -1,7 +1,7 @@
 ---
-title: "Useful Packages & Functions"
+title: "Useful Packages & Helper Functions"
 subtitle: ""
-date: 2025-11-18
+date: 2025-12-13
 published-title: "Last Updated"
 author: 
   name: https://adventofcode.com
@@ -34,6 +34,7 @@ This page offers a quick reference for R packages, built-in functions, and custo
 | Sets & Intervals | `sets` | [2021 Day 22](/2021/R/day22.html) |
 | Geometry | `sf` | [2022 Day 15](/2022/R/day15.html) |
 | Primes, GCD, LCM | `numbers` | [2020 Day 13](/2020/R/day13.html) |
+| Linear Programming | `lpsolve` | [2025 Day 10](/2025/R/day10.html) |
 
 ## Built-In
 

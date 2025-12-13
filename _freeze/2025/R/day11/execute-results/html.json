@@ -1,0 +1,15 @@
+{
+  "hash": "052daec54d1b430c501cf4e38a1dd929",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Day 11\"\ndate: 2025-12-11\nauthor:\n  name: https://adventofcode.com/2025/day/11\n  url: https://adventofcode.com/2025/day/11\nexecute:\n  eval: true\n---\n\n\n\n\n## Setup\n\nImport libraries:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(igraph)\nlibrary(memoise)\n```\n:::\n\n\n\n\nDisable scientific notation to display all digits of large numbers:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\noptions(scipen = 999)\n```\n:::\n\n\n\n\nRead text input from file and parse into a list of connections:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninput <- read_lines(\"../input/day11.txt\") |> \n  unglue_data(\"{src}: {out}\") |> \n  mutate(out = str_split(out, \" \")) |> \n  unnest_longer(out)\n```\n:::\n\n\n\n\n## Part 1\n\nConvert the input data frame to a directed graph:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\ng <- input |> \n  graph_from_data_frame()\n```\n:::\n\n\n\n\nFind all paths from `you` to `out`:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nall_simple_paths(g, \"you\", \"out\") |> \n  length()\n```\n:::\n\n\n\n\n## Part 2\n\nFind all paths from `svr` to `out` that also pass through `dac` and `fft` (in any order). `igraph::all_simple_paths` cannot handle this problem in sufficient time. Instead, we write a custom recursive function to count the number of paths between two nodes in our directed graph and use memoization to make it performant:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nnum_paths <- function(g, from, to) {\n  \n  if (from == to) {\n    return(1)\n  }\n  \n  nbrs <- names(neighborhood(g, nodes = from, mode = \"out\", mindist = 1)[[1]])\n  \n  if (length(nbrs) == 0) {\n    return(0)\n  }\n  \n  n <- 0\n  \n  for (nbr in nbrs) {\n    n <- n + num_paths(g, nbr, to)\n  }\n  \n  return(n)\n}\n\nnum_paths <- memoise(num_paths)\n```\n:::\n\n\n\n\nRun on puzzle input:\n\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\np1 <- num_paths(g, \"dac\", \"fft\")\np2 <- num_paths(g, \"fft\", \"dac\")\n\nif (p1 > 0) {\n  p1 * \n    num_paths(g, \"svr\", \"dac\") * \n    num_paths(g, \"fft\", \"out\")\n} else {\n  p2 * \n    num_paths(g, \"svr\", \"fft\") * \n    num_paths(g, \"dac\", \"out\")\n}\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

@@ -1091,41 +1091,41 @@
   {
     "objectID": "helpers.html",
     "href": "helpers.html",
-    "title": "Useful Packages & Functions",
+    "title": "Useful Packages & Helper Functions",
     "section": "",
     "text": "This page offers a quick reference for R packages, built-in functions, and custom helper functions that I regularly use in AOC challenges.",
     "crumbs": [
-      "Packages & Functions"
+      "Helper Functions"
     ]
   },
   {
     "objectID": "helpers.html#packages",
     "href": "helpers.html#packages",
-    "title": "Useful Packages & Functions",
+    "title": "Useful Packages & Helper Functions",
     "section": "Packages",
-    "text": "Packages\n\n\n\nConcept\nPackage Name\nExample\n\n\n\n\nInput Text Parsing\nunglue\n2020 Day 2\n\n\nGraphs\nigraph, tidygraph, ggraph\n2020 Day 10\n\n\nMemoization\nmemoise\n2021 Day 21\n\n\n64-Bit Integers\nbit64\n2024 Day 17\n\n\nSets & Intervals\nsets\n2021 Day 22\n\n\nGeometry\nsf\n2022 Day 15\n\n\nPrimes, GCD, LCM\nnumbers\n2020 Day 13",
+    "text": "Packages\n\n\n\nConcept\nPackage Name\nExample\n\n\n\n\nInput Text Parsing\nunglue\n2020 Day 2\n\n\nGraphs\nigraph, tidygraph, ggraph\n2020 Day 10\n\n\nMemoization\nmemoise\n2021 Day 21\n\n\n64-Bit Integers\nbit64\n2024 Day 17\n\n\nSets & Intervals\nsets\n2021 Day 22\n\n\nGeometry\nsf\n2022 Day 15\n\n\nPrimes, GCD, LCM\nnumbers\n2020 Day 13\n\n\nLinear Programming\nlpsolve\n2025 Day 10",
     "crumbs": [
-      "Packages & Functions"
+      "Helper Functions"
     ]
   },
   {
     "objectID": "helpers.html#built-in",
     "href": "helpers.html#built-in",
-    "title": "Useful Packages & Functions",
+    "title": "Useful Packages & Helper Functions",
     "section": "Built-In",
     "text": "Built-In\n\nScientific Notation\nDisable scientific notation to display all digits of large numbers:\n\noptions(scipen = 999)\n\n\n\nPolar Coordinates\n2D coordinates can be represented as complex numbers, easing common calculations such as addition, subtraction, distances, and angles:\n\nz = complex(real = x, imaginary = y)\n\n\n\nPipes\nColumns of a data frame can be passed through a pipe into a function that takes vector input by using the with function:\n\niris |&gt; \n  with(cor(Sepal.Length, Sepal.Width))\n\n\n\nBase N\nConvert string representations of numbers in any base to integers using the strtoi function:\n\nstrtoi(\"0xff\", base = 16L)\nstrtoi(\"1010\", base = 2L)\n\n\n\nBinary\nConvert 32-bit integers to binary representation using intToBits:\n\nintToBits(5)\n\n\n\nRun Length\nCalculate the length of continuous runs using rle. Convert a list of values and run lengths back to a single vector using inverse.rle.\n\nx &lt;- c(10, 10, 10, 10, 10, 9, 9, 9, 9, 8, 8, 8, 7, 7, 6)\nrle(x)\ninverse.rle(rle(x))",
     "crumbs": [
-      "Packages & Functions"
+      "Helper Functions"
     ]
   },
   {
     "objectID": "helpers.html#snippets-custom-functions",
     "href": "helpers.html#snippets-custom-functions",
-    "title": "Useful Packages & Functions",
+    "title": "Useful Packages & Helper Functions",
     "section": "Snippets & Custom Functions",
     "text": "Snippets & Custom Functions\n\nRead Matrix\nRead text input directly into a matrix by using a combination of read.table and as.matrix:\n\ninput &lt;- read.table(filepath) |&gt; \n  as.matrix() |&gt; \n  unname()\n\n\n\nPrint Compact Matrix\nDisplay fixed-width matrices in a compact format, with no spaces between cells:\n\nmtx_compact &lt;- function(mtx) { \n  mtx |&gt; \n    apply(1, str_flatten) |&gt; \n    cat(sep = \"\\n\")\n}\n\nExample:\n\nc(\"#\", \"#\", \"#\", \"#\", \".\", '#', '#', '.', '#', \"#\", \"#\", \"#\") |&gt; \n  matrix(nrow = 3) |&gt; \n  mtx_compact()\n\n####\n#..#\n####\n\n\n\n\nVisualize Matrix as Image\nPrint matrices as a colored pixel image:\n\nmtx_image &lt;- function(mtx, palette = NULL, palette_fun = viridis::mako) {\n  \n  # If a color palette is not supplied, generate one\n  if (is.null(palette)) {\n    palette &lt;- switch(typeof(mtx),\n      \"integer\"   = palette_fun(max(mtx) - min(mtx) + 1),\n      \"double\"    = palette_fun(100),\n      \"character\" = palette_fun(length(unique(c(input))))\n    )\n  }\n  \n  # Convert character matrix to integers\n  if (is.character(mtx)) {\n    mtx &lt;- mtx |&gt; \n      match(factor(mtx)) |&gt; \n      matrix(ncol = ncol(mtx))\n  }\n  \n  # Transpose & flip matrix so that pixels are displayed in intended order\n  image(\n    t(mtx)[, nrow(mtx):1], \n    col = palette,\n    asp = nrow(mtx) / ncol(mtx), \n    axes = FALSE\n  ) \n}\n\nExample:\n\nround(runif(12, max = 100)) |&gt; \n  matrix(nrow = 3) |&gt; \n  mtx_image()",
     "crumbs": [
-      "Packages & Functions"
+      "Helper Functions"
     ]
   },
   {
@@ -2339,47 +2339,80 @@
     ]
   },
   {
-    "objectID": "2025/R/day07.html",
-    "href": "2025/R/day07.html",
-    "title": "Day 7",
+    "objectID": "2025/R/day12.html",
+    "href": "2025/R/day12.html",
+    "title": "Day 12",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nDisable scientific notation to display all digits of large numbers:\n\noptions(scipen = 999)\n\nRead text input from file into a data frame of characters with row & column positions:\n\ninput &lt;- read_lines(\"../input/day07.txt\") |&gt; \n  str_split(\"\") |&gt; \n  map(enframe, name = \"col\") |&gt; \n  list_rbind(names_to = \"row\") |&gt; \n  filter(value != \".\") |&gt; \n  arrange(value != \"S\") |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead text input from file:\n\ninput &lt;- read_lines(\"../input/day12.txt\", skip_empty_rows = TRUE)\n\nSeparate the text for the presents and the regions from the raw input:\n\ninput &lt;- input |&gt; \n  enframe(name = NULL, value = \"txt\") |&gt; \n  mutate(\n    present_id = case_when(\n      str_detect(txt, \"^\\\\d+:$\") ~ parse_number(str_extract(txt, \"\\\\d+\"))\n    ),\n    is_present = str_detect(txt, \"^[#.]+$\"),\n    is_region  = str_detect(txt, \"^\\\\d+x\\\\d+\")\n  ) |&gt; \n  fill(present_id, .direction = \"down\") |&gt; \n  filter(is_present | is_region) |&gt; \n  group_split(is_region) |&gt; \n  set_names(c(\"presents\", \"regions\"))\n\nConvert all presents to a list of binary T/F matrices, where # is coded as TRUE and . as FALSE:\n\npresents &lt;- input$presents |&gt;\n  nest(mtx = txt, .by = present_id) |&gt; \n  mutate(mtx = map(mtx, \\(x) {\n    x |&gt; \n      unlist() |&gt; \n      str_split(\"\") |&gt; \n      reduce(rbind) |&gt; \n      unname()\n  })) |&gt; \n  pull(mtx) |&gt; \n  map(\\(x) x == '#')\n\nExtract numerical data from raw text input for regions (width, height, and vector of present counts by index):\n\nregions &lt;- input$regions |&gt; \n  pull(txt) |&gt; \n  unglue_data(\"{w}x{h}: {shapes}\", convert = TRUE) |&gt; \n  mutate(shapes = map(shapes, \\(x) as.numeric(str_split_1(x, \" \"))))",
     "crumbs": [
       "2025",
-      "Day 7"
+      "Day 12"
     ]
   },
   {
-    "objectID": "2025/R/day07.html#setup",
-    "href": "2025/R/day07.html#setup",
-    "title": "Day 7",
+    "objectID": "2025/R/day12.html#setup",
+    "href": "2025/R/day12.html#setup",
+    "title": "Day 12",
     "section": "",
-    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nDisable scientific notation to display all digits of large numbers:\n\noptions(scipen = 999)\n\nRead text input from file into a data frame of characters with row & column positions:\n\ninput &lt;- read_lines(\"../input/day07.txt\") |&gt; \n  str_split(\"\") |&gt; \n  map(enframe, name = \"col\") |&gt; \n  list_rbind(names_to = \"row\") |&gt; \n  filter(value != \".\") |&gt; \n  arrange(value != \"S\") |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\n\nRead text input from file:\n\ninput &lt;- read_lines(\"../input/day12.txt\", skip_empty_rows = TRUE)\n\nSeparate the text for the presents and the regions from the raw input:\n\ninput &lt;- input |&gt; \n  enframe(name = NULL, value = \"txt\") |&gt; \n  mutate(\n    present_id = case_when(\n      str_detect(txt, \"^\\\\d+:$\") ~ parse_number(str_extract(txt, \"\\\\d+\"))\n    ),\n    is_present = str_detect(txt, \"^[#.]+$\"),\n    is_region  = str_detect(txt, \"^\\\\d+x\\\\d+\")\n  ) |&gt; \n  fill(present_id, .direction = \"down\") |&gt; \n  filter(is_present | is_region) |&gt; \n  group_split(is_region) |&gt; \n  set_names(c(\"presents\", \"regions\"))\n\nConvert all presents to a list of binary T/F matrices, where # is coded as TRUE and . as FALSE:\n\npresents &lt;- input$presents |&gt;\n  nest(mtx = txt, .by = present_id) |&gt; \n  mutate(mtx = map(mtx, \\(x) {\n    x |&gt; \n      unlist() |&gt; \n      str_split(\"\") |&gt; \n      reduce(rbind) |&gt; \n      unname()\n  })) |&gt; \n  pull(mtx) |&gt; \n  map(\\(x) x == '#')\n\nExtract numerical data from raw text input for regions (width, height, and vector of present counts by index):\n\nregions &lt;- input$regions |&gt; \n  pull(txt) |&gt; \n  unglue_data(\"{w}x{h}: {shapes}\", convert = TRUE) |&gt; \n  mutate(shapes = map(shapes, \\(x) as.numeric(str_split_1(x, \" \"))))",
     "crumbs": [
       "2025",
-      "Day 7"
+      "Day 12"
     ]
   },
   {
-    "objectID": "2025/R/day07.html#part-1",
-    "href": "2025/R/day07.html#part-1",
-    "title": "Day 7",
+    "objectID": "2025/R/day12.html#part-1",
+    "href": "2025/R/day12.html#part-1",
+    "title": "Day 12",
     "section": "Part 1",
-    "text": "Part 1\nIterate through the rows of the input, tracking the current beam locations at each step, counting when a beam splits, and tracking how many timelines (for part 2) have been created so far:\n\nncol  &lt;- max(input$col) + 1\nbeams &lt;- rep(FALSE, ncol) |&gt; replace(input$col[input$value == \"S\"], TRUE)\ntimelines &lt;- as.numeric(beams)\nnsplit &lt;- 0\n\nfor (row_num in unique(input$row[-1])) {\n  \n  split &lt;- input |&gt; \n    filter(row == row_num) |&gt; \n    pull(col) |&gt; \n    keep(\\(x) beams[x] == TRUE)\n  \n  newbeams &lt;- unique(c(split - 1, split + 1))\n  \n  beams[split] &lt;- FALSE\n  beams[newbeams] &lt;- TRUE\n  \n  timelines[split - 1] &lt;- timelines[split - 1] + timelines[split]\n  timelines[split + 1] &lt;- timelines[split + 1] + timelines[split]\n  timelines[split] &lt;- 0\n  \n  nsplit &lt;- nsplit + length(split)\n  \n}\n\nCount the total number of splits that occurred:\n\nnsplit",
+    "text": "Part 1\nWith hint from Reddit user u/vash3r, a naive solution is sufficient. The least efficient packing solution for each region is if each present fits inside a full 3x3 box. From the opposite side, boxes will never fit if their total occupied area is greater than the area of the available region.\nImposing these simple constraints, we see that all regions from the input are either sufficiently large or too small – no packing solution is necessary.\n\npresent_area &lt;- map_dbl(presents, sum)\n\nregions |&gt; \n  mutate(\n    shapes_count = map_dbl(shapes, sum),\n    shapes_area  = map_dbl(shapes, \\(present) sum(present * present_area)),\n    fits = case_when(\n      w %/% 3 * h %/% 3 &gt;= shapes_count ~ 'YES',\n      w * h &lt;= shapes_area ~ 'NO',\n      .default = 'UNKNOWN'\n    )\n  ) |&gt; \n  summarize(n_regions = n(), .by = fits)",
     "crumbs": [
       "2025",
-      "Day 7"
+      "Day 12"
     ]
   },
   {
-    "objectID": "2025/R/day07.html#part-2",
-    "href": "2025/R/day07.html#part-2",
-    "title": "Day 7",
-    "section": "Part 2",
-    "text": "Part 2\nCount the total timelines created:\n\nsum(timelines)",
+    "objectID": "2025/R/day11.html",
+    "href": "2025/R/day11.html",
+    "title": "Day 11",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(igraph)\nlibrary(memoise)\n\nDisable scientific notation to display all digits of large numbers:\n\noptions(scipen = 999)\n\nRead text input from file and parse into a list of connections:\n\ninput &lt;- read_lines(\"../input/day11.txt\") |&gt; \n  unglue_data(\"{src}: {out}\") |&gt; \n  mutate(out = str_split(out, \" \")) |&gt; \n  unnest_longer(out)",
     "crumbs": [
       "2025",
-      "Day 7"
+      "Day 11"
+    ]
+  },
+  {
+    "objectID": "2025/R/day11.html#setup",
+    "href": "2025/R/day11.html#setup",
+    "title": "Day 11",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\nlibrary(unglue)\nlibrary(igraph)\nlibrary(memoise)\n\nDisable scientific notation to display all digits of large numbers:\n\noptions(scipen = 999)\n\nRead text input from file and parse into a list of connections:\n\ninput &lt;- read_lines(\"../input/day11.txt\") |&gt; \n  unglue_data(\"{src}: {out}\") |&gt; \n  mutate(out = str_split(out, \" \")) |&gt; \n  unnest_longer(out)",
+    "crumbs": [
+      "2025",
+      "Day 11"
+    ]
+  },
+  {
+    "objectID": "2025/R/day11.html#part-1",
+    "href": "2025/R/day11.html#part-1",
+    "title": "Day 11",
+    "section": "Part 1",
+    "text": "Part 1\nConvert the input data frame to a directed graph:\n\ng &lt;- input |&gt; \n  graph_from_data_frame()\n\nFind all paths from you to out:\n\nall_simple_paths(g, \"you\", \"out\") |&gt; \n  length()",
+    "crumbs": [
+      "2025",
+      "Day 11"
+    ]
+  },
+  {
+    "objectID": "2025/R/day11.html#part-2",
+    "href": "2025/R/day11.html#part-2",
+    "title": "Day 11",
+    "section": "Part 2",
+    "text": "Part 2\nFind all paths from svr to out that also pass through dac and fft (in any order). igraph::all_simple_paths cannot handle this problem in sufficient time. Instead, we write a custom recursive function to count the number of paths between two nodes in our directed graph and use memoization to make it performant:\n\nnum_paths &lt;- function(g, from, to) {\n  \n  if (from == to) {\n    return(1)\n  }\n  \n  nbrs &lt;- names(neighborhood(g, nodes = from, mode = \"out\", mindist = 1)[[1]])\n  \n  if (length(nbrs) == 0) {\n    return(0)\n  }\n  \n  n &lt;- 0\n  \n  for (nbr in nbrs) {\n    n &lt;- n + num_paths(g, nbr, to)\n  }\n  \n  return(n)\n}\n\nnum_paths &lt;- memoise(num_paths)\n\nRun on puzzle input:\n\np1 &lt;- num_paths(g, \"dac\", \"fft\")\np2 &lt;- num_paths(g, \"fft\", \"dac\")\n\nif (p1 &gt; 0) {\n  p1 * \n    num_paths(g, \"svr\", \"dac\") * \n    num_paths(g, \"fft\", \"out\")\n} else {\n  p2 * \n    num_paths(g, \"svr\", \"fft\") * \n    num_paths(g, \"dac\", \"out\")\n}",
+    "crumbs": [
+      "2025",
+      "Day 11"
     ]
   },
   {
@@ -3579,6 +3612,50 @@
     "crumbs": [
       "2025",
       "Day 5"
+    ]
+  },
+  {
+    "objectID": "2025/R/day07.html",
+    "href": "2025/R/day07.html",
+    "title": "Day 7",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nDisable scientific notation to display all digits of large numbers:\n\noptions(scipen = 999)\n\nRead text input from file into a data frame of characters with row & column positions:\n\ninput &lt;- read_lines(\"../input/day07.txt\") |&gt; \n  str_split(\"\") |&gt; \n  map(enframe, name = \"col\") |&gt; \n  list_rbind(names_to = \"row\") |&gt; \n  filter(value != \".\") |&gt; \n  arrange(value != \"S\") |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "crumbs": [
+      "2025",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2025/R/day07.html#setup",
+    "href": "2025/R/day07.html#setup",
+    "title": "Day 7",
+    "section": "",
+    "text": "Import libraries:\n\nlibrary(tidyverse)\n\nDisable scientific notation to display all digits of large numbers:\n\noptions(scipen = 999)\n\nRead text input from file into a data frame of characters with row & column positions:\n\ninput &lt;- read_lines(\"../input/day07.txt\") |&gt; \n  str_split(\"\") |&gt; \n  map(enframe, name = \"col\") |&gt; \n  list_rbind(names_to = \"row\") |&gt; \n  filter(value != \".\") |&gt; \n  arrange(value != \"S\") |&gt; \n  mutate(id = row_number(), .before = everything())",
+    "crumbs": [
+      "2025",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2025/R/day07.html#part-1",
+    "href": "2025/R/day07.html#part-1",
+    "title": "Day 7",
+    "section": "Part 1",
+    "text": "Part 1\nIterate through the rows of the input, tracking the current beam locations at each step, counting when a beam splits, and tracking how many timelines (for part 2) have been created so far:\n\nncol  &lt;- max(input$col) + 1\nbeams &lt;- rep(FALSE, ncol) |&gt; replace(input$col[input$value == \"S\"], TRUE)\ntimelines &lt;- as.numeric(beams)\nnsplit &lt;- 0\n\nfor (row_num in unique(input$row[-1])) {\n  \n  split &lt;- input |&gt; \n    filter(row == row_num) |&gt; \n    pull(col) |&gt; \n    keep(\\(x) beams[x] == TRUE)\n  \n  newbeams &lt;- unique(c(split - 1, split + 1))\n  \n  beams[split] &lt;- FALSE\n  beams[newbeams] &lt;- TRUE\n  \n  timelines[split - 1] &lt;- timelines[split - 1] + timelines[split]\n  timelines[split + 1] &lt;- timelines[split + 1] + timelines[split]\n  timelines[split] &lt;- 0\n  \n  nsplit &lt;- nsplit + length(split)\n  \n}\n\nCount the total number of splits that occurred:\n\nnsplit",
+    "crumbs": [
+      "2025",
+      "Day 7"
+    ]
+  },
+  {
+    "objectID": "2025/R/day07.html#part-2",
+    "href": "2025/R/day07.html#part-2",
+    "title": "Day 7",
+    "section": "Part 2",
+    "text": "Part 2\nCount the total timelines created:\n\nsum(timelines)",
+    "crumbs": [
+      "2025",
+      "Day 7"
     ]
   },
   {

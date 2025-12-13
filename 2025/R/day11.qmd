@@ -1,0 +1,111 @@
+---
+title: "Day 11"
+date: 2025-12-11
+author:
+  name: https://adventofcode.com/2025/day/11
+  url: https://adventofcode.com/2025/day/11
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+library(igraph)
+library(memoise)
+
+```
+
+Disable scientific notation to display all digits of large numbers:
+
+```{r}
+
+options(scipen = 999)
+
+```
+
+Read text input from file and parse into a list of connections:
+
+```{r}
+
+input <- read_lines("../input/day11.txt") |> 
+  unglue_data("{src}: {out}") |> 
+  mutate(out = str_split(out, " ")) |> 
+  unnest_longer(out)
+
+```
+
+## Part 1
+
+Convert the input data frame to a directed graph:
+
+```{r}
+
+g <- input |> 
+  graph_from_data_frame()
+
+```
+
+Find all paths from `you` to `out`:
+
+```{r}
+
+all_simple_paths(g, "you", "out") |> 
+  length()
+
+```
+
+## Part 2
+
+Find all paths from `svr` to `out` that also pass through `dac` and `fft` (in any order). `igraph::all_simple_paths` cannot handle this problem in sufficient time. Instead, we write a custom recursive function to count the number of paths between two nodes in our directed graph and use memoization to make it performant:
+
+```{r}
+
+num_paths <- function(g, from, to) {
+  
+  if (from == to) {
+    return(1)
+  }
+  
+  nbrs <- names(neighborhood(g, nodes = from, mode = "out", mindist = 1)[[1]])
+  
+  if (length(nbrs) == 0) {
+    return(0)
+  }
+  
+  n <- 0
+  
+  for (nbr in nbrs) {
+    n <- n + num_paths(g, nbr, to)
+  }
+  
+  return(n)
+}
+
+num_paths <- memoise(num_paths)
+
+```
+
+Run on puzzle input:
+
+```{r}
+
+p1 <- num_paths(g, "dac", "fft")
+p2 <- num_paths(g, "fft", "dac")
+
+if (p1 > 0) {
+  p1 * 
+    num_paths(g, "svr", "dac") * 
+    num_paths(g, "fft", "out")
+} else {
+  p2 * 
+    num_paths(g, "svr", "fft") * 
+    num_paths(g, "dac", "out")
+}
+
+```

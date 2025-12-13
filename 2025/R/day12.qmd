@@ -1,0 +1,103 @@
+---
+title: "Day 12"
+date: 2025-12-12
+author:
+  name: https://adventofcode.com/2025/day/12
+  url: https://adventofcode.com/2025/day/12
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(unglue)
+
+```
+
+Read text input from file:
+
+```{r}
+
+input <- read_lines("../input/day12.txt", skip_empty_rows = TRUE)
+
+```
+
+Separate the text for the presents and the regions from the raw input:
+
+```{r}
+
+input <- input |> 
+  enframe(name = NULL, value = "txt") |> 
+  mutate(
+    present_id = case_when(
+      str_detect(txt, "^\\d+:$") ~ parse_number(str_extract(txt, "\\d+"))
+    ),
+    is_present = str_detect(txt, "^[#.]+$"),
+    is_region  = str_detect(txt, "^\\d+x\\d+")
+  ) |> 
+  fill(present_id, .direction = "down") |> 
+  filter(is_present | is_region) |> 
+  group_split(is_region) |> 
+  set_names(c("presents", "regions"))
+
+```
+
+Convert all presents to a list of binary T/F matrices, where `#` is coded as `TRUE` and `.` as `FALSE`:
+
+```{r}
+
+presents <- input$presents |>
+  nest(mtx = txt, .by = present_id) |> 
+  mutate(mtx = map(mtx, \(x) {
+    x |> 
+      unlist() |> 
+      str_split("") |> 
+      reduce(rbind) |> 
+      unname()
+  })) |> 
+  pull(mtx) |> 
+  map(\(x) x == '#')
+
+```
+
+Extract numerical data from raw text input for regions (width, height, and vector of present counts by index):
+
+```{r}
+
+regions <- input$regions |> 
+  pull(txt) |> 
+  unglue_data("{w}x{h}: {shapes}", convert = TRUE) |> 
+  mutate(shapes = map(shapes, \(x) as.numeric(str_split_1(x, " "))))
+
+```
+
+## Part 1
+
+With hint from Reddit user [u/vash3r](https://www.reddit.com/r/adventofcode/comments/1pkje0o/comment/ntlj4ug/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button), a naive solution is sufficient. The least efficient packing solution for each region is if each present fits inside a full 3x3 box. From the opposite side, boxes will never fit if their total occupied area is greater than the area of the available region. 
+
+Imposing these simple constraints, we see that all regions from the input are either sufficiently large or too small -- no packing solution is necessary.
+
+```{r}
+
+present_area <- map_dbl(presents, sum)
+
+regions |> 
+  mutate(
+    shapes_count = map_dbl(shapes, sum),
+    shapes_area  = map_dbl(shapes, \(present) sum(present * present_area)),
+    fits = case_when(
+      w %/% 3 * h %/% 3 >= shapes_count ~ 'YES',
+      w * h <= shapes_area ~ 'NO',
+      .default = 'UNKNOWN'
+    )
+  ) |> 
+  summarize(n_regions = n(), .by = fits)
+
+```
+
+
