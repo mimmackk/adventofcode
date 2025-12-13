@@ -1,0 +1,119 @@
+---
+title: "Day 10"
+date: 2025-12-10
+author:
+  name: https://adventofcode.com/2025/day/10
+  url: https://adventofcode.com/2025/day/10
+execute:
+  eval: true
+---
+
+## Setup
+
+Import libraries:
+
+```{r setup}
+
+library(tidyverse)
+library(lpSolve)
+library(combinat)
+
+```
+
+Read text input from file:
+
+```{r}
+
+input <- read_lines("../input/day10.txt")
+
+```
+
+Parse text into numeric and binary vectors:
+
+-   An indicator light diagram `[.##.]` becomes `0 1 1 0`.
+-   For the same diagram, a button `(3)` becomes `0 0 0 1`.
+-   A joltage requirement `{3,5,4,7}` becomes `3 5 4 7`.
+
+```{r}
+
+manual <- input |> 
+  str_split(" ") |> 
+  map(\(x) {
+    lst(
+      output = pluck(x, 1) |> 
+        str_remove_all("\\[|\\]") |> 
+        str_split_1("") |> 
+        case_match("." ~ 0, "#" ~ 1), 
+      joltage = pluck(x, -1) |> 
+        str_remove_all("\\{|\\}") |> 
+        str_split_1(",") |> 
+        as.numeric(),
+      buttons = x |> 
+        head(-1) |> 
+        tail(-1) |> 
+        str_remove_all("\\(|\\)") |> 
+        str_split(",") |> 
+        map(\(btn) {
+          modify_at(rep(0, length(output)), as.numeric(btn) + 1, ~ 1)
+        })
+    )
+  })
+
+```
+
+## Part 1
+
+Since this is a modular equation, pressing a button once is equivalent to pressing it 3 times, 5 times, etc, and pressing it zero times is equivalent to pressing it 2 times, 4 times, etc. Since our goal is to minimize the number of button presses, each button can be pressed either once or never.
+
+We define a function which iterates through all possible combinations of button presses, starting from all sets of 1 button, all sets of 2 buttons, etc., until we find a pair that produces a match with the output:
+
+```{r}
+  
+min_buttons <- function(man) {
+  
+  for (n in 1:length(man$buttons)) {
+    combos <- combn(1:length(man$buttons), n, simplify = FALSE)
+    
+    for (i in combos) {
+      pressed <- reduce(man$buttons[i], `+`) %% 2
+      if (identical(pressed, man$output))
+        return(n)
+    }
+  }
+  
+}
+
+```
+
+Determine the minimum number of presses for each line of input, then sum the result:
+
+```{r}
+
+manual |> 
+  map_dbl(min_buttons) |> 
+  sum()
+
+```
+
+## Part 2
+
+Use linear programming with the package `lpSolve`. We create a system of linear equations for each line, then minimize for total presses:
+
+```{r}
+
+map_dbl(manual, \(man) {
+  lp(
+    direction = "min",
+    objective.in = rep(1, length(man$buttons)),
+    const.mat = man$buttons |> 
+      reduce(rbind) |> 
+      t(),
+    const.dir = rep("==", length(man$joltage)),
+    const.rhs = man$joltage,
+    all.int   = TRUE
+  ) |> 
+    pluck("objval")
+}) |> 
+  sum()
+
+```
